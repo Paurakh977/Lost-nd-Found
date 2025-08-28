@@ -218,14 +218,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         ? 'opacity-0 scale-95 blur-sm' 
         : 'opacity-100 scale-100 blur-0'
     }`}>
-      {/* Pin Animation with exit animation */}
+      {/* Premium Pin Animation with exit animation */}
       <div className={`flex items-center justify-center mb-6 transition-all duration-700 ease-out ${
         isExiting 
           ? 'transform -translate-y-8 opacity-0 scale-90' 
           : 'transform translate-y-0 opacity-100 scale-100'
       }`}>
         <svg 
-          id="site-pin"
+          id="premium-pin"
           xmlns="http://www.w3.org/2000/svg" 
           viewBox="0 0 319 415"
           style={{
@@ -238,7 +238,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
                 <stop offset="0%" style={{stopColor: '#ffffff', stopOpacity: 0.6}} />
                 <stop offset="100%" style={{stopColor: '#ffffff', stopOpacity: 0}} />
             </radialGradient>
-        </defs>
+          </defs>
 
           {/* Dark sections (fill first) */}
           <path className="dark-section" stroke="none" d="
@@ -320,44 +320,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             Z
           "/>
 
-          {/* Dark outline */}
-          <path className="pin-outline-dark" d="
-            M 158.41 63.62
-            Q 140.76 63.37 122.68 69.44
-            Q 93.46 79.24 73.03 101.51
-            C 38.87 138.75 32.17 194.42 58.02 237.96
-            Q 62.15 244.92 76.33 267.68
-            Q 133.08 358.76 142.44 374.07
-            Q 147.88 382.95 157.26 397.66
-            Q 159.50 397.97 159.65 396.77
-            Q 158.75 395.16 158.82 392.00
-            Q 159.08 380.01 158.71 355.78
-            Q 139.95 326.67 121.94 297.55
-            Q 105.21 270.49 88.52 243.32
-            Q 76.30 223.45 74.43 219.50
-            C 57.96 184.86 65.23 142.54 92.22 115.24
-            Q 119.54 87.61 158.82 86.91
-            L 158.41 63.62
-            Z
-          "/>
-
-          {/* Blue outline */}
-          <path className="blue-section" stroke="#4799c1" strokeWidth="2" d="
-            M 158.82 86.91
-            Q 183.57 87.07 205.13 99.61
-            C 248.08 124.59 264.85 177.66 241.67 222.16
-            C 236.31 232.45 228.26 244.08 224.04 250.90
-            C 222.93 252.68 221.92 253.94 222.63 256.12
-            Q 226.45 267.72 231.99 280.55
-            C 237.50 271.99 249.11 255.16 257.42 241.21
-            Q 263.80 230.48 266.97 222.11
-            Q 278.91 190.57 272.74 158.58
-            C 266.67 127.12 247.48 99.30 220.83 81.91
-            Q 193.11 63.81 158.41 63.62
-            L 158.82 86.91
-            Z
-          "/>
-
           {/* White magnifying glass */}
           <circle className="glass-white" stroke="none" cx="158.67" cy="175.57" r="44.30"/>
 
@@ -391,7 +353,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           text="GOTUS"
           duration={0.6}
           delayMultiple={0.1}
-          delay={2.5} // Start later in pin animation
+          delay={2.5}
           className="font-display text-5xl font-bold tracking-widest text-gray-800 drop-shadow-lg md:text-7xl"
           framerProps={{
             hidden: { opacity: 0, x: -30, scale: 0.8 },
@@ -414,73 +376,91 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             >
             Global Online Tracking for Unclaimed Stuff
         </TextEffect>
-
       </div>
 
       <style jsx global>{`
-        #site-pin {
+        #premium-pin {
           width: 250px;
           height: 325px;
-          transform: scale(0);
-          animation: pinEntrance 4.5s cubic-bezier(0.23, 1, 0.320, 1) forwards;
         }
 
-        .pin-outline-dark {
-          stroke-dasharray: 1000;
-          stroke-dashoffset: 1000;
-          fill: transparent;
-          stroke: #121e27;
-          stroke-width: 2;
-          animation: drawOutline 1.5s ease-out 0.5s forwards;
+        .logo-shape {
+          opacity: 0;
+          transform: scale(0.8);
         }
 
         .dark-section {
           fill: transparent;
           stroke: none;
-          animation: fillDark 0.8s ease-out 1.8s forwards;
+          animation: fillDark 0.8s ease-out 0.4s forwards;
         }
 
         .blue-section {
           fill: transparent;
           stroke: none;
-          animation: fillBlueMinimal 1.0s ease-in-out 2.1s forwards;
+          animation: fillBlue 1.0s ease-in-out 0.7s forwards;
         }
 
         .glass-white {
           fill: transparent;
           stroke: none;
-          animation: fillWhite 0.4s ease-out 2.8s forwards;
+          animation: fillWhite 0.4s ease-out 1.4s forwards;
         }
 
         .glass-highlight {
           fill: transparent;
           stroke: none;
-          animation: fillHighlight 0.3s ease-out 3.1s forwards;
+          animation: fillHighlight 0.3s ease-out 1.7s forwards;
         }
 
         .final-glow {
           opacity: 0;
-          animation: finalGlow 0.5s ease-out 3.3s forwards;
+          animation: finalGlow 0.5s ease-out 1.9s forwards;
         }
 
-        @keyframes pinEntrance {
-          0% {
-            transform: scale(0) rotate(180deg);
+        /* Premium Container Animation */
+        #premium-pin {
+          animation: containerScale 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+        }
+
+        /* Shape assembly animations with earlier timing */
+        #darkShape1 { animation: shapeAssemble 1.0s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s forwards; }
+        #darkShape2 { animation: shapeAssemble 1.0s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards; }
+        #blueShape1 { animation: shapeAssemble 1.0s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.6s forwards; }
+        #blueShape2 { animation: shapeAssemble 1.0s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.7s forwards; }
+        #centerCircle { animation: shapeAssemble 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.8s forwards; }
+        #highlight { animation: shapeAssemble 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1.0s forwards; }
+        
+        /* Final glow effect */
+        #finalGlow { animation: finalGlowPulse 1.0s ease-out 1.2s forwards; }
+
+        /* Keyframe Definitions */
+        @keyframes containerScale {
+          from {
+            transform: scale(0.3);
             opacity: 0;
           }
-          60% {
-            transform: scale(1.1) rotate(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(1) rotate(0deg);
+          to {
+            transform: scale(1);
             opacity: 1;
           }
         }
 
-        @keyframes drawOutline {
-          to {
-            stroke-dashoffset: 0;
+        @keyframes shapeAssemble {
+          0% {
+            opacity: 0;
+            transform: scale(0.8);
+            filter: blur(8px);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scale(1.05);
+            filter: blur(2px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(0px);
           }
         }
 
@@ -488,7 +468,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           to { fill: #121e27; }
         }
 
-        @keyframes fillBlueMinimal {
+        @keyframes fillBlue {
           0% { 
             fill: transparent;
           }
@@ -509,6 +489,22 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           0% { opacity: 0; }
           50% { opacity: 0.8; }
           100% { opacity: 0; }
+        }
+
+        /* Subtle floating animation for the entire logo after assembly */
+        #premium-pin {
+          animation: 
+            containerScale 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards,
+            floatAnimation 6s ease-in-out 2.5s infinite;
+        }
+
+        @keyframes floatAnimation {
+          0%, 100% {
+            transform: translateY(0px) scale(1);
+          }
+          50% {
+            transform: translateY(-8px) scale(1);
+          }
         }
       `}</style>
     </div>
