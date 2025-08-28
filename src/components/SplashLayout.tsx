@@ -1,16 +1,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import SplashScreen from './SplashScreen';
+import TransitionPage from './TransitionPage';
 
 interface SplashLayoutProps {
   children: React.ReactNode;
 }
 
 const SplashLayout: React.FC<SplashLayoutProps> = ({ children }) => {
+  const pathname = usePathname();
   const [showSplash, setShowSplash] = useState(false);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [showTransition, setShowTransition] = useState(false);
+  const [previousPath, setPreviousPath] = useState('');
 
+  // Handle initial splash screen
   useEffect(() => {
     // Always show splash on page load/refresh
     // Use a timestamp to detect actual page refresh vs navigation
@@ -25,10 +31,31 @@ const SplashLayout: React.FC<SplashLayoutProps> = ({ children }) => {
     
     // Update last visit time
     localStorage.setItem('lastVisit', currentTime.toString());
+    
+    // Initialize previous path
+    setPreviousPath(pathname);
   }, []);
+
+  // Handle page transitions
+  useEffect(() => {
+    // Skip on initial render
+    if (previousPath === '') {
+      return;
+    }
+    
+    // If path changed, show transition
+    if (pathname !== previousPath) {
+      setShowTransition(true);
+      setPreviousPath(pathname);
+    }
+  }, [pathname, previousPath]);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
+  };
+
+  const handleTransitionComplete = () => {
+    setShowTransition(false);
   };
 
   return (
@@ -36,7 +63,10 @@ const SplashLayout: React.FC<SplashLayoutProps> = ({ children }) => {
       {showSplash && isFirstVisit && (
         <SplashScreen onComplete={handleSplashComplete} />
       )}
-      <div className={showSplash ? 'hidden' : ''}>
+      {showTransition && (
+        <TransitionPage onComplete={handleTransitionComplete} />
+      )}
+      <div className={showSplash || showTransition ? 'hidden' : ''}>
         {children}
       </div>
     </>
