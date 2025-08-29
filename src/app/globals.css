@@ -39,3 +39,24 @@ html {
   background: rgba(156, 163, 175, 0.5);
   border-radius: 10px;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Dark mode styles */
+.dark {
+  color-scheme: dark;
+}
