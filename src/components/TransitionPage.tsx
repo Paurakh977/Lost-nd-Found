@@ -4,14 +4,15 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 interface TransitionPageProps {
   onComplete: () => void;
+  onPhaseChange?: (phase: 'closing' | 'closed' | 'opening') => void;
 }
 
 const PANEL_COUNT = 12;
 const STAGGER_DELAY = 45;
-const COVER_DURATION = 1200;
+const COVER_DURATION = 1200; 
 const REVEAL_STAGGER = 35;
 
-const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete }) => {
+const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChange }) => {
   const [isVisible, setIsVisible] = useState(true);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const timeoutsRef = useRef<number[]>([]);
@@ -32,6 +33,9 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete }) => {
     // Enable interaction blocking
     overlay.classList.add('active');
 
+    // Notify that panels are starting to close
+    onPhaseChange?.('closing');
+
     // Phase 1: Slide down panels with staggered timing
     panels.forEach((panel, index) => {
       const timeout = window.setTimeout(() => {
@@ -42,15 +46,24 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete }) => {
 
     // Phase 2: Hold covered state, then reveal
     const revealTimeout = window.setTimeout(() => {
-      panels.forEach((panel, index) => {
-        const timeout = window.setTimeout(() => {
-          panel.classList.remove('slide-down');
-          panel.classList.add('slide-up');
-        }, (panels.length - 1 - index) * REVEAL_STAGGER);
-        timeoutsRef.current.push(timeout);
-      });
+      // Notify when panels are fully closed (this is when navigation should happen)
+      onPhaseChange?.('closed');
+      
+      // Small delay to ensure navigation completes before panels start opening
+      setTimeout(() => {
+        panels.forEach((panel, index) => {
+          const timeout = window.setTimeout(() => {
+            panel.classList.remove('slide-down');
+            panel.classList.add('slide-up');
+          }, (panels.length - 1 - index) * REVEAL_STAGGER);
+          timeoutsRef.current.push(timeout);
+        });
 
-      // Phase 3: Complete transition and cleanup
+        // Notify that panels are starting to open
+        onPhaseChange?.('opening');
+      }, 50); // Small delay to ensure navigation is complete
+
+      // Phase 3: Complete transition and cleanup - FIXED TIMING
       const completeTimeout = window.setTimeout(() => {
         overlay.classList.remove('active');
         setIsVisible(false);
@@ -62,12 +75,12 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete }) => {
     timeoutsRef.current.push(revealTimeout);
 
     return cleanup;
-  }, [onComplete, cleanup]);
+  }, [onComplete, cleanup, onPhaseChange]);
 
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] overflow-hidden">
+    <div className="fixed inset-0 z-[9999] overflow-hidden pointer-events-none">
       <div ref={overlayRef} className="transition-overlay">
         {Array.from({ length: PANEL_COUNT }).map((_, i) => (
           <div 
