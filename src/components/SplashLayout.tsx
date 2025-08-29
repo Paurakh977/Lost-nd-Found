@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import SplashScreen from './SplashScreen';
 import TransitionPage from './TransitionPage';
@@ -12,46 +12,49 @@ interface SplashLayoutProps {
 const SplashLayout: React.FC<SplashLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [showSplash, setShowSplash] = useState(false);
-  const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [showTransition, setShowTransition] = useState(false);
   const [previousPath, setPreviousPath] = useState('');
+  const isFirstMount = useRef(true);
+  const hasShownSplash = useRef(false);
 
-  // Handle initial splash screen
+  // Handle initial splash screen - ONLY on first visit
   useEffect(() => {
-    // Always show splash on page load/refresh
-    // Use a timestamp to detect actual page refresh vs navigation
-    const currentTime = Date.now();
-    const lastVisit = localStorage.getItem('lastVisit');
-    
-    // If no lastVisit or more than 1 second ago (indicates refresh/new visit)
-    if (!lastVisit || currentTime - parseInt(lastVisit) > 1000) {
-      setShowSplash(true);
-      setIsFirstVisit(true);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      
+      // Check if this is a fresh visit
+      const lastVisit = localStorage.getItem('lastVisit');
+      const currentTime = Date.now();
+      
+      // If no lastVisit or more than 1 second ago (indicates refresh/new visit)
+      if (!lastVisit || currentTime - parseInt(lastVisit) > 1000) {
+        setShowSplash(true);
+        hasShownSplash.current = true;
+      }
+      
+      // Update last visit time
+      localStorage.setItem('lastVisit', currentTime.toString());
+      setPreviousPath(pathname);
     }
-    
-    // Update last visit time
-    localStorage.setItem('lastVisit', currentTime.toString());
-    
-    // Initialize previous path
-    setPreviousPath(pathname);
-  }, []);
+  }, []); // Only run once on mount
 
-  // Handle page transitions
+  // Handle page transitions - ONLY during navigation
   useEffect(() => {
-    // Skip on initial render
-    if (previousPath === '') {
-      return;
-    }
+    if (isFirstMount.current) return; // Skip on first mount
     
-    // If path changed, show transition
-    if (pathname !== previousPath) {
+    // If path changed and we've already shown splash, show transition
+    if (pathname !== previousPath && previousPath !== '' && hasShownSplash.current && !showSplash) {
       setShowTransition(true);
       setPreviousPath(pathname);
     }
-  }, [pathname, previousPath]);
+  }, [pathname, previousPath, showSplash]);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
+    // Ensure we don't show transition immediately after splash
+    setTimeout(() => {
+      hasShownSplash.current = true;
+    }, 100);
   };
 
   const handleTransitionComplete = () => {
@@ -60,7 +63,7 @@ const SplashLayout: React.FC<SplashLayoutProps> = ({ children }) => {
 
   return (
     <>
-      {showSplash && isFirstVisit && (
+      {showSplash && (
         <SplashScreen onComplete={handleSplashComplete} />
       )}
       {showTransition && (

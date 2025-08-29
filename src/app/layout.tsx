@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SplashLayout from "../components/SplashLayout";
+import Navbar from "../components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "GOTUS",
-  description: "Your awesome app",
+  description: "Global Online Tracking for Unclaimed Stuff",
   icons: {
     icon: '/Logo.png', 
   },
@@ -32,7 +33,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SplashLayout>
-          {children}
+          <div className="min-h-screen bg-gray-50">
+            <Navbar />
+            {children}
+          </div>
         </SplashLayout>
       </body>
     </html>
