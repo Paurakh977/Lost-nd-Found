@@ -152,10 +152,9 @@ function TextEffect({
   const delayedContainerVariants: Variants = {
     hidden: containerVariants.hidden,
     visible: {
-      ...containerVariants.visible,
+      opacity: 1,
       transition: {
-        ...(containerVariants.visible as any)?.transition,
-        staggerChildren: (containerVariants.visible as any)?.transition?.staggerChildren || 0.05,
+        staggerChildren: 0.05,
         delayChildren: delay,
       },
     },
@@ -354,7 +353,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           duration={0.6}
           delayMultiple={0.1}
           delay={2.5}
-          className="font-display text-5xl font-bold tracking-widest text-gray-800 drop-shadow-lg md:text-7xl"
+          className="text-4xl font-bold tracking-widest text-gray-800 drop-shadow-lg md:text-6xl"
           framerProps={{
             hidden: { opacity: 0, x: -30, scale: 0.8 },
             visible: { opacity: 1, x: 0, scale: 1 },
@@ -363,7 +362,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       </div>
 
       {/* Subtitle with Text Effect and exit animation */}
-      <div className={`max-w-5xl text-center px-4 transition-all duration-400 ease-out delay-200 ${
+      <div className={`text-center px-4 transition-all duration-400 ease-out delay-200 ${
         isExiting 
           ? 'transform translate-y-6 opacity-0' 
           : 'transform translate-y-0 opacity-100'
@@ -372,7 +371,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             per="word"
             preset="fade"
             delay={3.5}
-            className="text-4xl font-normal text-gray-600 tracking-wide leading-relaxed md:text-6xl font-sans"
+            className="text-sm font-medium text-gray-425 tracking-normal leading-relaxed md:text-base font-sans uppercase"
             >
             Global Online Tracking for Unclaimed Stuff
         </TextEffect>
