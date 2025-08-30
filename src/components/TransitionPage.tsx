@@ -26,53 +26,70 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
     const overlay = overlayRef.current;
     if (!overlay) return;
 
-    const panels = Array.from(
-      overlay.querySelectorAll<HTMLDivElement>('.transition-panel')
-    );
+    // Force a browser reflow to ensure CSS transitions work properly
+    // This is especially important for the first navigation after page load
+    const forceReflow = overlay.offsetHeight;
 
-    // Enable interaction blocking
-    overlay.classList.add('active');
+    // Use a small delay to ensure DOM is ready before starting animations
+    // This prevents the "stuck panels" issue on first navigation
+    const initialDelay = window.setTimeout(() => {
+      const panels = Array.from(
+        overlay.querySelectorAll<HTMLDivElement>('.transition-panel')
+      );
 
-    // Notify that panels are starting to close
-    onPhaseChange?.('closing');
+      // Enable interaction blocking
+      overlay.classList.add('active');
 
-    // Phase 1: Slide down panels with staggered timing
-    panels.forEach((panel, index) => {
-      const timeout = window.setTimeout(() => {
-        panel.classList.add('slide-down');
-      }, index * STAGGER_DELAY);
-      timeoutsRef.current.push(timeout);
-    });
+      // Notify that panels are starting to close
+      onPhaseChange?.('closing');
 
-    // Phase 2: Hold covered state, then reveal
-    const revealTimeout = window.setTimeout(() => {
-      // Notify when panels are fully closed (this is when navigation should happen)
-      onPhaseChange?.('closed');
-      
-      // Small delay to ensure navigation completes before panels start opening
-      setTimeout(() => {
-        panels.forEach((panel, index) => {
-          const timeout = window.setTimeout(() => {
-            panel.classList.remove('slide-down');
-            panel.classList.add('slide-up');
-          }, (panels.length - 1 - index) * REVEAL_STAGGER);
-          timeoutsRef.current.push(timeout);
-        });
+      // Phase 1: Slide down panels with staggered timing
+      panels.forEach((panel, index) => {
+        // Pre-compute styles to force browser to acknowledge elements
+        // This ensures consistent animation behavior on first navigation
+        window.getComputedStyle(panel).transform;
+        
+        const timeout = window.setTimeout(() => {
+          panel.classList.add('slide-down');
+        }, index * STAGGER_DELAY);
+        timeoutsRef.current.push(timeout);
+      });
 
-        // Notify that panels are starting to open
-        onPhaseChange?.('opening');
-      }, 50); // Small delay to ensure navigation is complete
+      // Phase 2: Hold covered state, then reveal
+      const revealTimeout = window.setTimeout(() => {
+        // Notify when panels are fully closed (this is when navigation should happen)
+        onPhaseChange?.('closed');
+        
+        // Small delay to ensure navigation completes before panels start opening
+        setTimeout(() => {
+          panels.forEach((panel, index) => {
+            // Force browser to acknowledge current state before changing it
+            window.getComputedStyle(panel).transform;
+            
+            const timeout = window.setTimeout(() => {
+              panel.classList.remove('slide-down');
+              panel.classList.add('slide-up');
+            }, (panels.length - 1 - index) * REVEAL_STAGGER);
+            timeoutsRef.current.push(timeout);
+          });
 
-      // Phase 3: Complete transition and cleanup - FIXED TIMING
-      const completeTimeout = window.setTimeout(() => {
-        overlay.classList.remove('active');
-        setIsVisible(false);
-        onComplete();
-      }, panels.length * REVEAL_STAGGER + 600);
-      timeoutsRef.current.push(completeTimeout);
-    }, COVER_DURATION);
+          // Notify that panels are starting to open
+          onPhaseChange?.('opening');
+        }, 50); // Small delay to ensure navigation is complete
 
-    timeoutsRef.current.push(revealTimeout);
+        // Phase 3: Complete transition and cleanup - FIXED TIMING
+        const completeTimeout = window.setTimeout(() => {
+          overlay.classList.remove('active');
+          setIsVisible(false);
+          onComplete();
+        }, panels.length * REVEAL_STAGGER + 600);
+        timeoutsRef.current.push(completeTimeout);
+      }, COVER_DURATION);
+
+      timeoutsRef.current.push(revealTimeout);
+    }, 10); // Small initial delay to ensure DOM is ready
+    
+    timeoutsRef.current.push(initialDelay);
 
     return cleanup;
   }, [onComplete, cleanup, onPhaseChange]);
@@ -127,8 +144,14 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
           transform-origin: var(--transform-origin, bottom);
           transition: transform 0.85s cubic-bezier(0.23, 1, 0.32, 1);
           min-width: calc(100% / var(--total-panels));
-          will-change: transform;
+          will-change: transform, opacity;
           overflow: hidden;
+          opacity: 1; /* Ensure panels are visible */
+          /* Force hardware acceleration to prevent animation glitches */
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+          -webkit-transform-style: preserve-3d;
+          transform-style: preserve-3d;
         }
 
         /* Dynamic transform origins for wave effect */
@@ -268,8 +291,10 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
 
         /* Opening state - slide back up with improved easing */
         .transition-panel.slide-up {
-          transform: scaleY(0);
+          transform: scaleY(0) !important; /* Force override to ensure animation works */
           transition: transform 0.9s cubic-bezier(0.165, 0.84, 0.44, 1);
+          /* Add a small delay to ensure the browser has time to process the state change */
+          transition-delay: 5ms;
         }
 
         .transition-panel.slide-up .shine-layer-1 {
