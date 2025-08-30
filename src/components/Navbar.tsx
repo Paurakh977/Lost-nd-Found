@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Info, Mail } from 'lucide-react';
 import { cn } from "../lib/utlis";
 import { useNavigation } from './SplashLayout';
+import { useTheme } from './ThemeProvider';
 
 interface NavItem {
   name: string;
@@ -13,8 +14,8 @@ interface NavItem {
   icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
 }
 
-// Sky Toggle Component with fixed alignment
-const SkyToggle: React.FC<{ isDark: boolean; onToggle: () => void }> = ({ isDark, onToggle }) => {
+// Optimized Sky Toggle Component
+const SkyToggle = React.memo<{ isDark: boolean; onToggle: () => void }>(({ isDark, onToggle }) => {
   return (
     <div className="flex items-center justify-center h-full">
       <label className="theme-switch cursor-pointer flex items-center">
@@ -60,8 +61,8 @@ const SkyToggle: React.FC<{ isDark: boolean; onToggle: () => void }> = ({ isDark
           --stars-color: #fff;
           --clouds-color: #F3FDFF;
           --back-clouds-color: #AACADF;
-          --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
-          --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
+          --transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+          --circle-transition: .2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
@@ -83,6 +84,7 @@ const SkyToggle: React.FC<{ isDark: boolean; onToggle: () => void }> = ({ isDark
           position: relative;
           display: flex;
           align-items: center;
+          will-change: background-color;
         }
 
         .theme-switch__container::before {
@@ -103,13 +105,14 @@ const SkyToggle: React.FC<{ isDark: boolean; onToggle: () => void }> = ({ isDark
           height: var(--circle-container-diameter);
           background-color: rgba(255, 255, 255, 0.1);
           position: absolute;
-          left: calc(var(--circle-container-offset) + 0.4em);;
+          left: calc(var(--circle-container-offset) + 0.4em);
           top: calc(var(--circle-container-offset) + 0.4em);
           border-radius: var(--container-radius);
           box-shadow: inset 0 0 0 2.4em rgba(255, 255, 255, 0.1), 0 0 0 0.5em rgba(255, 255, 255, 0.1), 0 0 0 1em rgba(255, 255, 255, 0.1);
           display: flex;
           transition: var(--circle-transition);
           pointer-events: none;
+          will-change: left;
         }
 
         .theme-switch__sun-moon-container {
@@ -136,6 +139,7 @@ const SkyToggle: React.FC<{ isDark: boolean; onToggle: () => void }> = ({ isDark
           box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
           transition: var(--transition);
           position: relative;
+          will-change: transform;
         }
 
         .theme-switch__spot {
@@ -172,7 +176,8 @@ const SkyToggle: React.FC<{ isDark: boolean; onToggle: () => void }> = ({ isDark
           bottom: -0.5em;
           left: 0.25em;
           box-shadow: 0.75em 0.25em var(--clouds-color), -0.25em -0.25em var(--back-clouds-color), 1.15em 0.3em var(--clouds-color), 0.4em -0.1em var(--back-clouds-color), 1.75em 0 var(--clouds-color), 1em -0.05em var(--back-clouds-color), 2.35em 0.25em var(--clouds-color), 1.6em -0.25em var(--back-clouds-color), 2.9em -0.05em var(--clouds-color), 2.1em 0em var(--back-clouds-color), 3.6em -0.25em var(--clouds-color), 2.7em -0.35em var(--back-clouds-color);
-          transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+          transition: var(--transition);
+          will-change: bottom;
         }
 
         .theme-switch__stars-container {
@@ -183,6 +188,7 @@ const SkyToggle: React.FC<{ isDark: boolean; onToggle: () => void }> = ({ isDark
           width: 2.2em;
           height: auto;
           transition: var(--transition);
+          will-change: top, transform;
         }
 
         /* Checked state styles */
@@ -217,45 +223,62 @@ const SkyToggle: React.FC<{ isDark: boolean; onToggle: () => void }> = ({ isDark
       `}</style>
     </div>
   );
-};
+});
 
+SkyToggle.displayName = 'SkyToggle';
+
+// Optimized Navbar Component
 const Navbar: React.FC = () => {
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const { isDark, toggleTheme, mounted } = useTheme();
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('Home');
   const pathname = usePathname();
   const { navigateTo, isNavigating } = useNavigation();
 
-  const navItems: NavItem[] = React.useMemo(() => [
+  // Memoize nav items to prevent recreation
+  const navItems: NavItem[] = useMemo(() => [
     { name: 'Home', url: '/', icon: Home },
     { name: 'About', url: '/about', icon: Info },
     { name: 'Contact', url: '/contact', icon: Mail },
   ], []);
 
+  // Memoized handlers
+  const handleTabHover = useCallback((tabName: string | null) => {
+    setHoveredTab(tabName);
+  }, []);
+
+  const handleTabClick = useCallback((name: string, url: string) => {
+    if (!isNavigating) {
+      setActiveTab(name);
+      navigateTo(url);
+    }
+  }, [isNavigating, navigateTo]);
+
+  const handleLogoClick = useCallback(() => {
+    if (!isNavigating) {
+      setActiveTab('Home');
+      navigateTo('/');
+    }
+  }, [isNavigating, navigateTo]);
+
+  // Update active tab based on pathname
   useEffect(() => {
-    setMounted(true);
-    // Set active tab based on current pathname
     const currentItem = navItems.find(item => item.url === pathname);
     if (currentItem) {
       setActiveTab(currentItem.name);
     }
   }, [pathname, navItems]);
 
-  useEffect(() => {
-    // Apply theme to document
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
-
-  const handleThemeToggle = () => {
-    setIsDark(!isDark);
-  };
-
-  if (!mounted) return null;
+  // Don't render until mounted to prevent hydration issues
+  if (!mounted) {
+    return (
+      <div className="fixed top-0 left-0 right-0 z-50 pt-6">
+        <div className="flex justify-center">
+          <div className="flex items-center gap-1 bg-white/80 backdrop-blur-xl py-2 px-3 rounded-full shadow-lg h-14 w-80" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-6">
@@ -272,10 +295,7 @@ const Navbar: React.FC = () => {
         >
           {/* Logo */}
           <button 
-            onClick={() => {
-              setActiveTab('Home');
-              navigateTo('/');
-            }}
+            onClick={handleLogoClick}
             className="flex items-center space-x-2 px-3 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-white/5"
             disabled={isNavigating}
           >
@@ -300,12 +320,9 @@ const Navbar: React.FC = () => {
             return (
               <button
                 key={item.name}
-                onClick={() => {
-                  setActiveTab(item.name);
-                  navigateTo(item.url);
-                }}
-                onMouseEnter={() => setHoveredTab(item.name)}
-                onMouseLeave={() => setHoveredTab(null)}
+                onClick={() => handleTabClick(item.name, item.url)}
+                onMouseEnter={() => handleTabHover(item.name)}
+                onMouseLeave={() => handleTabHover(null)}
                 disabled={isNavigating}
                 className={cn(
                   "relative cursor-pointer text-xs font-medium px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2",
@@ -408,14 +425,14 @@ const Navbar: React.FC = () => {
 
           <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
 
-          {/* Sky Toggle - Fixed alignment */}
+          {/* Sky Toggle */}
           <div className="flex items-center h-10">
             <motion.div
               className="flex items-center justify-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <SkyToggle isDark={isDark} onToggle={handleThemeToggle} />
+              <SkyToggle isDark={isDark} onToggle={toggleTheme} />
             </motion.div>
           </div>
         </motion.div>

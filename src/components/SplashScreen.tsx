@@ -214,7 +214,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   return (
     <div className={`fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center min-h-screen w-full overflow-hidden transition-all duration-700 ease-in-out ${
       isExiting 
-        ? 'opacity-0 scale-95 blur-sm' 
+        ? 'opacity-0 scale-95 blur-sm ' 
         : 'opacity-100 scale-100 blur-0'
     }`}>
       {/* Premium Pin Animation with exit animation */}
@@ -353,7 +353,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           duration={0.6}
           delayMultiple={0.1}
           delay={2.5}
-          className="text-4xl font-bold tracking-widest text-gray-800 drop-shadow-lg md:text-6xl"
+          className="text-4xl font-bold tracking-widest text-gray-900 drop-shadow-lg md:text-6xl"
           framerProps={{
             hidden: { opacity: 0, x: -30, scale: 0.8 },
             visible: { opacity: 1, x: 0, scale: 1 },
@@ -371,7 +371,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             per="word"
             preset="fade"
             delay={3.5}
-            className="text-sm font-medium text-gray-425 tracking-normal leading-relaxed md:text-base font-sans uppercase"
+            className="text-sm font-medium text-gray-600 tracking-normal leading-relaxed md:text-base font-sans uppercase"
             >
             Global Online Tracking for Unclaimed Stuff
         </TextEffect>
