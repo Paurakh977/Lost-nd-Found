@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 
 interface ThemeContextType {
   isDark: boolean;
@@ -30,18 +30,31 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Memoized toggle function to prevent unnecessary re-renders
+  // Debounce timer ref to prevent rapid consecutive toggles
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Memoized toggle function with debouncing to prevent unnecessary re-renders
   const toggleTheme = useCallback(() => {
+    // Prevent rapid consecutive toggles
+    if (debounceTimerRef.current) return;
+    
+    // Set a debounce timer to prevent multiple toggles in quick succession
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null;
+    }, 300); // 300ms debounce time
+    
     setIsDark(prev => {
       const newTheme = !prev;
-      // Immediately update DOM and localStorage
-      if (newTheme) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      }
+      // Use requestAnimationFrame for smoother DOM updates
+      requestAnimationFrame(() => {
+        if (newTheme) {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        }
+      });
       return newTheme;
     });
   }, []);
