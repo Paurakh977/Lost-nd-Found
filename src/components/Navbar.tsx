@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Info, Mail } from 'lucide-react';
+import { Home, Info, Mail, Circle } from 'lucide-react';
 import { cn } from "../lib/utlis";
 import { useNavigation } from './SplashLayout';
 import { useTheme } from './ThemeProvider';
-  import SkyToggle from './ui/SkyToggle';
+import SkyToggle from './ui/SkyToggle';
 
 interface NavItem {
   name: string;
@@ -15,9 +15,6 @@ interface NavItem {
   icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
 }
 
-// Using the optimized SkyToggle component from './ui/SkyToggle'
-
-// Optimized Navbar Component with improved performance
 const Navbar: React.FC = () => {
   const { isDark, toggleTheme, mounted } = useTheme();
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
@@ -117,107 +114,210 @@ const Navbar: React.FC = () => {
 
             return (
               <button
-                key={item.name}
-                onClick={() => handleTabClick(item.name, item.url)}
-                onMouseEnter={() => handleTabHover(item.name)}
-                onMouseLeave={() => handleTabHover(null)}
-                disabled={isNavigating}
-                className={cn(
-                  "relative cursor-pointer text-xs font-medium px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2",
-                  "text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white",
-                  isActive && "text-blue-600 dark:text-blue-400",
-                  isNavigating && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                {isActive && (
-                  <motion.div
-                    className="absolute inset-0 rounded-full -z-10 overflow-hidden"
-                    initial={{ opacity: 0 }}
-                    animate={{ 
-                      opacity: [0.1, 0.2, 0.1],
-                      scale: [1, 1.02, 1]
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-blue-500/10 dark:bg-blue-400/10 rounded-full blur-sm" />
-                    <div className="absolute inset-[-2px] bg-blue-500/5 dark:bg-blue-400/5 rounded-full blur-md" />
-                  </motion.div>
-                )}
+  key={item.name}
+  onClick={() => handleTabClick(item.name, item.url)}
+  onMouseEnter={() => handleTabHover(item.name)}
+  onMouseLeave={() => handleTabHover(null)}
+  disabled={isNavigating}
+  className={cn(
+    "relative cursor-pointer text-sm font-semibold px-6 py-3 rounded-full transition-all duration-300",
+    "text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white",
+    isActive && "text-white",
+    isNavigating && "opacity-50 cursor-not-allowed"
+  )}
+>
+  {isActive && (
+    <motion.div
+      className="absolute inset-0 rounded-full -z-10 overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ 
+        opacity: [0.3, 0.5, 0.3],
+        scale: [1, 1.03, 1]
+      }}
+      transition={{
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+    >
+      <div className="absolute inset-0 bg-blue-500/25 dark:bg-blue-400/25 rounded-full blur-md" />
+      <div className="absolute inset-[-4px] bg-blue-500/20 dark:bg-blue-400/20 rounded-full blur-xl" />
+      <div className="absolute inset-[-8px] bg-blue-500/15 dark:bg-blue-400/15 rounded-full blur-2xl" />
+      <div className="absolute inset-[-12px] bg-blue-500/5 dark:bg-blue-400/5 rounded-full blur-3xl" />
+      
+      <div 
+        className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/20 to-blue-500/0 dark:from-blue-400/0 dark:via-blue-400/20 dark:to-blue-400/0"
+        style={{
+          animation: "shine 3s ease-in-out infinite"
+        }}
+      />
+    </motion.div>
+  )}
 
-                <motion.span 
-                  className="relative z-10"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+  <motion.span
+    className="hidden sm:inline relative z-10"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.2 }}
+  >
+    {item.name}
+  </motion.span>
+  <motion.span 
+    className="sm:hidden relative z-10"
+    whileHover={{ scale: 1.2 }}
+    whileTap={{ scale: 0.9 }}
+  >
+    <Icon size={18} strokeWidth={2.5} />
+  </motion.span>
+
+  <AnimatePresence>
+    {isHovered && !isActive && (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        className="absolute inset-0 bg-white/10 rounded-full -z-10"
+      />
+    )}
+  </AnimatePresence>
+
+  {isActive && (
+    <motion.div
+      layoutId="anime-mascot"
+      className="absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none"
+      initial={false}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+      }}
+    >
+      <div className="relative w-12 h-12">
+        <motion.div 
+          className="absolute w-10 h-10 bg-white rounded-full left-1/2 -translate-x-1/2"
+          animate={
+            isHovered ? {
+              scale: [1, 1.1, 1],
+              rotate: [0, -5, 5, 0],
+              transition: {
+                duration: 0.5,
+                ease: "easeInOut"
+              }
+            } : {
+              y: [0, -3, 0],
+              transition: {
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
+            }
+          }
+        >
+          <motion.div 
+            className="absolute w-2 h-2 bg-black rounded-full"
+            animate={
+              isHovered ? {
+                scaleY: [1, 0.2, 1],
+                transition: {
+                  duration: 0.2,
+                  times: [0, 0.5, 1]
+                }
+              } : {}
+            }
+            style={{ left: '25%', top: '40%' }}
+          />
+          <motion.div 
+            className="absolute w-2 h-2 bg-black rounded-full"
+            animate={
+              isHovered ? {
+                scaleY: [1, 0.2, 1],
+                transition: {
+                  duration: 0.2,
+                  times: [0, 0.5, 1]
+                }
+              } : {}
+            }
+            style={{ right: '25%', top: '40%' }}
+          />
+          <motion.div 
+            className="absolute w-2 h-1.5 bg-pink-300 rounded-full"
+            animate={{
+              opacity: isHovered ? 0.8 : 0.6
+            }}
+            style={{ left: '15%', top: '55%' }}
+          />
+          <motion.div 
+            className="absolute w-2 h-1.5 bg-pink-300 rounded-full"
+            animate={{
+              opacity: isHovered ? 0.8 : 0.6
+            }}
+            style={{ right: '15%', top: '55%' }}
+          />
+          
+          <motion.div 
+            className="absolute w-4 h-2 border-b-2 border-black rounded-full"
+            animate={
+              isHovered ? {
+                scaleY: 1.5,
+                y: -1
+              } : {
+                scaleY: 1,
+                y: 0
+              }
+            }
+            style={{ left: '30%', top: '60%' }}
+          />
+          <AnimatePresence>
+            {isHovered && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  className="absolute -top-1 -right-1 w-2 h-2 text-yellow-300"
                 >
-                  <Icon size={16} strokeWidth={2} className="sm:hidden" />
-                  <span className="hidden sm:inline">{item.name}</span>
-                </motion.span>
-
-                <AnimatePresence>
-                  {isHovered && !isActive && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="absolute inset-0 bg-gray-100/50 dark:bg-white/5 rounded-full -z-10"
-                    />
-                  )}
-                </AnimatePresence>
-
-                {/* Cute mascot for active item */}
-                {isActive && (
-                  <motion.div
-                    layoutId="navbar-mascot"
-                    className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none"
-                    initial={false}
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 30,
-                    }}
-                  >
-                    <motion.div 
-                      className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs"
-                      animate={{
-                        y: [0, -2, 0],
-                        rotate: isHovered ? [0, -10, 10, 0] : 0,
-                        scale: isHovered ? [1, 1.1, 1] : 1,
-                      }}
-                      transition={{
-                        y: {
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        },
-                        rotate: {
-                          duration: 0.5,
-                        },
-                        scale: {
-                          duration: 0.3,
-                        }
-                      }}
-                    >
-                      ✨
-                    </motion.div>
-                    <motion.div
-                      className="absolute -bottom-1 left-1/2 w-2 h-2 bg-gradient-to-br from-blue-400 to-purple-500 rotate-45 transform -translate-x-1/2"
-                      animate={{
-                        y: [0, 1, 0],
-                      }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 0.5
-                      }}
-                    />
-                  </motion.div>
-                )}
-              </button>
+                  ✨
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="absolute -top-2 left-0 w-2 h-2 text-yellow-300"
+                >
+                  ✨
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </motion.div>
+        <motion.div
+          className="absolute -bottom-1 left-1/2 w-4 h-4 -translate-x-1/2"
+          animate={
+            isHovered ? {
+              y: [0, -4, 0],
+              transition: {
+                duration: 0.3,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }
+            } : {
+              y: [0, 2, 0],
+              transition: {
+                duration: 1,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.5
+              }
+            }
+          }
+        >
+          <div className="w-full h-full bg-white rotate-45 transform origin-center" />
+        </motion.div>
+      </div>
+    </motion.div>
+  )}
+</button>
             );
           })}
 
