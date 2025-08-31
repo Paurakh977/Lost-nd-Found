@@ -2,15 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView } from 'framer-motion';
-import { Search, CheckCircle, Zap, Globe, Shield, Star, ArrowRight, Play, Menu, X, Users, TrendingUp, Clock, Award, ChevronDown, MousePointer, BarChart3, Sparkles } from 'lucide-react';
+import { Search, CheckCircle, Zap, Globe, Shield, Star, ArrowRight, Users, BarChart3, TrendingUp, Award } from 'lucide-react';
 import { cn } from "../lib/utlis";
 import { AuroraBackground } from "../components/ui/aurora-background";
 
-
-// Custom hook for counter animation
 interface CounterHookResult {
   count: number;
-  ref: React.RefObject<HTMLDivElement>;
+  ref: React.RefObject<HTMLDivElement | null>;
 }
 
 const useCounter = (end: number, duration: number = 2000, start: number = 0): CounterHookResult => {
@@ -38,8 +36,6 @@ const useCounter = (end: number, duration: number = 2000, start: number = 0): Co
   return { count, ref };
 };
 
-// Navigation component
-
 // Hero section with Aurora Background
 const HeroSection = () => {
   return (
@@ -52,68 +48,76 @@ const HeroSection = () => {
           duration: 0.8,
           ease: "easeInOut",
         }}
-        className="relative flex flex-col gap-4 items-center justify-center px-4 max-w-6xl mx-auto text-center"
+        className="relative flex flex-col gap-6 items-center justify-center px-4 max-w-5xl mx-auto text-center"
       >
         <motion.span
-          className="inline-block px-4 py-2 bg-slate-800/10 dark:bg-slate-200/10 text-slate-800 dark:text-slate-200 rounded-full text-sm font-medium mb-6 backdrop-blur-sm border border-slate-200/20"
-          initial={{ opacity: 0, scale: 0.5 }}
+          className="inline-flex items-center px-3 py-1.5 bg-zinc-100/10 dark:bg-zinc-800/20 text-zinc-700 dark:text-zinc-300 rounded-full text-sm font-medium backdrop-blur-sm border border-zinc-200/20"
+          initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5, duration: 0.6 }}
         >
-          🚀 Global Asset Recovery Platform
+          Global Asset Recovery Platform
         </motion.span>
 
-        <div className="text-3xl md:text-7xl font-bold dark:text-white text-slate-900 text-center mb-4">
-          Welcome to{' '}
+        <div className="text-4xl md:text-7xl font-semibold dark:text-white text-zinc-900 leading-tight">
+          Discover Hidden{' '}
           <motion.span
-            className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600"
+            className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
             animate={{
               backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
             }}
-            transition={{ duration: 5, repeat: Infinity }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
           >
-            GOTUS
+            Assets
           </motion.span>
         </div>
 
         <motion.p
-          className="font-extralight text-base md:text-xl dark:text-neutral-200 text-slate-600 py-4 max-w-3xl"
+          className="text-lg md:text-xl dark:text-zinc-300 text-zinc-600 max-w-2xl leading-relaxed"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.8 }}
         >
-          Global Online Tracking for Unclaimed Stuff. Discover, track, and recover 
-          unclaimed assets with our AI-powered global tracking system.
+          AI-powered global tracking system for unclaimed assets. 
+          Secure, fast, and comprehensive recovery solutions.
         </motion.p>
 
-        <motion.button
-          className="bg-black dark:bg-white rounded-full w-fit text-white dark:text-black px-8 py-3 font-medium flex items-center gap-2 group hover:shadow-lg transition-all mt-8"
-          whileHover={{ 
-            scale: 1.05,
-            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)"
-          }}
-          whileTap={{ scale: 0.95 }}
+        <motion.div
+          className="flex flex-col sm:flex-row gap-4 mt-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.8 }}
         >
-          Start Free Trial
-          <motion.div
-            className="group-hover:translate-x-1 transition-transform"
+          <motion.button
+            className="px-8 py-3 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-full font-medium flex items-center justify-center gap-2 group hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <ArrowRight size={18} />
-          </motion.div>
-        </motion.button>
+            Start Free Search
+            <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+          </motion.button>
+          
+          <motion.button
+            className="px-8 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-full font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Watch Demo
+          </motion.button>
+        </motion.div>
 
         <motion.div
-          className="flex justify-center items-center gap-6 text-sm text-slate-500 dark:text-slate-400 mt-8"
+          className="flex items-center gap-8 text-sm text-zinc-500 dark:text-zinc-400 mt-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.1, duration: 0.8 }}
         >
           <div className="flex items-center gap-2">
-            <CheckCircle size={16} className="text-green-500" />
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             Free 30-day trial
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle size={16} className="text-green-500" />
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             No credit card required
           </div>
         </motion.div>
@@ -126,36 +130,32 @@ const HeroSection = () => {
 const StatsSection = () => {
   const stats = [
     { value: 1000000, label: 'Assets Recovered', prefix: '$', suffix: '+' },
-    { value: 50000, label: 'Happy Users', suffix: '+' },
-    { value: 99.9, label: 'Uptime', suffix: '%' },
-    { value: 150, label: 'Countries Covered', suffix: '+' }
+    { value: 50000, label: 'Active Users', suffix: '+' },
+    { value: 99.9, label: 'Platform Uptime', suffix: '%' },
+    { value: 150, label: 'Global Coverage', suffix: '+' }
   ];
 
   return (
-    <section className="py-20 bg-zinc-50 dark:bg-zinc-900">
+    <section className="py-24 bg-zinc-50 dark:bg-zinc-900">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
           {stats.map((stat, i) => {
-            const { count, ref } = useCounter(stat.value, 2000);
+            const { count, ref } = useCounter(stat.value, 2500);
             
             return (
               <motion.div
                 key={i}
                 ref={ref}
                 className="text-center"
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.1, duration: 0.6 }}
                 viewport={{ once: true }}
               >
-                <motion.div
-                  className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-2"
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 0.5, delay: i * 0.1 + 1 }}
-                >
+                <div className="text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
                   {stat.prefix}{count.toLocaleString()}{stat.suffix}
-                </motion.div>
-                <div className="text-slate-600 dark:text-slate-400 font-medium">{stat.label}</div>
+                </div>
+                <div className="text-zinc-600 dark:text-zinc-400 text-sm font-medium">{stat.label}</div>
               </motion.div>
             );
           })}
@@ -170,51 +170,54 @@ const FeaturesSection = () => {
   const features = [
     {
       icon: Search,
-      title: 'AI-Powered Search',
-      description: 'Advanced algorithms scan millions of unclaimed assets globally.',
+      title: 'AI-Powered Discovery',
+      description: 'Advanced algorithms scan global databases to identify unclaimed assets with precision.',
     },
     {
       icon: Shield,
-      title: 'Secure & Verified',
-      description: 'Bank-level security with verified government partnerships.',
+      title: 'Enterprise Security',
+      description: 'Bank-grade encryption and verified government partnerships ensure data protection.',
     },
     {
       icon: Zap,
-      title: 'Lightning Fast',
-      description: 'Get results in seconds with our optimized tracking system.',
+      title: 'Instant Results',
+      description: 'Real-time search capabilities deliver comprehensive results in seconds.',
     },
     {
       icon: Globe,
-      title: 'Global Coverage',
-      description: 'Access databases from 150+ countries worldwide.',
+      title: 'Global Database Access',
+      description: 'Connected to 150+ countries and jurisdictions worldwide.',
     },
     {
       icon: BarChart3,
-      title: 'Analytics Dashboard',
-      description: 'Track your recovery progress with detailed insights.',
+      title: 'Advanced Analytics',
+      description: 'Detailed insights and progress tracking for your recovery journey.',
     },
     {
-      icon: Users,
-      title: '24/7 Support',
-      description: 'Expert team available around the clock to help you.',
+      icon: Award,
+      title: 'Expert Support',
+      description: 'Professional guidance from asset recovery specialists.',
     }
   ];
 
   return (
-    <section id="features" className="py-32 bg-white dark:bg-zinc-800 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+    <section className="py-32 bg-zinc-50 dark:bg-zinc-900">
+      <div className="max-w-6xl mx-auto px-6">
         <motion.div
           className="text-center mb-20"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
         >
-          <h2 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-            Everything You Need to
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"> Succeed</span>
+          <h2 className="text-4xl lg:text-5xl font-semibold text-zinc-900 dark:text-zinc-100 mb-6 leading-tight">
+            Everything You Need to{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+              Succeed
+            </span>
           </h2>
-          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-            Our comprehensive suite of tools makes asset recovery simple, fast, and incredibly effective.
+          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+            Comprehensive tools designed for efficient and effective asset recovery
           </p>
         </motion.div>
 
@@ -222,26 +225,21 @@ const FeaturesSection = () => {
           {features.map((feature, i) => (
             <motion.div
               key={i}
-              className="group relative"
-              initial={{ opacity: 0, y: 50 }}
+              className="group"
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.1, duration: 0.6 }}
               viewport={{ once: true }}
-              whileHover={{ y: -5 }}
             >
-              <div className="relative bg-white dark:bg-zinc-800/50 p-8 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all duration-300 hover:shadow-xl backdrop-blur-sm">
-                <motion.div
-                  className="w-16 h-16 rounded-full bg-black dark:bg-white flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
-                  whileHover={{ rotate: 5 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <feature.icon className="w-8 h-8 text-white dark:text-black" />
-                </motion.div>
+              <div className="p-8 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 hover:border-zinc-300/80 dark:hover:border-zinc-600/80 transition-all duration-300 bg-zinc-100/30 dark:bg-zinc-800/30 backdrop-blur-sm group-hover:bg-zinc-100/50 dark:group-hover:bg-zinc-800/50">
+                <div className="w-12 h-12 rounded-xl bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300">
+                  <feature.icon className="w-6 h-6 text-zinc-100 dark:text-zinc-900" />
+                </div>
                 
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   {feature.title}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed text-sm">
                   {feature.description}
                 </p>
               </div>
@@ -259,40 +257,38 @@ const TestimonialsSection = () => {
     {
       name: 'Sarah Johnson',
       title: 'Business Owner',
-      content: 'GOTUS helped me recover $45,000 in unclaimed business assets. The process was incredibly smooth and professional.',
-      avatar: '👩‍💼',
+      content: 'Recovered $45,000 in unclaimed business assets. The process was seamless and professional.',
       rating: 5
     },
     {
       name: 'Michael Chen',
       title: 'Investment Advisor',
-      content: 'The AI-powered search found assets I never knew existed. This platform is a game-changer for asset recovery.',
-      avatar: '👨‍💼',
+      content: 'Found assets I never knew existed. This platform is transformative for asset recovery.',
       rating: 5
     },
     {
       name: 'Emily Davis',
       title: 'Legal Consultant',
-      content: 'Outstanding service and support. The global database coverage is unmatched in the industry.',
-      avatar: '👩‍⚖️',
+      content: 'Outstanding service with unmatched global database coverage and expert support.',
       rating: 5
     }
   ];
 
   return (
-    <section className="py-32 bg-slate-50 dark:bg-slate-900">
+    <section className="py-32 bg-zinc-50 dark:bg-zinc-900">
       <div className="max-w-6xl mx-auto px-6">
         <motion.div
           className="text-center mb-20"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
         >
-          <h2 className="text-5xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-            What Our <span className="text-blue-600">Users Say</span>
+          <h2 className="text-4xl lg:text-5xl font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
+            Trusted by Professionals
           </h2>
-          <p className="text-xl text-slate-600 dark:text-slate-400">
-            Join thousands of satisfied users who've recovered millions in assets
+          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
+            Join thousands who have successfully recovered millions in assets
           </p>
         </motion.div>
 
@@ -300,28 +296,33 @@ const TestimonialsSection = () => {
           {testimonials.map((testimonial, i) => (
             <motion.div
               key={i}
-              className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all duration-300"
-              initial={{ opacity: 0, y: 50 }}
+              className="group"
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.2 }}
+              transition={{ delay: i * 0.15, duration: 0.6 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.02 }}
             >
-              <div className="flex items-center mb-4">
-                {[...Array(testimonial.rating)].map((_, starIndex) => (
-                  <Star key={starIndex} className="w-5 h-5 text-yellow-400 fill-current" />
-                ))}
-              </div>
-              
-              <p className="text-slate-700 dark:text-slate-300 mb-6 italic leading-relaxed">
-                "{testimonial.content}"
-              </p>
-              
-              <div className="flex items-center">
-                <div className="text-3xl mr-4">{testimonial.avatar}</div>
-                <div>
-                  <h4 className="font-semibold text-slate-900 dark:text-slate-100">{testimonial.name}</h4>
-                  <p className="text-slate-500 dark:text-slate-400">{testimonial.title}</p>
+              <div className="p-8 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 bg-zinc-100/30 dark:bg-zinc-800/30 backdrop-blur-sm hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition-all duration-300">
+                <div className="flex items-center gap-1 mb-6">
+                  {[...Array(testimonial.rating)].map((_, starIndex) => (
+                    <Star key={starIndex} className="w-4 h-4 text-amber-400 fill-current" />
+                  ))}
+                </div>
+                
+                <p className="text-zinc-700 dark:text-zinc-300 mb-8 leading-relaxed">
+                  "{testimonial.content}"
+                </p>
+                
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      {testimonial.name.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">{testimonial.name}</h4>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-xs">{testimonial.title}</p>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -346,83 +347,82 @@ const PricingSection = () => {
       name: 'Professional',
       price: 79,
       period: 'month',
-      features: ['Unlimited searches', 'Advanced tracking', 'Priority support', 'Full history', 'API access'],
+      features: ['Unlimited searches', 'Advanced tracking', 'Priority support', 'Full analytics', 'API access'],
       popular: true
     },
     {
       name: 'Enterprise',
       price: 199,
       period: 'month',
-      features: ['Everything in Pro', 'White-label solution', 'Dedicated manager', 'Custom integrations', 'SLA guarantee'],
+      features: ['Everything in Pro', 'White-label solution', 'Dedicated support', 'Custom integrations', 'SLA guarantee'],
       popular: false
     }
   ];
 
   return (
-    <section id="pricing" className="py-32 bg-white dark:bg-slate-800">
+    <section id="pricing" className="py-32 bg-zinc-50 dark:bg-zinc-900">
       <div className="max-w-6xl mx-auto px-6">
         <motion.div
           className="text-center mb-20"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
         >
-          <h2 className="text-5xl font-bold text-slate-900 dark:text-slate-100 mb-6">
-            Simple, <span className="text-blue-600">Transparent</span> Pricing
+          <h2 className="text-4xl lg:text-5xl font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
+            Simple Pricing
           </h2>
-          <p className="text-xl text-slate-600 dark:text-slate-400">
-            Choose the perfect plan for your asset recovery needs
+          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
+            Choose the plan that fits your asset recovery needs
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
           {plans.map((plan, i) => (
             <motion.div
               key={i}
-              className={`relative bg-white dark:bg-slate-700 rounded-2xl border-2 p-8 ${
+              className={`relative rounded-2xl border-2 p-8 transition-all duration-300 ${
                 plan.popular 
-                  ? 'border-blue-500 shadow-xl scale-105' 
-                  : 'border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-400'
-              } transition-all duration-300`}
-              initial={{ opacity: 0, y: 50 }}
+                  ? 'border-blue-500 bg-zinc-100/50 dark:bg-zinc-800/50 scale-105 shadow-xl' 
+                  : 'border-zinc-200/60 dark:border-zinc-700/60 bg-zinc-100/30 dark:bg-zinc-800/30 hover:border-zinc-300/80 dark:hover:border-zinc-600/80'
+              } backdrop-blur-sm`}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.1, duration: 0.6 }}
               viewport={{ once: true }}
-              whileHover={{ y: -5 }}
+              whileHover={{ y: plan.popular ? 0 : -2 }}
             >
               {plan.popular && (
-                <motion.div
-                  className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-2 rounded-full text-sm font-medium"
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-medium">
                   Most Popular
-                </motion.div>
+                </div>
               )}
               
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">{plan.name}</h3>
-                <div className="text-5xl font-bold text-blue-600 mb-2">${plan.price}</div>
-                <div className="text-slate-500 dark:text-slate-400">per {plan.period}</div>
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">{plan.name}</h3>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">${plan.price}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400 text-sm">/{plan.period}</span>
+                </div>
               </div>
 
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-3 mb-8">
                 {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                    <span className="text-slate-700 dark:text-slate-300">{feature}</span>
+                  <li key={featureIndex} className="flex items-center gap-3">
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <span className="text-zinc-700 dark:text-zinc-300 text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               <motion.button
-                className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
+                className={`w-full py-3 rounded-xl font-medium transition-all ${
                   plan.popular
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-500'
+                    : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-600'
                 }`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
               >
                 Get Started
               </motion.button>
@@ -437,60 +437,54 @@ const PricingSection = () => {
 // CTA section
 const CTASection = () => {
   return (
-    <section className="py-32 bg-zinc-900 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-20"></div>
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+    <section className="py-32 bg-zinc-900 ">
+      <div className="max-w-6xl mx-auto px-6 relative z-10">
+        <div className="text-center">
           <motion.div
-            className="lg:w-2/3"
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to Discover Your Unclaimed Assets?
+            <h2 className="text-4xl lg:text-5xl font-semibold text-white mb-6 leading-tight">
+              Start Your Asset Recovery
             </h2>
-            <p className="text-xl text-zinc-300 mb-8 max-w-2xl">
-              Join thousands of users who have successfully recovered over $1 billion in assets. 
-              Start your search today and see what you might find.
+            <p className="text-xl text-zinc-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+              Join thousands who have recovered over $1 billion in unclaimed assets. 
+              Begin your search today with our AI-powered platform.
             </p>
-            <div className="flex flex-wrap gap-4">
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <motion.button
-                className="px-8 py-3 bg-white text-black hover:bg-zinc-100 rounded-full font-medium flex items-center gap-2 group"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-8 py-4 bg-white text-zinc-900 rounded-full font-medium flex items-center justify-center gap-2 group hover:bg-zinc-100 transition-all"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 Start Free Trial
-                <motion.div className="group-hover:translate-x-1 transition-transform">
-                  <ArrowRight size={18} />
-                </motion.div>
+                <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+              </motion.button>
+              
+              <motion.button
+                className="px-8 py-4 border border-zinc-600 text-zinc-300 rounded-full font-medium hover:bg-zinc-800 hover:border-zinc-500 transition-all"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Schedule Demo
               </motion.button>
             </div>
-          </motion.div>
-          
-          <motion.div
-            className="lg:w-1/3"
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-          >
-            <div className="bg-zinc-800/50 backdrop-blur-sm p-8 rounded-xl border border-zinc-700 shadow-xl">
-              <h3 className="text-2xl font-bold text-white mb-4">Quick Stats</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300">Average Recovery</span>
-                  <span className="text-white font-bold">$1,200</span>
-                </div>
-                <div className="h-px bg-zinc-700"></div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300">Success Rate</span>
-                  <span className="text-white font-bold">78%</span>
-                </div>
-                <div className="h-px bg-zinc-700"></div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300">Time to First Result</span>
-                  <span className="text-white font-bold">~2 minutes</span>
-                </div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-3xl mx-auto">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-2">$1,200</div>
+                <div className="text-zinc-400 text-sm">Average Recovery</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-2">78%</div>
+                <div className="text-zinc-400 text-sm">Success Rate</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-2">2 min</div>
+                <div className="text-zinc-400 text-sm">Average Search Time</div>
               </div>
             </div>
           </motion.div>
@@ -502,26 +496,26 @@ const CTASection = () => {
 
 // Footer
 const Footer = () => (
-  <footer className="bg-zinc-900 text-white py-16">
+  <footer className="bg-zinc-900 text-white py-16 ">
     <div className="max-w-6xl mx-auto px-6">
-      <div className="grid md:grid-cols-4 gap-8">
+      <div className="grid md:grid-cols-4 gap-8 mb-12">
         <div>
-          <div className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <div className="text-xl font-semibold mb-4 flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-              <span className="text-black font-bold text-sm">G</span>
+              <span className="text-zinc-900 font-bold text-sm">G</span>
             </div>
-            <span className="text-white">GOTUS</span>
+            GOTUS
           </div>
-          <p className="text-zinc-400 mb-6">
-            Revolutionizing asset recovery with AI-powered global tracking.
+          <p className="text-zinc-400 text-sm leading-relaxed max-w-xs">
+            Advanced AI-powered platform for global asset recovery and tracking.
           </p>
         </div>
         
         <div>
-          <h4 className="font-semibold mb-4">Product</h4>
-          <div className="space-y-2">
+          <h4 className="font-medium mb-4 text-white">Product</h4>
+          <div className="space-y-3">
             {['Features', 'Pricing', 'API', 'Documentation'].map((item) => (
-              <a key={item} href="#" className="block text-zinc-400 hover:text-white transition-colors">
+              <a key={item} href="#" className="block text-zinc-400 hover:text-zinc-200 transition-colors text-sm">
                 {item}
               </a>
             ))}
@@ -529,10 +523,10 @@ const Footer = () => (
         </div>
         
         <div>
-          <h4 className="font-semibold mb-4">Company</h4>
-          <div className="space-y-2">
+          <h4 className="font-medium mb-4 text-white">Company</h4>
+          <div className="space-y-3">
             {['About', 'Careers', 'Press', 'Contact'].map((item) => (
-              <a key={item} href="#" className="block text-zinc-400 hover:text-white transition-colors">
+              <a key={item} href="#" className="block text-zinc-400 hover:text-zinc-200 transition-colors text-sm">
                 {item}
               </a>
             ))}
@@ -540,10 +534,10 @@ const Footer = () => (
         </div>
         
         <div>
-          <h4 className="font-semibold mb-4">Support</h4>
-          <div className="space-y-2">
-            {['Help Center', 'Community', 'Status', 'Security'].map((item) => (
-              <a key={item} href="#" className="block text-zinc-400 hover:text-white transition-colors">
+          <h4 className="font-medium mb-4 text-white">Legal</h4>
+          <div className="space-y-3">
+            {['Privacy', 'Terms', 'Security', 'Compliance'].map((item) => (
+              <a key={item} href="#" className="block text-zinc-400 hover:text-zinc-200 transition-colors text-sm">
                 {item}
               </a>
             ))}
@@ -551,16 +545,17 @@ const Footer = () => (
         </div>
       </div>
       
-      <div className="border-t border-zinc-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-        <p className="text-zinc-400">
+      <div className="border-t border-zinc-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p className="text-zinc-400 text-sm">
           © 2025 GOTUS. All rights reserved.
         </p>
-        <div className="flex space-x-6 mt-4 md:mt-0">
-          {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((item) => (
-            <a key={item} href="#" className="text-zinc-400 hover:text-white transition-colors text-sm">
-              {item}
-            </a>
-          ))}
+        <div className="flex items-center gap-6">
+          <a href="#" className="text-zinc-400 hover:text-zinc-200 transition-colors text-sm">
+            Privacy Policy
+          </a>
+          <a href="#" className="text-zinc-400 hover:text-zinc-200 transition-colors text-sm">
+            Terms of Service
+          </a>
         </div>
       </div>
     </div>
@@ -591,12 +586,12 @@ export default function App() {
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
             >
               <motion.div
-                className="w-16 h-16 border-4 border-black dark:border-white border-t-transparent rounded-full"
+                className="w-12 h-12 border-3 border-zinc-900 dark:border-zinc-100 border-t-transparent rounded-full"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
               <motion.p
-                className="mt-4 text-black dark:text-white font-medium"
+                className="mt-4 text-zinc-900 dark:text-zinc-100 font-medium text-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
@@ -611,7 +606,6 @@ export default function App() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            
             <HeroSection />
             <StatsSection />
             <FeaturesSection />
@@ -625,11 +619,11 @@ export default function App() {
       
       {/* Scroll to top button */}
       <motion.button
-        className="fixed bottom-8 right-8 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40"
+        className="fixed bottom-8 right-8 w-12 h-12 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-full shadow-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors z-40 backdrop-blur-sm"
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
         ↑
