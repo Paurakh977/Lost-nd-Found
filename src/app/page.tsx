@@ -3,8 +3,125 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView } from 'framer-motion';
 import { Search, CheckCircle, Zap, Globe, Shield, Star, ArrowRight, Users, BarChart3, TrendingUp, Award } from 'lucide-react';
+import Lenis from 'lenis';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Register GSAP plugins
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const cn = (...classes: (string | undefined | boolean)[]) => classes.filter(Boolean).join(' ');
+
+// Cosmic Particles Component
+const CosmicParticles = ({ density = 'medium', className = '' }: { density?: 'low' | 'medium' | 'high' | 'ultra', className?: string }) => {
+  const particleCounts = {
+    low: 8,
+    medium: 15,
+    high: 25,
+    ultra: 40
+  };
+  
+  const particleCount = particleCounts[density];
+  
+  return (
+    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}>
+      {/* Floating Orbs */}
+      {Array.from({ length: Math.floor(particleCount * 0.3) }).map((_, i) => (
+        <motion.div
+          key={`orb-${i}`}
+          className="absolute w-1 h-1 bg-gradient-to-r from-blue-400/40 to-indigo-400/40 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            x: [0, Math.random() * 20 - 10, 0],
+            opacity: [0.2, 0.8, 0.2],
+            scale: [1, 1.5, 1],
+          }}
+          transition={{
+            duration: 8 + Math.random() * 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: Math.random() * 5,
+          }}
+        />
+      ))}
+      
+      {/* Cosmic Dust */}
+      {Array.from({ length: Math.floor(particleCount * 0.4) }).map((_, i) => (
+        <motion.div
+          key={`dust-${i}`}
+          className="absolute w-0.5 h-0.5 bg-gradient-to-r from-purple-400/30 to-pink-400/30 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -20, 0],
+            x: [0, Math.random() * 15 - 7.5, 0],
+            opacity: [0.1, 0.6, 0.1],
+          }}
+          transition={{
+            duration: 12 + Math.random() * 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: Math.random() * 8,
+          }}
+        />
+      ))}
+      
+      {/* Floating Stars */}
+      {Array.from({ length: Math.floor(particleCount * 0.2) }).map((_, i) => (
+        <motion.div
+          key={`star-${i}`}
+          className="absolute w-px h-px bg-gradient-to-r from-cyan-400/50 to-blue-400/50 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            opacity: [0.3, 1, 0.3],
+            scale: [1, 2, 1],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: Math.random() * 3,
+          }}
+        />
+      ))}
+      
+      {/* Energy Wisps */}
+      {Array.from({ length: Math.floor(particleCount * 0.1) }).map((_, i) => (
+        <motion.div
+          key={`wisp-${i}`}
+          className="absolute w-8 h-0.5 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            transform: `rotate(${Math.random() * 360}deg)`,
+          }}
+          animate={{
+            x: [0, Math.random() * 40 - 20],
+            opacity: [0, 0.7, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 15 + Math.random() * 5,
+            repeat: Infinity,
+            ease: "linear",
+            delay: Math.random() * 10,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 // Aurora Background Component
 const AuroraBackground = ({
@@ -108,7 +225,7 @@ const HeroSection = () => {
           Global Asset Recovery Platform
         </motion.span>
 
-        <div className="text-4xl md:text-7xl font-semibold dark:text-white text-zinc-900 leading-tight">
+        <div className="text-4xl md:text-7xl font-light tracking-tight dark:text-white text-zinc-900 leading-[1.1] gsap-reveal">
           Discover Hidden{' '}
           <motion.span
             className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
@@ -122,7 +239,7 @@ const HeroSection = () => {
         </div>
 
         <motion.p
-          className="text-lg md:text-xl dark:text-zinc-300 text-zinc-600 max-w-2xl leading-relaxed"
+          className="text-lg md:text-xl font-light dark:text-zinc-200 text-zinc-700 max-w-2xl leading-relaxed tracking-wide gsap-reveal"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.8 }}
@@ -175,7 +292,7 @@ const HeroSection = () => {
   );
 };
 
-// Ultra Minimal Stats Section with floating elements
+// Ultra Minimal Stats Section with enhanced cosmic particles
 const StatsSection = () => {
   const stats = [
     { value: 25000, label: 'Items Reunited', suffix: '+' },
@@ -185,30 +302,37 @@ const StatsSection = () => {
   ];
 
   return (
-    <section className="relative py-32 bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-900 dark:to-zinc-900/80 overflow-hidden">
-      {/* Subtle aurora continuation */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_800px_400px_at_50%_-50%,rgba(99,102,241,0.02),transparent)] dark:bg-[radial-gradient(ellipse_800px_400px_at_50%_-50%,rgba(99,102,241,0.03),transparent)]"></div>
+    <section className="relative py-32 bg-gradient-to-b from-zinc-50/95 via-zinc-50/90 via-blue-50/15 to-zinc-50/85 dark:from-zinc-900/95 dark:via-zinc-900/90 dark:via-blue-950/8 dark:to-zinc-900/85 overflow-hidden">
+      {/* Enhanced aurora continuation */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.03),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.02),transparent)] dark:bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.04),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.03),transparent)]"></div>
       
-      {/* Floating light particles */}
+      {/* Cosmic Particles */}
+      <div className="cosmic-parallax">
+        <CosmicParticles density="high" />
+      </div>
+      
+      {/* Additional floating cosmic elements */}
       <motion.div 
-        className="absolute top-20 left-1/4 w-2 h-2 bg-blue-400/40 rounded-full"
+        className="absolute top-1/4 left-1/6 w-16 h-16 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-xl"
         animate={{ 
-          y: [0, -20, 0],
-          opacity: [0.4, 0.8, 0.4]
+          scale: [1, 1.3, 1],
+          opacity: [0.3, 0.6, 0.3],
+          rotate: [0, 180, 360]
         }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div 
-        className="absolute top-40 right-1/3 w-1 h-1 bg-indigo-400/60 rounded-full"
+        className="absolute bottom-1/4 right-1/6 w-12 h-12 bg-gradient-to-br from-purple-500/6 to-pink-500/6 rounded-full blur-lg"
         animate={{ 
-          y: [0, -15, 0],
-          opacity: [0.6, 1, 0.6]
+          scale: [1, 1.4, 1],
+          opacity: [0.2, 0.5, 0.2],
+          rotate: [360, 180, 0]
         }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 5 }}
       />
       
       <div className="relative max-w-4xl mx-auto px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 gsap-stagger-parent">
           {stats.map((stat, i) => {
             const { count, ref } = useCounter(stat.value, 2500);
             
@@ -232,13 +356,14 @@ const StatsSection = () => {
                   
                   <div className="relative bg-white/60 dark:bg-zinc-800/40 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-zinc-700/20 group-hover:border-blue-200/40 dark:group-hover:border-blue-700/40 transition-all duration-500">
                     <motion.div 
-                      className="text-3xl lg:text-4xl font-light text-zinc-900 dark:text-zinc-100 mb-2"
+                      className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-2 gsap-counter"
+                      data-value={stat.value}
                       animate={{ scale: count > 0 ? [1, 1.05, 1] : 1 }}
                       transition={{ duration: 0.3 }}
                     >
-                      {count.toLocaleString()}<span className="text-blue-600 dark:text-blue-400">{stat.suffix}</span>
+                      {count.toLocaleString()}<span className="text-blue-500 dark:text-blue-300 font-light">{stat.suffix}</span>
                     </motion.div>
-                    <div className="text-zinc-500 dark:text-zinc-400 text-sm font-light tracking-wide uppercase">
+                    <div className="text-zinc-600 dark:text-zinc-300 text-sm font-normal tracking-wider uppercase letter-spacing-wide">
                       {stat.label}
                     </div>
                   </div>
@@ -252,7 +377,7 @@ const StatsSection = () => {
   );
 };
 
-// Floating Features Section
+// Enhanced Features Section with cosmic atmosphere
 const FeaturesSection = () => {
   const features = [
     { icon: Search, title: 'Smart Matching', description: 'AI analyzes descriptions to match lost and found items.' },
@@ -264,26 +389,42 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <section className="relative py-32 bg-gradient-to-b from-white to-zinc-50/50 dark:from-zinc-900/80 dark:to-zinc-900 overflow-hidden">
-      {/* Flowing aurora continuation */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_600px_at_50%_100%,rgba(79,70,229,0.015),transparent)] dark:bg-[radial-gradient(ellipse_1200px_600px_at_50%_100%,rgba(79,70,229,0.025),transparent)]"></div>
+    <section className="relative py-32 bg-gradient-to-b from-zinc-50/85 via-zinc-50/80 via-indigo-50/25 to-zinc-50/75 dark:from-zinc-900/85 dark:via-zinc-900/80 dark:via-indigo-950/12 dark:to-zinc-900/75 overflow-hidden">
+      {/* Enhanced flowing aurora */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1500px_800px_at_50%_100%,rgba(79,70,229,0.02),transparent),radial-gradient(ellipse_1000px_500px_at_80%_20%,rgba(168,85,247,0.015),transparent)] dark:bg-[radial-gradient(ellipse_1500px_800px_at_50%_100%,rgba(79,70,229,0.03),transparent),radial-gradient(ellipse_1000px_500px_at_80%_20%,rgba(168,85,247,0.025),transparent)]"></div>
       
-      {/* Minimal floating elements */}
+      {/* Ultra-dense cosmic particles */}
+      <div className="cosmic-parallax">
+        <CosmicParticles density="ultra" />
+      </div>
+      
+      {/* Floating cosmic nebulae */}
       <motion.div 
-        className="absolute top-1/4 left-10 w-32 h-32 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-3xl"
+        className="absolute top-1/5 left-1/12 w-40 h-40 bg-gradient-to-br from-indigo-500/6 to-purple-500/6 rounded-full blur-3xl"
         animate={{ 
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3]
+          scale: [1, 1.4, 1],
+          opacity: [0.3, 0.6, 0.3],
+          rotate: [0, 360]
         }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div 
-        className="absolute bottom-1/3 right-10 w-24 h-24 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-full blur-2xl"
+        className="absolute top-2/3 right-1/12 w-32 h-32 bg-gradient-to-br from-purple-500/6 to-pink-500/6 rounded-full blur-2xl"
+        animate={{ 
+          scale: [1, 1.5, 1],
+          opacity: [0.2, 0.5, 0.2],
+          rotate: [360, 0]
+        }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+      />
+      <motion.div 
+        className="absolute bottom-1/6 left-1/3 w-28 h-28 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-full blur-xl"
         animate={{ 
           scale: [1, 1.3, 1],
-          opacity: [0.2, 0.4, 0.2]
+          opacity: [0.25, 0.4, 0.25],
+          x: [0, 30, 0]
         }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 7 }}
       />
       
       <div className="relative max-w-6xl mx-auto px-6">
@@ -296,16 +437,16 @@ const FeaturesSection = () => {
           transition={{ duration: 0.8 }}
         >
           <motion.h2 
-            className="text-2xl lg:text-3xl font-light text-zinc-900 dark:text-zinc-100 mb-4 tracking-wide"
+            className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide gsap-reveal"
             whileInView={{ opacity: [0, 1] }}
             transition={{ duration: 1.2 }}
           >
-            Engineered for <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Simplicity</span>
+            Engineered for <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Simplicity</span>
           </motion.h2>
         </motion.div>
 
         {/* Floating grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 gsap-stagger-parent">
           {features.map((feature, i) => (
             <motion.div
               key={i}
@@ -330,10 +471,10 @@ const FeaturesSection = () => {
                   <feature.icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </motion.div>
                 
-                <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <h3 className="text-lg font-normal text-zinc-800 dark:text-zinc-50 mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors tracking-wide">
                   {feature.title}
                 </h3>
-                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed font-light">
+                <p className="text-zinc-700 dark:text-zinc-300 text-sm leading-relaxed font-normal tracking-wide">
                   {feature.description}
                 </p>
               </motion.div>
@@ -345,7 +486,7 @@ const FeaturesSection = () => {
   );
 };
 
-// Minimal Testimonials with floating cards
+// Enhanced Testimonials with cosmic ambiance
 const TestimonialsSection = () => {
   const testimonials = [
     {
@@ -366,26 +507,33 @@ const TestimonialsSection = () => {
   ];
 
   return (
-    <section className="relative py-32 bg-gradient-to-b from-zinc-50/50 to-white dark:from-zinc-900 dark:to-zinc-900/70 overflow-hidden">
-      {/* Subtle aurora waves */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1000px_500px_at_50%_0%,rgba(139,92,246,0.01),transparent)] dark:bg-[radial-gradient(ellipse_1000px_500px_at_50%_0%,rgba(139,92,246,0.02),transparent)]"></div>
+    <section className="relative py-32 bg-gradient-to-b from-zinc-50/75 via-zinc-50/70 via-purple-50/18 to-zinc-50/65 dark:from-zinc-900/75 dark:via-zinc-900/70 dark:via-purple-950/10 dark:to-zinc-900/65 overflow-hidden">
+      {/* Enhanced aurora waves */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_600px_at_50%_0%,rgba(139,92,246,0.02),transparent),radial-gradient(ellipse_800px_400px_at_20%_100%,rgba(59,130,246,0.015),transparent)] dark:bg-[radial-gradient(ellipse_1200px_600px_at_50%_0%,rgba(139,92,246,0.03),transparent),radial-gradient(ellipse_800px_400px_at_20%_100%,rgba(59,130,246,0.025),transparent)]"></div>
       
-      {/* Ambient particles */}
+      {/* Dense cosmic particles */}
+      <div className="cosmic-parallax">
+        <CosmicParticles density="high" />
+      </div>
+      
+      {/* Floating cosmic formations */}
       <motion.div 
-        className="absolute top-1/3 right-1/4 w-1 h-1 bg-purple-400/50 rounded-full"
+        className="absolute top-1/5 right-1/8 w-20 h-20 bg-gradient-to-br from-purple-500/8 to-violet-500/8 rounded-full blur-2xl"
         animate={{ 
-          scale: [1, 2, 1],
-          opacity: [0.5, 1, 0.5]
+          scale: [1, 1.6, 1],
+          opacity: [0.4, 0.7, 0.4],
+          y: [0, -20, 0]
         }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div 
-        className="absolute bottom-1/3 left-1/4 w-1.5 h-1.5 bg-violet-400/40 rounded-full"
+        className="absolute bottom-1/4 left-1/8 w-24 h-24 bg-gradient-to-br from-violet-500/6 to-pink-500/6 rounded-full blur-xl"
         animate={{ 
-          scale: [1, 1.5, 1],
-          opacity: [0.4, 0.7, 0.4]
+          scale: [1, 1.4, 1],
+          opacity: [0.3, 0.6, 0.3],
+          x: [0, 15, 0]
         }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 2 }}
       />
       
       <div className="relative max-w-5xl mx-auto px-6">
@@ -397,15 +545,15 @@ const TestimonialsSection = () => {
           transition={{ duration: 0.8 }}
         >
           <motion.h2 
-            className="text-2xl lg:text-3xl font-light text-zinc-900 dark:text-zinc-100 mb-4 tracking-wide"
+            className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide gsap-reveal"
             whileInView={{ opacity: [0, 1] }}
             transition={{ duration: 1.2 }}
           >
-            Trusted by <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Thousands</span>
+            Trusted by <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Thousands</span>
           </motion.h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-8 gsap-stagger-parent">
           {testimonials.map((testimonial, i) => (
             <motion.div
               key={i}
@@ -441,7 +589,7 @@ const TestimonialsSection = () => {
                 </motion.div>
                 
                 <motion.p 
-                  className="text-zinc-700 dark:text-zinc-300 mb-8 leading-relaxed font-light italic"
+                  className="text-zinc-800 dark:text-zinc-200 mb-8 leading-relaxed font-normal italic tracking-wide"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: i * 0.15 + 0.3 }}
@@ -462,7 +610,7 @@ const TestimonialsSection = () => {
                       {testimonial.name.split(' ').map(n => n[0]).join('')}
                     </span>
                   </motion.div>
-                  <h4 className="font-light text-zinc-600 dark:text-zinc-400 text-sm">{testimonial.name}</h4>
+                  <h4 className="font-normal text-zinc-700 dark:text-zinc-300 text-sm tracking-wide">{testimonial.name}</h4>
                 </motion.div>
               </motion.div>
             </motion.div>
@@ -473,7 +621,7 @@ const TestimonialsSection = () => {
   );
 };
 
-// Ethereal Pricing Section
+// Enhanced Ethereal Pricing Section
 const PricingSection = () => {
   const plans = [
     {
@@ -500,26 +648,43 @@ const PricingSection = () => {
   ];
 
   return (
-    <section className="relative py-32 bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-900/70 dark:to-zinc-900 overflow-hidden">
-      {/* Ethereal aurora flows */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_800px_400px_at_20%_50%,rgba(16,185,129,0.015),transparent),radial-gradient(ellipse_600px_300px_at_80%_50%,rgba(59,130,246,0.015),transparent)] dark:bg-[radial-gradient(ellipse_800px_400px_at_20%_50%,rgba(16,185,129,0.025),transparent),radial-gradient(ellipse_600px_300px_at_80%_50%,rgba(59,130,246,0.025),transparent)]"></div>
+    <section className="relative py-32 bg-gradient-to-b from-zinc-50/65 via-zinc-50/60 via-emerald-50/20 to-zinc-50/55 dark:from-zinc-900/65 dark:via-zinc-900/60 dark:via-emerald-950/12 dark:to-zinc-900/55 overflow-hidden">
+      {/* Enhanced ethereal aurora flows */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1000px_500px_at_20%_50%,rgba(16,185,129,0.025),transparent),radial-gradient(ellipse_800px_400px_at_80%_50%,rgba(59,130,246,0.02),transparent),radial-gradient(ellipse_600px_300px_at_50%_0%,rgba(168,85,247,0.015),transparent)] dark:bg-[radial-gradient(ellipse_1000px_500px_at_20%_50%,rgba(16,185,129,0.035),transparent),radial-gradient(ellipse_800px_400px_at_80%_50%,rgba(59,130,246,0.03),transparent),radial-gradient(ellipse_600px_300px_at_50%_0%,rgba(168,85,247,0.025),transparent)]"></div>
       
-      {/* Floating light dots */}
+      {/* Ultra-dense cosmic field */}
+      <div className="cosmic-parallax">
+        <CosmicParticles density="ultra" />
+      </div>
+      
+      {/* Floating cosmic storms */}
       <motion.div 
-        className="absolute top-20 left-1/5 w-1 h-1 bg-emerald-400/60 rounded-full"
+        className="absolute top-1/6 left-1/12 w-36 h-36 bg-gradient-to-br from-emerald-500/6 to-blue-500/6 rounded-full blur-3xl"
         animate={{ 
-          y: [0, -30, 0],
-          opacity: [0.6, 1, 0.6]
+          scale: [1, 1.5, 1],
+          opacity: [0.3, 0.7, 0.3],
+          rotate: [0, 180, 360]
         }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div 
-        className="absolute bottom-20 right-1/5 w-1.5 h-1.5 bg-blue-400/50 rounded-full"
+        className="absolute bottom-1/6 right-1/12 w-28 h-28 bg-gradient-to-br from-blue-500/7 to-purple-500/7 rounded-full blur-2xl"
         animate={{ 
-          y: [0, -25, 0],
-          opacity: [0.5, 0.8, 0.5]
+          scale: [1, 1.3, 1],
+          opacity: [0.4, 0.6, 0.4],
+          rotate: [360, 0]
         }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 5 }}
+      />
+      <motion.div 
+        className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-br from-cyan-500/4 to-emerald-500/4 rounded-full blur-xl"
+        animate={{ 
+          scale: [1, 1.6, 1],
+          opacity: [0.2, 0.5, 0.2],
+          x: [0, -40, 0],
+          y: [0, -20, 0]
+        }}
+        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 10 }}
       />
       
       <div className="relative max-w-5xl mx-auto px-6">
@@ -531,15 +696,15 @@ const PricingSection = () => {
           transition={{ duration: 0.8 }}
         >
           <motion.h2 
-            className="text-2xl lg:text-3xl font-light text-zinc-900 dark:text-zinc-100 mb-4 tracking-wide"
+            className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide gsap-reveal"
             whileInView={{ opacity: [0, 1] }}
             transition={{ duration: 1.2 }}
           >
-            Simple <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-blue-600">Pricing</span>
+            Simple <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-blue-600">Pricing</span>
           </motion.h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-8 gsap-stagger-parent">
           {plans.map((plan, i) => (
             <motion.div
               key={i}
@@ -579,14 +744,14 @@ const PricingSection = () => {
                 )}></div>
                 
                 <div className="relative text-center">
-                  <h3 className="text-xl font-light text-zinc-900 dark:text-zinc-100 mb-2 tracking-wide">
+                  <h3 className="text-xl font-normal text-zinc-800 dark:text-zinc-50 mb-2 tracking-wide">
                     {plan.name}
                   </h3>
                   <div className="mb-6">
-                    <span className="text-3xl font-light text-zinc-900 dark:text-zinc-100">{plan.price}</span>
-                    {plan.price !== 'Custom' && <span className="text-zinc-500 dark:text-zinc-400 text-sm font-light">/mo</span>}
+                    <span className="text-3xl font-extralight text-zinc-800 dark:text-zinc-50">{plan.price}</span>
+                    {plan.price !== 'Custom' && <span className="text-zinc-600 dark:text-zinc-300 text-sm font-normal">/mo</span>}
                   </div>
-                  <p className="text-zinc-600 dark:text-zinc-400 text-sm font-light mb-8">
+                  <p className="text-zinc-700 dark:text-zinc-300 text-sm font-normal mb-8 tracking-wide">
                     {plan.description}
                   </p>
                   
@@ -600,7 +765,7 @@ const PricingSection = () => {
                         transition={{ delay: i * 0.1 + featureIndex * 0.05 }}
                       >
                         <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
-                        <span className="text-zinc-700 dark:text-zinc-300 text-sm font-light">{feature}</span>
+                        <span className="text-zinc-700 dark:text-zinc-300 text-sm font-normal tracking-wide">{feature}</span>
                       </motion.div>
                     ))}
                   </div>
@@ -627,7 +792,7 @@ const PricingSection = () => {
   );
 };
 
-// Minimal How It Works with flowing elements
+// Enhanced How It Works with cosmic energy streams
 const HowItWorksSection = () => {
   const steps = [
     {
@@ -651,20 +816,50 @@ const HowItWorksSection = () => {
   ];
 
   return (
-    <section className="relative py-32 bg-gradient-to-b from-zinc-50 to-white/80 dark:from-zinc-900 dark:to-zinc-900/90 overflow-hidden">
-      {/* Flowing aurora streams */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_600px_at_50%_-100%,rgba(59,130,246,0.012),transparent),radial-gradient(ellipse_800px_400px_at_50%_200%,rgba(168,85,247,0.01),transparent)] dark:bg-[radial-gradient(ellipse_1200px_600px_at_50%_-100%,rgba(59,130,246,0.02),transparent),radial-gradient(ellipse_800px_400px_at_50%_200%,rgba(168,85,247,0.015),transparent)]"></div>
+    <section className="relative py-32 bg-gradient-to-b from-zinc-50/55 via-zinc-50/50 via-blue-50/25 to-zinc-50/45 dark:from-zinc-900/55 dark:via-zinc-900/50 dark:via-blue-950/15 dark:to-zinc-900/45 overflow-hidden">
+      {/* Enhanced flowing aurora streams */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1400px_700px_at_50%_-100%,rgba(59,130,246,0.02),transparent),radial-gradient(ellipse_1000px_500px_at_50%_200%,rgba(168,85,247,0.015),transparent),radial-gradient(ellipse_600px_300px_at_20%_50%,rgba(99,102,241,0.012),transparent)] dark:bg-[radial-gradient(ellipse_1400px_700px_at_50%_-100%,rgba(59,130,246,0.03),transparent),radial-gradient(ellipse_1000px_500px_at_50%_200%,rgba(168,85,247,0.025),transparent),radial-gradient(ellipse_600px_300px_at_20%_50%,rgba(99,102,241,0.02),transparent)]"></div>
       
-      {/* Minimal light streams */}
+      {/* High-density cosmic field */}
+      <div className="cosmic-parallax">
+        <CosmicParticles density="high" />
+      </div>
+      
+      {/* Enhanced energy streams */}
       <motion.div 
-        className="absolute top-0 left-1/2 w-px h-32 bg-gradient-to-b from-transparent via-blue-500/20 to-transparent"
-        animate={{ opacity: [0.2, 0.6, 0.2] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-0 left-1/2 w-px h-40 bg-gradient-to-b from-transparent via-blue-500/30 to-transparent"
+        animate={{ 
+          opacity: [0.3, 0.8, 0.3],
+          scaleY: [1, 1.2, 1]
+        }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div 
-        className="absolute bottom-0 left-1/3 w-px h-24 bg-gradient-to-t from-transparent via-purple-500/20 to-transparent"
-        animate={{ opacity: [0.1, 0.5, 0.1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute bottom-0 left-1/3 w-px h-32 bg-gradient-to-t from-transparent via-purple-500/30 to-transparent"
+        animate={{ 
+          opacity: [0.2, 0.7, 0.2],
+          scaleY: [1, 1.3, 1]
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      />
+      <motion.div 
+        className="absolute top-1/2 right-1/4 w-px h-28 bg-gradient-to-b from-transparent via-cyan-500/25 to-transparent"
+        animate={{ 
+          opacity: [0.15, 0.6, 0.15],
+          scaleY: [1, 1.4, 1]
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+      />
+      
+      {/* Floating cosmic vortex */}
+      <motion.div 
+        className="absolute top-1/3 left-1/6 w-24 h-24 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-xl"
+        animate={{ 
+          scale: [1, 1.5, 1],
+          opacity: [0.3, 0.6, 0.3],
+          rotate: [0, 360]
+        }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
       
       <div className="relative max-w-5xl mx-auto px-6">
@@ -676,15 +871,15 @@ const HowItWorksSection = () => {
           transition={{ duration: 0.8 }}
         >
           <motion.h2 
-            className="text-2xl lg:text-3xl font-light text-zinc-900 dark:text-zinc-100 tracking-wider"
+            className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 tracking-wider gsap-reveal"
             whileInView={{ opacity: [0, 1] }}
             transition={{ duration: 1.2 }}
           >
-            Three <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Steps</span>
+            Three <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Steps</span>
           </motion.h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-12 lg:gap-16">
+        <div className="grid md:grid-cols-3 gap-12 lg:gap-16 gsap-stagger-parent">
           {steps.map((step, i) => (
             <motion.div
               key={i}
@@ -719,10 +914,10 @@ const HowItWorksSection = () => {
                   <span className="text-zinc-600 dark:text-zinc-400 text-xs font-light tracking-widest">{step.step}</span>
                 </motion.div>
                 
-                <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-4 tracking-wide">
+                <h3 className="text-lg font-normal text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide">
                   {step.title}
                 </h3>
-                <p className="text-zinc-600 dark:text-zinc-400 text-sm font-light leading-relaxed max-w-xs mx-auto">
+                <p className="text-zinc-700 dark:text-zinc-300 text-sm font-normal leading-relaxed max-w-xs mx-auto tracking-wide">
                   {step.description}
                 </p>
               </motion.div>
@@ -734,29 +929,46 @@ const HowItWorksSection = () => {
   );
 };
 
-// Minimal CTA with ethereal elements
+// Enhanced CTA with cosmic convergence
 const CTASection = () => {
   return (
-    <section className="relative py-32 bg-gradient-to-b from-white/80 to-zinc-100 dark:from-zinc-900/90 dark:to-zinc-900 overflow-hidden">
-      {/* Flowing aurora conclusion */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1000px_400px_at_50%_50%,rgba(99,102,241,0.008),transparent),radial-gradient(ellipse_600px_300px_at_50%_50%,rgba(59,130,246,0.012),transparent)] dark:bg-[radial-gradient(ellipse_1000px_400px_at_50%_50%,rgba(99,102,241,0.015),transparent),radial-gradient(ellipse_600px_300px_at_50%_50%,rgba(59,130,246,0.02),transparent)]"></div>
+    <section className="relative py-32 bg-gradient-to-b from-zinc-50/45 via-zinc-50/40 via-indigo-50/30 to-zinc-200/95 dark:from-zinc-900/45 dark:via-zinc-900/40 dark:via-indigo-950/18 dark:to-zinc-800/95 overflow-hidden">
+      {/* Enhanced flowing aurora conclusion */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_500px_at_50%_50%,rgba(99,102,241,0.015),transparent),radial-gradient(ellipse_800px_400px_at_50%_50%,rgba(59,130,246,0.02),transparent),radial-gradient(ellipse_600px_300px_at_80%_20%,rgba(168,85,247,0.012),transparent)] dark:bg-[radial-gradient(ellipse_1200px_500px_at_50%_50%,rgba(99,102,241,0.025),transparent),radial-gradient(ellipse_800px_400px_at_50%_50%,rgba(59,130,246,0.03),transparent),radial-gradient(ellipse_600px_300px_at_80%_20%,rgba(168,85,247,0.02),transparent)]"></div>
       
-      {/* Minimal accent lights */}
+      {/* Ultra-dense cosmic convergence */}
+      <div className="cosmic-parallax">
+        <CosmicParticles density="ultra" />
+      </div>
+      
+      {/* Cosmic energy convergence */}
       <motion.div 
-        className="absolute top-1/4 left-1/6 w-24 h-24 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-2xl"
+        className="absolute top-1/5 left-1/8 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full blur-2xl"
         animate={{ 
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.6, 0.3]
+          scale: [1, 1.4, 1],
+          opacity: [0.4, 0.7, 0.4],
+          rotate: [0, 180, 360]
         }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div 
-        className="absolute bottom-1/4 right-1/6 w-20 h-20 bg-gradient-to-br from-indigo-500/8 to-purple-500/8 rounded-full blur-2xl"
+        className="absolute bottom-1/5 right-1/8 w-28 h-28 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-2xl"
         animate={{ 
-          scale: [1, 1.3, 1],
-          opacity: [0.2, 0.5, 0.2]
+          scale: [1, 1.5, 1],
+          opacity: [0.3, 0.6, 0.3],
+          rotate: [360, 180, 0]
         }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      />
+      <motion.div 
+        className="absolute top-1/2 left-1/2 w-40 h-40 bg-gradient-to-br from-cyan-500/6 to-blue-500/6 rounded-full blur-3xl"
+        animate={{ 
+          scale: [1, 1.6, 1],
+          opacity: [0.25, 0.5, 0.25],
+          x: [0, -30, 0],
+          y: [0, -15, 0]
+        }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 5 }}
       />
       
       <div className="relative max-w-4xl mx-auto px-6 text-center">
@@ -834,22 +1046,41 @@ const CTASection = () => {
   );
 };
 
-// Minimal Footer with subtle aurora fade
+// Enhanced Footer with cosmic fade
 const Footer = () => (
-  <footer className="relative bg-gradient-to-b from-zinc-100 to-zinc-900 dark:from-zinc-900 dark:to-zinc-900 text-white py-16 overflow-hidden">
-    {/* Final aurora glow */}
-    <div className="absolute inset-0 bg-[radial-gradient(ellipse_800px_200px_at_50%_0%,rgba(79,70,229,0.02),transparent)] dark:bg-[radial-gradient(ellipse_800px_200px_at_50%_0%,rgba(79,70,229,0.03),transparent)]"></div>
+  <footer className="relative bg-gradient-to-b from-zinc-200/95 via-zinc-700/90 to-zinc-900 dark:from-zinc-800/95 dark:via-zinc-850/90 dark:to-zinc-900 text-white py-16 overflow-hidden">
+    {/* Enhanced final aurora glow */}
+    <div className="absolute inset-0 bg-[radial-gradient(ellipse_1000px_300px_at_50%_0%,rgba(79,70,229,0.03),transparent),radial-gradient(ellipse_600px_200px_at_20%_0%,rgba(99,102,241,0.025),transparent),radial-gradient(ellipse_600px_200px_at_80%_0%,rgba(168,85,247,0.02),transparent)] dark:bg-[radial-gradient(ellipse_1000px_300px_at_50%_0%,rgba(79,70,229,0.04),transparent),radial-gradient(ellipse_600px_200px_at_20%_0%,rgba(99,102,241,0.035),transparent),radial-gradient(ellipse_600px_200px_at_80%_0%,rgba(168,85,247,0.03),transparent)]"></div>
     
-    {/* Subtle light rays */}
+    {/* Final cosmic particles */}
+    <div className="cosmic-parallax">
+      <CosmicParticles density="medium" />
+    </div>
+    
+    {/* Enhanced light constellation */}
     <motion.div 
-      className="absolute top-0 left-1/4 w-px h-16 bg-gradient-to-b from-blue-500/30 to-transparent"
-      animate={{ opacity: [0.3, 0.7, 0.3] }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      className="absolute top-0 left-1/5 w-px h-20 bg-gradient-to-b from-blue-500/40 to-transparent"
+      animate={{ 
+        opacity: [0.4, 0.8, 0.4],
+        scaleY: [1, 1.3, 1]
+      }}
+      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
     />
     <motion.div 
-      className="absolute top-0 right-1/4 w-px h-12 bg-gradient-to-b from-indigo-500/25 to-transparent"
-      animate={{ opacity: [0.2, 0.6, 0.2] }}
-      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      className="absolute top-0 right-1/5 w-px h-16 bg-gradient-to-b from-indigo-500/35 to-transparent"
+      animate={{ 
+        opacity: [0.3, 0.7, 0.3],
+        scaleY: [1, 1.4, 1]
+      }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+    />
+    <motion.div 
+      className="absolute top-0 left-1/2 w-px h-12 bg-gradient-to-b from-purple-500/30 to-transparent"
+      animate={{ 
+        opacity: [0.2, 0.6, 0.2],
+        scaleY: [1, 1.5, 1]
+      }}
+      transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 4 }}
     />
     
     <div className="relative max-w-5xl mx-auto px-6">
@@ -923,14 +1154,14 @@ const Footer = () => (
         <div className="flex items-center gap-6">
           <motion.a 
             href="#" 
-            className="text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-light"
+            className="text-zinc-300 hover:text-white dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors text-sm font-normal tracking-wide"
             whileHover={{ scale: 1.05 }}
           >
             Privacy
           </motion.a>
           <motion.a 
             href="#" 
-            className="text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-light"
+            className="text-zinc-300 hover:text-white dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors text-sm font-normal tracking-wide"
             whileHover={{ scale: 1.05 }}
           >
             Terms
@@ -948,7 +1179,112 @@ export default function App() {
   useEffect(() => {
     setIsLoaded(true);
     
-    // Add custom CSS for aurora animation
+    // Initialize premium Lenis smooth scrolling
+    const lenis = new Lenis({
+      duration: 1.8,
+      easing: (t: number) => 1 - Math.pow(1 - t, 4), // Premium easing curve
+      lerp: 0.08, // Smoother interpolation
+      wheelMultiplier: 0.8, // More controlled wheel scrolling
+    });
+
+    // Premium scroll animation function
+    function raf(time: number) {
+      lenis.raf(time);
+      ScrollTrigger.update(); // Sync with GSAP
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    // GSAP Premium Scroll Animations
+    const initScrollAnimations = () => {
+      // Parallax effect for cosmic particles
+      gsap.utils.toArray('.cosmic-parallax').forEach((element: any) => {
+        gsap.to(element, {
+          yPercent: -50,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: element,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+      });
+
+      // Smooth reveal animations for sections
+      gsap.utils.toArray('section').forEach((section: any, index: number) => {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 85%',
+            end: 'bottom 15%',
+            toggleActions: 'play none none reverse',
+          },
+        });
+
+        tl.from(section.querySelectorAll('.gsap-reveal'), {
+          y: 60,
+          opacity: 0,
+          duration: 1.2,
+          stagger: 0.1,
+          ease: 'power3.out',
+        });
+      });
+
+      // Premium stagger animations for cards/items
+      gsap.utils.toArray('.gsap-stagger-parent').forEach((parent: any) => {
+        gsap.from(parent.children, {
+          y: 80,
+          opacity: 0,
+          duration: 1,
+          stagger: 0.15,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: parent,
+            start: 'top 80%',
+            toggleActions: 'play none none reverse',
+          },
+        });
+      });
+
+      // Smooth counter animations
+      gsap.utils.toArray('.gsap-counter').forEach((counter: any) => {
+        const finalValue = parseInt(counter.dataset.value || '0');
+        const obj = { value: 0 };
+        
+        gsap.to(obj, {
+          value: finalValue,
+          duration: 2.5,
+          ease: 'power2.out',
+          onUpdate: () => {
+            counter.textContent = Math.round(obj.value).toLocaleString();
+          },
+          scrollTrigger: {
+            trigger: counter,
+            start: 'top 80%',
+            toggleActions: 'play none none reverse',
+          },
+        });
+      });
+
+      // Floating elements with physics-based movement
+      gsap.utils.toArray('.gsap-float').forEach((element: any) => {
+        gsap.to(element, {
+          y: -30,
+          rotation: 360,
+          duration: 8 + Math.random() * 4,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+      });
+    };
+
+    // Initialize animations after a short delay
+    setTimeout(initScrollAnimations, 100);
+    
+    // Add custom CSS for enhanced effects
     const style = document.createElement('style');
     style.textContent = `
       @keyframes aurora {
@@ -963,14 +1299,60 @@ export default function App() {
         animation: aurora 60s linear infinite;
       }
       
+      /* Premium smooth scrolling setup */
       html {
-        scroll-behavior: smooth;
+        scroll-behavior: auto; /* Let Lenis handle it */
+      }
+      
+      html, body {
+        overflow-x: hidden;
+      }
+
+      /* Smooth transitions for all elements */
+      * {
+        will-change: auto;
+      }
+
+      /* Enhanced text rendering */
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+      }
+
+      /* Premium scroll indicator */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(to bottom, rgba(59, 130, 246, 0.6), rgba(99, 102, 241, 0.6));
+        border-radius: 3px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(to bottom, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8));
+      }
+
+      /* Focus states for accessibility */
+      button:focus-visible, 
+      a:focus-visible {
+        outline: 2px solid rgba(59, 130, 246, 0.5);
+        outline-offset: 2px;
+        border-radius: 4px;
       }
     `;
     document.head.appendChild(style);
     
     return () => {
       document.head.removeChild(style);
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+      lenis.destroy();
     };
   }, []);
 
