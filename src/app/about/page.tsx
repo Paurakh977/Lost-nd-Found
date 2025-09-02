@@ -115,19 +115,19 @@ const SectionObserver = ({ children, className = "", delay = 0 }: { children: Re
   const ref = useRef(null);
   const isInView = useInView(ref, { 
     once: false, 
-    margin: "-100px",
-    amount: 0.3 
+    margin: "-120px",
+    amount: 0.2 
   });
   
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
       transition={{ 
-        duration: 0.6,
+        duration: 0.8,
         delay: isInView ? delay : 0,
-        ease: [0.22, 1, 0.36, 1]
+        ease: [0.16, 1, 0.3, 1]
       }}
       className={className}
     >
@@ -154,29 +154,49 @@ const HeroSection = () => {
       />
       
       <div className="relative max-w-5xl mx-auto px-6 text-center">
-        <SectionObserver>
+        <motion.div
+          initial={{ opacity: 0.0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.3,
+            duration: 0.8,
+            ease: "easeInOut",
+          }}
+          className="relative flex flex-col gap-6 items-center justify-center text-center"
+        >
           <motion.span
-            className="inline-flex items-center px-3 py-1.5 bg-zinc-100/50 dark:bg-zinc-800/30 text-zinc-700 dark:text-zinc-300 rounded-full text-sm font-medium backdrop-blur-sm border border-zinc-200/20 mb-8"
-            initial={{ opacity: 0, scale: 0.9 }}
+            className="inline-flex items-center px-3 py-1.5 bg-zinc-100/10 dark:bg-zinc-800/20 text-zinc-700 dark:text-zinc-300 rounded-full text-sm font-medium backdrop-blur-sm border border-zinc-200/20"
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
           >
             <Sparkles className="w-3 h-3 mr-2" />
             About Our Mission
           </motion.span>
 
-          <h1 className="text-4xl md:text-6xl font-light tracking-tight dark:text-white text-zinc-900 leading-[1.1] mb-6">
+          <div className="text-4xl md:text-6xl font-light tracking-tight dark:text-white text-zinc-900 leading-[1.1]">
             Reuniting People with Their{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+            <motion.span
+              className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
+              animate={{
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            >
               Lost Assets
-            </span>
-          </h1>
+            </motion.span>
+          </div>
 
-          <p className="text-lg md:text-xl font-light dark:text-zinc-200 text-zinc-700 max-w-3xl mx-auto leading-relaxed tracking-wide">
+          <motion.p
+            className="text-lg md:text-xl font-light dark:text-zinc-200 text-zinc-700 max-w-3xl leading-relaxed tracking-wide"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.8 }}
+          >
             GOTUS leverages cutting-edge AI and global databases to help individuals and organizations 
             discover and recover unclaimed assets, forgotten treasures, and lost valuables worldwide.
-          </p>
-        </SectionObserver>
+          </motion.p>
+        </motion.div>
       </div>
     </section>
   );
@@ -194,26 +214,49 @@ const StatsSection = () => {
   return (
     <section className="relative py-20 bg-gradient-to-b from-zinc-50/85 to-zinc-50/80 dark:from-zinc-900/85 dark:to-zinc-900/80 overflow-hidden">
       <div className="relative max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <motion.div 
+          className="grid grid-cols-2 md:grid-cols-4 gap-8"
+          initial={{ opacity: 0.0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.3,
+            duration: 0.8,
+            ease: "easeInOut",
+          }}
+        >
           {stats.map((stat, i) => (
-            <SectionObserver key={i} delay={i * 0.1}>
-              <div className="text-center group">
-                <motion.div
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-500/10 mb-3 group-hover:from-blue-500/20 group-hover:to-indigo-500/20 transition-all duration-300"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                >
-                  <stat.icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                </motion.div>
-                <div className="text-2xl md:text-3xl font-light text-zinc-900 dark:text-zinc-50 mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-zinc-600 dark:text-zinc-400 font-light">
-                  {stat.label}
-                </div>
-              </div>
-            </SectionObserver>
+            <motion.div
+              key={i}
+              className="text-center group"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }}
+            >
+              <motion.div
+                className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-500/10 mb-3 group-hover:from-blue-500/20 group-hover:to-indigo-500/20 transition-all duration-300"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+              >
+                <stat.icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </motion.div>
+              <motion.div 
+                className="text-2xl md:text-3xl font-light text-zinc-900 dark:text-zinc-50 mb-1"
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 + i * 0.1, duration: 0.6 }}
+              >
+                {stat.value}
+              </motion.div>
+              <motion.div 
+                className="text-sm text-zinc-600 dark:text-zinc-400 font-light"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ delay: 0.7 + i * 0.1, duration: 0.8 }}
+              >
+                {stat.label}
+              </motion.div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -249,7 +292,7 @@ const MissionVisionSection = () => {
               <motion.div 
                 className="group relative p-8 rounded-2xl bg-white/30 dark:bg-zinc-800/20 backdrop-blur-sm border border-white/20 dark:border-zinc-700/20 hover:bg-white/40 dark:hover:bg-zinc-800/30 transition-all duration-500"
                 whileHover={{ y: -5 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.02] via-transparent to-indigo-500/[0.02] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
@@ -257,13 +300,13 @@ const MissionVisionSection = () => {
                   <section.icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 
-                <h2 className="text-2xl font-light text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide">
+                <h2 className="text-2xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-tight">
                   {section.title}
                 </h2>
                 <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed font-light mb-3">
                   {section.content}
                 </p>
-                <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                <p className="text-sm text-blue-600 dark:text-blue-400 font-normal">
                   {section.highlight}
                 </p>
               </motion.div>
@@ -325,10 +368,10 @@ const WhyChooseSection = () => {
       <div className="relative max-w-6xl mx-auto px-6">
         <SectionObserver>
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide">
-              Why Choose <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">GOTUS</span>
+            <h2 className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-tight">
+              Why Choose <span className="font-normal text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">GOTUS</span>
             </h2>
-            <p className="text-lg text-zinc-600 dark:text-zinc-300 max-w-2xl mx-auto font-light">
+            <p className="text-base text-zinc-600 dark:text-zinc-300 max-w-2xl mx-auto font-light">
               Industry-leading technology meets unparalleled expertise
             </p>
           </div>
@@ -340,6 +383,7 @@ const WhyChooseSection = () => {
               <motion.div 
                 className="group relative p-6 rounded-xl bg-white/30 dark:bg-zinc-800/20 backdrop-blur-sm border border-white/20 dark:border-zinc-700/20 hover:bg-white/40 dark:hover:bg-zinc-800/30 transition-all duration-500"
                 whileHover={{ y: -3 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center">
@@ -350,10 +394,10 @@ const WhyChooseSection = () => {
                   </span>
                 </div>
                 
-                <h3 className="text-lg font-normal text-zinc-800 dark:text-zinc-50 mb-2">
+                <h3 className="text-lg font-light text-zinc-800 dark:text-zinc-50 mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed font-normal">
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed font-light">
                   {feature.description}
                 </p>
               </motion.div>
@@ -399,10 +443,10 @@ const ProcessSection = () => {
       <div className="relative max-w-6xl mx-auto px-6">
         <SectionObserver>
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide">
+            <h2 className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-tight">
               How It Works
             </h2>
-            <p className="text-lg text-zinc-600 dark:text-zinc-300 max-w-2xl mx-auto font-light">
+            <p className="text-base text-zinc-600 dark:text-zinc-300 max-w-2xl mx-auto font-light">
               Simple, transparent process from search to recovery
             </p>
           </div>
@@ -418,14 +462,15 @@ const ProcessSection = () => {
                 <motion.div
                   className="p-6 rounded-xl bg-white/30 dark:bg-zinc-800/20 backdrop-blur-sm border border-white/20 dark:border-zinc-700/20"
                   whileHover={{ y: -3 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center mb-4">
                     <step.icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h3 className="text-lg font-normal text-zinc-800 dark:text-zinc-50 mb-2">
+                  <h3 className="text-lg font-light text-zinc-800 dark:text-zinc-50 mb-2">
                     {step.title}
                   </h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-light">
                     {step.description}
                   </p>
                 </motion.div>
@@ -457,10 +502,10 @@ const TrustSection = () => {
       <div className="relative max-w-6xl mx-auto px-6">
         <SectionObserver>
           <div className="text-center mb-12">
-            <h2 className="text-2xl font-light text-zinc-800 dark:text-zinc-50 mb-3">
+            <h2 className="text-2xl font-extralight text-zinc-800 dark:text-zinc-50 mb-3 tracking-tight">
               Trusted & Certified
             </h2>
-            <p className="text-zinc-600 dark:text-zinc-400 font-light">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light">
               Industry-leading certifications for your peace of mind
             </p>
           </div>
@@ -471,13 +516,14 @@ const TrustSection = () => {
             <SectionObserver key={i} delay={i * 0.05}>
               <motion.div
                 className="p-4 rounded-lg bg-white/20 dark:bg-zinc-800/10 backdrop-blur-sm border border-white/10 dark:border-zinc-700/10 text-center"
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.03 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
                 <badge.icon className="w-6 h-6 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <div className="text-sm font-medium text-zinc-800 dark:text-zinc-50">
+                <div className="text-sm font-light text-zinc-800 dark:text-zinc-50">
                   {badge.title}
                 </div>
-                <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 font-light">
                   {badge.desc}
                 </div>
               </motion.div>
@@ -502,29 +548,31 @@ const CTASection = () => {
             Limited Time: Free Premium Search
           </div>
           
-          <h2 className="text-3xl md:text-4xl font-light text-zinc-800 dark:text-zinc-50 mb-6 tracking-wide">
+          <h2 className="text-3xl md:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-6 tracking-tight">
             Ready to Discover Your Lost Assets?
           </h2>
-          <p className="text-lg text-zinc-600 dark:text-zinc-300 mb-8 max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="text-base text-zinc-600 dark:text-zinc-300 mb-8 max-w-2xl mx-auto font-light leading-relaxed">
             Join over 50,000 satisfied clients who have successfully recovered their assets. 
             Start your journey today with our comprehensive search.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.button
-              className="px-8 py-3 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-full font-medium flex items-center justify-center gap-2 group hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              className="px-8 py-3 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-full font-normal flex items-center justify-center gap-2 group hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all duration-300"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
               Start Free Search
-              <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform duration-300" />
             </motion.button>
             
             <Link href="/contact">
               <motion.button
-                className="px-8 py-3 border border-zinc-300/30 dark:border-zinc-700/50 text-zinc-700 dark:text-zinc-300 rounded-full font-medium hover:bg-zinc-200/20 dark:hover:bg-zinc-800/30 transition-all backdrop-blur-sm"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="px-8 py-3 border border-zinc-300/30 dark:border-zinc-700/50 text-zinc-700 dark:text-zinc-300 rounded-full font-normal hover:bg-zinc-200/20 dark:hover:bg-zinc-800/30 transition-all duration-300 backdrop-blur-sm"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
                 Schedule Consultation
               </motion.button>
@@ -667,12 +715,12 @@ export default function About() {
       </AnimatePresence>
       
       <motion.button
-        className="fixed bottom-8 right-8 w-10 h-10 bg-white/80 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 rounded-full backdrop-blur-sm border border-white/60 dark:border-zinc-700/60 hover:bg-white/95 dark:hover:bg-zinc-800/95 transition-all z-40 flex items-center justify-center shadow-lg"
+        className="fixed bottom-8 right-8 w-10 h-10 bg-white/80 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 rounded-full backdrop-blur-sm border border-white/60 dark:border-zinc-700/60 hover:bg-white/95 dark:hover:bg-zinc-800/95 transition-all duration-300 z-40 flex items-center justify-center shadow-lg"
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        transition={{ delay: 1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
         <ArrowRight size={16} className="rotate-[-90deg]" />
