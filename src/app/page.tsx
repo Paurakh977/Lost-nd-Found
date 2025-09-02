@@ -1,127 +1,119 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView } from 'framer-motion';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { Search, CheckCircle, Zap, Globe, Shield, Star, ArrowRight, Users, BarChart3, TrendingUp, Award } from 'lucide-react';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-// Register GSAP plugins
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-}
+// GSAP plugin registration will be done in useEffect to ensure proper timing
 
 const cn = (...classes: (string | undefined | boolean)[]) => classes.filter(Boolean).join(' ');
 
-// Cosmic Particles Component
-const CosmicParticles = ({ density = 'medium', className = '' }: { density?: 'low' | 'medium' | 'high' | 'ultra', className?: string }) => {
+// Optimized Cosmic Particles Component
+const CosmicParticles = React.memo(({ density = 'medium', className = '' }: { density?: 'low' | 'medium' | 'high' | 'ultra', className?: string }) => {
   const particleCounts = {
-    low: 8,
-    medium: 15,
-    high: 25,
-    ultra: 40
+    low: 4,
+    medium: 8,
+    high: 12,
+    ultra: 16
   };
   
   const particleCount = particleCounts[density];
   
+  // Memoize particle positions to prevent recalculation on re-renders
+  const particles = useMemo(() => {
+    const result = [];
+    
+    // Floating Orbs - increased opacity and size for visibility
+    for (let i = 0; i < Math.floor(particleCount * 0.4); i++) {
+      result.push({
+        type: 'orb',
+        id: `orb-${i}`,
+        className: "absolute w-2 h-2 bg-gradient-to-r from-blue-400/80 to-indigo-400/80 rounded-full shadow-sm",
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        animate: {
+          y: [0, -25, 0],
+          x: [0, Math.random() * 15 - 7.5, 0],
+          opacity: [0.6, 1, 0.6],
+          scale: [1, 1.3, 1],
+        },
+        transition: {
+          duration: 6 + Math.random() * 3,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: Math.random() * 3,
+        }
+      });
+    }
+    
+    // Cosmic Dust - increased opacity
+    for (let i = 0; i < Math.floor(particleCount * 0.4); i++) {
+      result.push({
+        type: 'dust',
+        id: `dust-${i}`,
+        className: "absolute w-1 h-1 bg-gradient-to-r from-purple-400/70 to-pink-400/70 rounded-full",
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        animate: {
+          y: [0, -15, 0],
+          x: [0, Math.random() * 10 - 5, 0],
+          opacity: [0.4, 0.9, 0.4],
+        },
+        transition: {
+          duration: 8 + Math.random() * 4,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: Math.random() * 5,
+        }
+      });
+    }
+    
+    // Floating Stars - increased opacity and size
+    for (let i = 0; i < Math.floor(particleCount * 0.2); i++) {
+      result.push({
+        type: 'star',
+        id: `star-${i}`,
+        className: "absolute w-1.5 h-1.5 bg-gradient-to-r from-cyan-400/90 to-blue-400/90 rounded-full",
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        animate: {
+          opacity: [0.7, 1, 0.7],
+          scale: [1, 1.5, 1],
+        },
+        transition: {
+          duration: 2 + Math.random() * 1.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: Math.random() * 2,
+        }
+      });
+    }
+    
+    return result;
+  }, [particleCount]);
+  
   return (
     <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}>
-      {/* Floating Orbs */}
-      {Array.from({ length: Math.floor(particleCount * 0.3) }).map((_, i) => (
+      {particles.map((particle) => (
         <motion.div
-          key={`orb-${i}`}
-          className="absolute w-1 h-1 bg-gradient-to-r from-blue-400/40 to-indigo-400/40 rounded-full"
+          key={particle.id}
+          className={particle.className}
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
+            left: `${particle.left}%`,
+            top: `${particle.top}%`,
           }}
-          animate={{
-            y: [0, -30, 0],
-            x: [0, Math.random() * 20 - 10, 0],
-            opacity: [0.2, 0.8, 0.2],
-            scale: [1, 1.5, 1],
-          }}
-          transition={{
-            duration: 8 + Math.random() * 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: Math.random() * 5,
-          }}
-        />
-      ))}
-      
-      {/* Cosmic Dust */}
-      {Array.from({ length: Math.floor(particleCount * 0.4) }).map((_, i) => (
-        <motion.div
-          key={`dust-${i}`}
-          className="absolute w-0.5 h-0.5 bg-gradient-to-r from-purple-400/30 to-pink-400/30 rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -20, 0],
-            x: [0, Math.random() * 15 - 7.5, 0],
-            opacity: [0.1, 0.6, 0.1],
-          }}
-          transition={{
-            duration: 12 + Math.random() * 6,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: Math.random() * 8,
-          }}
-        />
-      ))}
-      
-      {/* Floating Stars */}
-      {Array.from({ length: Math.floor(particleCount * 0.2) }).map((_, i) => (
-        <motion.div
-          key={`star-${i}`}
-          className="absolute w-px h-px bg-gradient-to-r from-cyan-400/50 to-blue-400/50 rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            opacity: [0.3, 1, 0.3],
-            scale: [1, 2, 1],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: Math.random() * 3,
-          }}
-        />
-      ))}
-      
-      {/* Energy Wisps */}
-      {Array.from({ length: Math.floor(particleCount * 0.1) }).map((_, i) => (
-        <motion.div
-          key={`wisp-${i}`}
-          className="absolute w-8 h-0.5 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            transform: `rotate(${Math.random() * 360}deg)`,
-          }}
-          animate={{
-            x: [0, Math.random() * 40 - 20],
-            opacity: [0, 0.7, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 15 + Math.random() * 5,
-            repeat: Infinity,
-            ease: "linear",
-            delay: Math.random() * 10,
-          }}
+          animate={particle.animate}
+          transition={particle.transition}
         />
       ))}
     </div>
   );
-};
+});
+
+CosmicParticles.displayName = 'CosmicParticles';
 
 // Aurora Background Component
 const AuroraBackground = ({
@@ -174,28 +166,48 @@ const AuroraBackground = ({
 
 interface CounterHookResult {
   count: number;
-  ref: React.RefObject<HTMLDivElement | null>;
+  ref: React.RefObject<HTMLDivElement>;
 }
 
 const useCounter = (end: number, duration: number = 2000, start: number = 0): CounterHookResult => {
   const [count, setCount] = useState(start);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number>();
+  const isMountedRef = useRef(true);
   const inView = useInView(ref);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (inView && !isVisible) {
       setIsVisible(true);
       let startTime: number;
+      
       const animate = (timestamp: number): void => {
+        if (!isMountedRef.current) return;
+        
         if (!startTime) startTime = timestamp;
         const progress = Math.min((timestamp - startTime) / duration, 1);
-        setCount(Math.floor(progress * (end - start) + start));
-        if (progress < 1) {
-          requestAnimationFrame(animate);
+        
+        if (isMountedRef.current) {
+          setCount(Math.floor(progress * (end - start) + start));
+        }
+        
+        if (progress < 1 && isMountedRef.current) {
+          animationRef.current = requestAnimationFrame(animate);
         }
       };
-      requestAnimationFrame(animate);
+      
+      animationRef.current = requestAnimationFrame(animate);
     }
   }, [inView, isVisible, end, duration, start]);
 
@@ -1175,114 +1187,100 @@ const Footer = () => (
 // Main App Component
 export default function App() {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const rafRef = useRef<number>();
+  const lenisRef = useRef<Lenis>();
+  const scrollTriggersRef = useRef<ScrollTrigger[]>([]);
 
   useEffect(() => {
+    // Register GSAP plugins properly
+    if (typeof window !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger);
+    }
+    
     setIsLoaded(true);
     
-    // Initialize premium Lenis smooth scrolling
-    const lenis = new Lenis({
-      duration: 1.8,
-      easing: (t: number) => 1 - Math.pow(1 - t, 4), // Premium easing curve
-      lerp: 0.08, // Smoother interpolation
-      wheelMultiplier: 0.8, // More controlled wheel scrolling
+    // Initialize optimized Lenis smooth scrolling
+    lenisRef.current = new Lenis({
+      duration: 1.6,
+      easing: (t: number) => 1 - Math.pow(1 - t, 3), // Lighter easing
+      lerp: 0.1, // Slightly faster interpolation
+      wheelMultiplier: 0.9,
     });
 
-    // Premium scroll animation function
-    function raf(time: number) {
-      lenis.raf(time);
-      ScrollTrigger.update(); // Sync with GSAP
-      requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
-
-    // GSAP Premium Scroll Animations
-    const initScrollAnimations = () => {
-      // Parallax effect for cosmic particles
-      gsap.utils.toArray('.cosmic-parallax').forEach((element: any) => {
-        gsap.to(element, {
-          yPercent: -50,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: element,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: true,
-          },
-        });
-      });
-
-      // Smooth reveal animations for sections
-      gsap.utils.toArray('section').forEach((section: any, index: number) => {
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 85%',
-            end: 'bottom 15%',
-            toggleActions: 'play none none reverse',
-          },
-        });
-
-        tl.from(section.querySelectorAll('.gsap-reveal'), {
-          y: 60,
-          opacity: 0,
-          duration: 1.2,
-          stagger: 0.1,
-          ease: 'power3.out',
-        });
-      });
-
-      // Premium stagger animations for cards/items
-      gsap.utils.toArray('.gsap-stagger-parent').forEach((parent: any) => {
-        gsap.from(parent.children, {
-          y: 80,
-          opacity: 0,
-          duration: 1,
-          stagger: 0.15,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: parent,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        });
-      });
-
-      // Smooth counter animations
-      gsap.utils.toArray('.gsap-counter').forEach((counter: any) => {
-        const finalValue = parseInt(counter.dataset.value || '0');
-        const obj = { value: 0 };
-        
-        gsap.to(obj, {
-          value: finalValue,
-          duration: 2.5,
-          ease: 'power2.out',
-          onUpdate: () => {
-            counter.textContent = Math.round(obj.value).toLocaleString();
-          },
-          scrollTrigger: {
-            trigger: counter,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        });
-      });
-
-      // Floating elements with physics-based movement
-      gsap.utils.toArray('.gsap-float').forEach((element: any) => {
-        gsap.to(element, {
-          y: -30,
-          rotation: 360,
-          duration: 8 + Math.random() * 4,
-          repeat: -1,
-          yoyo: true,
-          ease: 'sine.inOut',
-        });
-      });
+    // Optimized scroll animation function
+    const raf = (time: number) => {
+      if (lenisRef.current) {
+        lenisRef.current.raf(time);
+        ScrollTrigger.update();
+      }
+      rafRef.current = requestAnimationFrame(raf);
     };
 
-    // Initialize animations after a short delay
-    setTimeout(initScrollAnimations, 100);
+    rafRef.current = requestAnimationFrame(raf);
+
+    // Optimized GSAP Scroll Animations
+    const initScrollAnimations = () => {
+      // Reduced parallax effect for cosmic particles
+      const parallaxElements = gsap.utils.toArray('.cosmic-parallax') as Element[];
+      parallaxElements.forEach((element: Element) => {
+        const trigger = ScrollTrigger.create({
+          trigger: element,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+          animation: gsap.to(element, {
+            yPercent: -30, // Reduced from -50
+            ease: 'none',
+          }),
+        });
+        scrollTriggersRef.current.push(trigger);
+      });
+
+      // Simplified reveal animations for sections
+      const sections = gsap.utils.toArray('section') as Element[];
+      sections.forEach((section: Element) => {
+        const revealElements = section.querySelectorAll('.gsap-reveal');
+        if (revealElements.length > 0) {
+          const trigger = ScrollTrigger.create({
+            trigger: section,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+            animation: gsap.from(revealElements, {
+              y: 40, // Reduced from 60
+              opacity: 0,
+              duration: 0.8, // Reduced from 1.2
+              stagger: 0.05, // Reduced from 0.1
+              ease: 'power2.out',
+            }),
+          });
+          scrollTriggersRef.current.push(trigger);
+        }
+      });
+
+      // Optimized stagger animations for cards/items
+      const staggerParents = gsap.utils.toArray('.gsap-stagger-parent') as Element[];
+      staggerParents.forEach((parent: Element) => {
+        const trigger = ScrollTrigger.create({
+          trigger: parent,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse',
+          animation: gsap.from(parent.children, {
+            y: 50, // Reduced from 80
+            opacity: 0,
+            duration: 0.8, // Reduced from 1
+            stagger: 0.1, // Reduced from 0.15
+            ease: 'power2.out',
+          }),
+        });
+        scrollTriggersRef.current.push(trigger);
+      });
+
+      // Removed floating animations to improve performance
+      // Counter animations are handled by the useCounter hook
+    };
+
+    // Initialize animations with proper timing
+    const timeoutId = setTimeout(initScrollAnimations, 100);
     
     // Add custom CSS for enhanced effects
     const style = document.createElement('style');
@@ -1346,13 +1344,41 @@ export default function App() {
         outline-offset: 2px;
         border-radius: 4px;
       }
+
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
     `;
     document.head.appendChild(style);
     
     return () => {
-      document.head.removeChild(style);
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-      lenis.destroy();
+      // Cleanup timeout
+      clearTimeout(timeoutId);
+      
+      // Cancel animation frame
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      
+      // Clean up ScrollTrigger instances
+      scrollTriggersRef.current.forEach(trigger => trigger.kill());
+      scrollTriggersRef.current = [];
+      
+      // Destroy Lenis instance
+      if (lenisRef.current) {
+        lenisRef.current.destroy();
+      }
+      
+      // Remove style element safely
+      if (style && style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
     };
   }, []);
 
