@@ -356,7 +356,7 @@ const StatsSection = () => {
                 initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1, duration: 1, ease: "easeOut" }}
-                viewport={{ once: true }}
+                viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
               >
                 <motion.div 
                   className="relative"
@@ -445,7 +445,7 @@ const FeaturesSection = () => {
           className="text-center mb-20"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
           transition={{ duration: 0.8 }}
         >
           <motion.h2 
@@ -466,7 +466,7 @@ const FeaturesSection = () => {
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08, duration: 0.8, ease: "easeOut" }}
-              viewport={{ once: true }}
+              viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
             >
               <motion.div 
                 className="relative p-8 rounded-3xl bg-white/40 dark:bg-zinc-800/30 backdrop-blur-md border border-white/30 dark:border-zinc-700/30 hover:bg-white/60 dark:hover:bg-zinc-800/50 transition-all duration-700 group-hover:border-blue-200/50 dark:group-hover:border-blue-700/50"
@@ -573,7 +573,7 @@ const TestimonialsSection = () => {
               initial={{ opacity: 0, y: 80, rotateX: 15 }}
               whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
               transition={{ delay: i * 0.15, duration: 1, ease: "easeOut" }}
-              viewport={{ once: true }}
+              viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
             >
               <motion.div 
                 className="relative p-8 rounded-3xl bg-white/50 dark:bg-zinc-800/40 backdrop-blur-xl border border-white/40 dark:border-zinc-700/30 hover:bg-white/70 dark:hover:bg-zinc-800/60 transition-all duration-700"
@@ -1100,7 +1100,7 @@ const Footer = () => (
         className="grid md:grid-cols-4 gap-8 mb-12"
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
         transition={{ duration: 0.8 }}
       >
         <motion.div
@@ -1132,7 +1132,7 @@ const Footer = () => (
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: sectionIndex * 0.1, duration: 0.6 }}
-            viewport={{ once: true }}
+            viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
           >
             <h4 className="font-light mb-4 text-white/90 text-sm tracking-wider uppercase">{section.title}</h4>
             <div className="space-y-3">
@@ -1232,6 +1232,7 @@ export default function App() {
             yPercent: -30, // Reduced from -50
             ease: 'none',
           }),
+          // Parallax effect is handled by scrub, which automatically handles scrolling in both directions
         });
         scrollTriggersRef.current.push(trigger);
       });
@@ -1244,7 +1245,7 @@ export default function App() {
           const trigger = ScrollTrigger.create({
             trigger: section,
             start: 'top 85%',
-            toggleActions: 'play none none reverse',
+            toggleActions: 'play none none none', // Changed from 'reverse' to 'none' to keep elements visible
             animation: gsap.from(revealElements, {
               y: 40, // Reduced from 60
               opacity: 0,
@@ -1263,7 +1264,7 @@ export default function App() {
         const trigger = ScrollTrigger.create({
           trigger: parent,
           start: 'top 80%',
-          toggleActions: 'play none none reverse',
+          toggleActions: 'play none none none', // Changed from 'reverse' to 'none' to keep elements visible
           animation: gsap.from(parent.children, {
             y: 50, // Reduced from 80
             opacity: 0,

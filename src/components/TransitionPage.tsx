@@ -28,14 +28,37 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
 
     // Force a browser reflow to ensure CSS transitions work properly
     // This is especially important for the first navigation after page load
-    const forceReflow = overlay.offsetHeight;
+    overlay.offsetHeight;
+    
+    // Force GPU layer creation by accessing computed styles
+    const panels = Array.from(
+      overlay.querySelectorAll<HTMLDivElement>('.transition-panel')
+    );
+    
+    // Pre-warm GPU layers and force composite layer creation
+    // This is critical for first navigation to prevent stuck panels
+    panels.forEach(panel => {
+      // Apply and force computation of multiple properties to ensure GPU acceleration
+      const style = window.getComputedStyle(panel);
+      style.transform; // Force browser to read this property
+      style.opacity;   // Force browser to read this property
+      
+      // Force layout recalculation
+      panel.offsetHeight;
+      panel.offsetWidth;
+    });
 
-    // Use a small delay to ensure DOM is ready before starting animations
+    // Apply initial styles to force hardware acceleration before animation starts
+    // This is crucial for preventing the "stuck panels" issue on first navigation
+    document.body.style.willChange = 'transform';
+    document.body.style.transform = 'translateZ(0)';
+    
+    // Use a slightly longer delay to ensure DOM and GPU layers are fully ready
     // This prevents the "stuck panels" issue on first navigation
     const initialDelay = window.setTimeout(() => {
-      const panels = Array.from(
-        overlay.querySelectorAll<HTMLDivElement>('.transition-panel')
-      );
+      // Reset body styles after initialization
+      document.body.style.willChange = '';
+      document.body.style.transform = '';
 
       // Enable interaction blocking
       overlay.classList.add('active');
@@ -67,8 +90,26 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
             window.getComputedStyle(panel).transform;
             
             const timeout = window.setTimeout(() => {
-              panel.classList.remove('slide-down');
-              panel.classList.add('slide-up');
+              // Force a reflow to ensure the browser has processed the current state
+              panel.offsetHeight;
+              panel.offsetWidth;
+              
+              // Use double requestAnimationFrame to ensure the class change happens
+              // after the browser has had time to process the current state
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  // Force another reflow before class changes
+                  panel.offsetHeight;
+                  
+                  // Apply slide-up class before removing slide-down to ensure smooth transition
+                  panel.classList.add('slide-up');
+                  
+                  // Small delay before removing slide-down to ensure transition starts properly
+                  setTimeout(() => {
+                    panel.classList.remove('slide-down');
+                  }, 5);
+                });
+              });
             }, (panels.length - 1 - index) * REVEAL_STAGGER);
             timeoutsRef.current.push(timeout);
           });
@@ -140,7 +181,7 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
           flex: 1;
           height: 100%;
           position: relative;
-          transform: scaleY(0);
+          transform: scaleY(0) translateZ(0); /* Force GPU layer creation */
           transform-origin: var(--transform-origin, bottom);
           transition: transform 0.85s cubic-bezier(0.23, 1, 0.32, 1);
           min-width: calc(100% / var(--total-panels));
@@ -152,6 +193,10 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
           backface-visibility: hidden;
           -webkit-transform-style: preserve-3d;
           transform-style: preserve-3d;
+          /* Additional GPU acceleration hints */
+          -webkit-perspective: 1000px;
+          perspective: 1000px;
+          contain: layout style paint;
         }
 
         /* Dynamic transform origins for wave effect */
@@ -270,7 +315,7 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
 
         /* Active state - slide down with all layer effects */
         .transition-panel.slide-down {
-          transform: scaleY(1);
+          transform: scaleY(1) translateZ(0);
           box-shadow: 
             inset 0 0 30px rgba(255, 255, 255, 0.04),
             0 0 40px rgba(0, 0, 0, 0.6),
@@ -291,10 +336,22 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
 
         /* Opening state - slide back up with improved easing */
         .transition-panel.slide-up {
-          transform: scaleY(0) !important; /* Force override to ensure animation works */
+          transform: scaleY(0) translateZ(0) !important; /* Force override to ensure animation works */
           transition: transform 0.9s cubic-bezier(0.165, 0.84, 0.44, 1);
-          /* Add a small delay to ensure the browser has time to process the state change */
-          transition-delay: 5ms;
+          /* Enhanced hardware acceleration */
+          backface-visibility: hidden !important;
+          perspective: 1000px !important;
+          contain: layout style paint !important;
+        }
+        
+        /* Ensure smooth transition from slide-down to slide-up */
+        .transition-panel.slide-down.slide-up {
+          transform: scaleY(0) translateZ(0) !important;
+          transition: transform 0.9s cubic-bezier(0.165, 0.84, 0.44, 1);
+          /* Enhanced hardware acceleration */
+          backface-visibility: hidden !important;
+          perspective: 1000px !important;
+          contain: layout style paint !important;
         }
 
         .transition-panel.slide-up .shine-layer-1 {
