@@ -43,7 +43,7 @@ const CosmicParticles = React.memo(({ density = 'medium', className = '' }: { de
         transition: {
           duration: 6 + Math.random() * 3,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: "easeInOut" as const,
           delay: Math.random() * 3,
         }
       });
@@ -65,7 +65,7 @@ const CosmicParticles = React.memo(({ density = 'medium', className = '' }: { de
         transition: {
           duration: 8 + Math.random() * 4,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: "easeInOut" as const,
           delay: Math.random() * 5,
         }
       });
@@ -86,7 +86,7 @@ const CosmicParticles = React.memo(({ density = 'medium', className = '' }: { de
         transition: {
           duration: 2 + Math.random() * 1.5,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: "easeInOut" as const,
           delay: Math.random() * 2,
         }
       });
@@ -166,14 +166,14 @@ const AuroraBackground = ({
 
 interface CounterHookResult {
   count: number;
-  ref: React.RefObject<HTMLDivElement>;
+  ref: React.RefObject<HTMLDivElement | null>;
 }
 
 const useCounter = (end: number, duration: number = 2000, start: number = 0): CounterHookResult => {
   const [count, setCount] = useState(start);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const isMountedRef = useRef(true);
   const inView = useInView(ref);
 
@@ -356,7 +356,7 @@ const StatsSection = () => {
                 initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1, duration: 1, ease: "easeOut" }}
-                viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
+                viewport={{ once: true }}
               >
                 <motion.div 
                   className="relative"
@@ -445,7 +445,7 @@ const FeaturesSection = () => {
           className="text-center mb-20"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
+          viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
           <motion.h2 
@@ -466,7 +466,7 @@ const FeaturesSection = () => {
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08, duration: 0.8, ease: "easeOut" }}
-              viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
+              viewport={{ once: true }}
             >
               <motion.div 
                 className="relative p-8 rounded-3xl bg-white/40 dark:bg-zinc-800/30 backdrop-blur-md border border-white/30 dark:border-zinc-700/30 hover:bg-white/60 dark:hover:bg-zinc-800/50 transition-all duration-700 group-hover:border-blue-200/50 dark:group-hover:border-blue-700/50"
@@ -573,7 +573,7 @@ const TestimonialsSection = () => {
               initial={{ opacity: 0, y: 80, rotateX: 15 }}
               whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
               transition={{ delay: i * 0.15, duration: 1, ease: "easeOut" }}
-              viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
+              viewport={{ once: true }}
             >
               <motion.div 
                 className="relative p-8 rounded-3xl bg-white/50 dark:bg-zinc-800/40 backdrop-blur-xl border border-white/40 dark:border-zinc-700/30 hover:bg-white/70 dark:hover:bg-zinc-800/60 transition-all duration-700"
@@ -1100,7 +1100,7 @@ const Footer = () => (
         className="grid md:grid-cols-4 gap-8 mb-12"
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
+        viewport={{ once: true }}
         transition={{ duration: 0.8 }}
       >
         <motion.div
@@ -1132,7 +1132,7 @@ const Footer = () => (
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: sectionIndex * 0.1, duration: 0.6 }}
-            viewport={{ once: false }} // Changed from true to false to animate every time it comes into view
+            viewport={{ once: true }}
           >
             <h4 className="font-light mb-4 text-white/90 text-sm tracking-wider uppercase">{section.title}</h4>
             <div className="space-y-3">
@@ -1187,8 +1187,8 @@ const Footer = () => (
 // Main App Component
 export default function App() {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const rafRef = useRef<number>();
-  const lenisRef = useRef<Lenis>();
+  const rafRef = useRef<number | undefined>(undefined);
+  const lenisRef = useRef<Lenis | undefined>(undefined);
   const scrollTriggersRef = useRef<ScrollTrigger[]>([]);
 
   useEffect(() => {
@@ -1196,6 +1196,9 @@ export default function App() {
     if (typeof window !== 'undefined') {
       gsap.registerPlugin(ScrollTrigger);
     }
+    
+    // Clear any existing ScrollTrigger instances to prevent conflicts
+    ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     
     setIsLoaded(true);
     
@@ -1218,9 +1221,9 @@ export default function App() {
 
     rafRef.current = requestAnimationFrame(raf);
 
-    // Optimized GSAP Scroll Animations
+    // Optimized GSAP Scroll Animations - only for parallax, avoid conflicts with Framer Motion
     const initScrollAnimations = () => {
-      // Reduced parallax effect for cosmic particles
+      // Only use GSAP for parallax effects to avoid conflicts with Framer Motion
       const parallaxElements = gsap.utils.toArray('.cosmic-parallax') as Element[];
       parallaxElements.forEach((element: Element) => {
         const trigger = ScrollTrigger.create({
@@ -1229,55 +1232,15 @@ export default function App() {
           end: 'bottom top',
           scrub: 1,
           animation: gsap.to(element, {
-            yPercent: -30, // Reduced from -50
+            yPercent: -20, // Further reduced to be more subtle
             ease: 'none',
           }),
-          // Parallax effect is handled by scrub, which automatically handles scrolling in both directions
         });
         scrollTriggersRef.current.push(trigger);
       });
 
-      // Simplified reveal animations for sections
-      const sections = gsap.utils.toArray('section') as Element[];
-      sections.forEach((section: Element) => {
-        const revealElements = section.querySelectorAll('.gsap-reveal');
-        if (revealElements.length > 0) {
-          const trigger = ScrollTrigger.create({
-            trigger: section,
-            start: 'top 85%',
-            toggleActions: 'play none none none', // Changed from 'reverse' to 'none' to keep elements visible
-            animation: gsap.from(revealElements, {
-              y: 40, // Reduced from 60
-              opacity: 0,
-              duration: 0.8, // Reduced from 1.2
-              stagger: 0.05, // Reduced from 0.1
-              ease: 'power2.out',
-            }),
-          });
-          scrollTriggersRef.current.push(trigger);
-        }
-      });
-
-      // Optimized stagger animations for cards/items
-      const staggerParents = gsap.utils.toArray('.gsap-stagger-parent') as Element[];
-      staggerParents.forEach((parent: Element) => {
-        const trigger = ScrollTrigger.create({
-          trigger: parent,
-          start: 'top 80%',
-          toggleActions: 'play none none none', // Changed from 'reverse' to 'none' to keep elements visible
-          animation: gsap.from(parent.children, {
-            y: 50, // Reduced from 80
-            opacity: 0,
-            duration: 0.8, // Reduced from 1
-            stagger: 0.1, // Reduced from 0.15
-            ease: 'power2.out',
-          }),
-        });
-        scrollTriggersRef.current.push(trigger);
-      });
-
-      // Removed floating animations to improve performance
-      // Counter animations are handled by the useCounter hook
+      // Remove GSAP animations for sections - let Framer Motion handle all visibility animations
+      // This prevents conflicts between GSAP and Framer Motion
     };
 
     // Initialize animations with proper timing
@@ -1370,6 +1333,7 @@ export default function App() {
       // Clean up ScrollTrigger instances
       scrollTriggersRef.current.forEach(trigger => trigger.kill());
       scrollTriggersRef.current = [];
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
       
       // Destroy Lenis instance
       if (lenisRef.current) {
