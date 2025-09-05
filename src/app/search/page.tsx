@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useProtectedRoute } from "../../hooks/useAuthRedirect";
 
-export default function ChatBot() {
+function ChatBot() {
   // All hooks must be called at the top level, before any conditional returns
   const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([]);
   const [input, setInput] = useState("");
@@ -74,5 +74,13 @@ export default function ChatBot() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChatBot />
+    </Suspense>
   );
 }
