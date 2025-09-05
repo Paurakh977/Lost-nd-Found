@@ -135,8 +135,9 @@ function useVoiceRecorder({ onStop }: { onStop?: (audioBlob: Blob) => void }) {
     return { isRecording, audioLevel, startRecording, stopRecording };
 }
 
-// Audio player for preview
+// Minimalistic Audio player for preview
 const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: () => void }) => {
+    const { isDark } = useTheme();
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -162,113 +163,182 @@ const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: ()
         };
     }, [audioUrl]);
 
-    const togglePlay = () => {
+    const togglePlay = useCallback(() => {
         const audio = audioRef.current;
         if (!audio) return;
         if (isPlaying) audio.pause();
         else audio.play();
         setIsPlaying(!isPlaying);
-    };
+    }, [isPlaying]);
 
     return (
-        <div className="flex items-center gap-3 w-full p-2 bg-gray-500/10 rounded-lg">
+        <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className={`flex items-center gap-3 w-full p-3 rounded-xl ${
+                isDark ? 'bg-white/5 border border-white/10' : 'bg-gray-900/5 border border-gray-200/50'
+            }`}
+        >
             <audio ref={audioRef} src={audioUrl} preload="auto" />
-            <motion.button onClick={togglePlay} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="p-2 rounded-full bg-blue-500/20 text-blue-500">
-                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            
+            {/* Play/Pause button */}
+            <motion.button 
+                onClick={togglePlay} 
+                whileHover={{ scale: 1.05 }} 
+                whileTap={{ scale: 0.95 }}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                    isDark 
+                        ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
+                        : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
+                }`}
+            >
+                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
             </motion.button>
-            <div className="flex-1 h-1.5 bg-gray-500/20 rounded-full overflow-hidden">
-                <motion.div className="h-full bg-blue-500" style={{ width: `${progress}%` }} />
+            
+            {/* Progress bar */}
+            <div className={`flex-1 h-1 rounded-full overflow-hidden ${
+                isDark ? 'bg-white/10' : 'bg-gray-900/10'
+            }`}>
+                <motion.div 
+                    className={`h-full ${isDark ? 'bg-blue-400' : 'bg-blue-500'}`}
+                    style={{ width: `${progress}%` }}
+                    transition={{ duration: 0.1 }}
+                />
             </div>
-            <motion.button onClick={onDiscard} whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.9, rotate: -5 }} className="p-2 rounded-full hover:bg-red-500/20 text-gray-400 hover:text-red-500">
-                <Trash2 className="w-4 h-4" />
+            
+            {/* Delete button */}
+            <motion.button 
+                onClick={onDiscard} 
+                whileHover={{ scale: 1.05 }} 
+                whileTap={{ scale: 0.95 }}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                    isDark 
+                        ? 'text-white/40 hover:text-red-400 hover:bg-red-500/20' 
+                        : 'text-gray-500 hover:text-red-500 hover:bg-red-500/10'
+                }`}
+            >
+                <Trash2 className="w-3.5 h-3.5" />
             </motion.button>
-        </div>
+        </motion.div>
     );
 };
 
-// Recording indicator component - updated to match sample.tsx
+// Minimalistic Recording indicator component with rapid ring effects
 const RecordingIndicator = ({ onStop, audioLevel }: { onStop: () => void, audioLevel: number }) => {
     const { isDark } = useTheme();
     
     return (
         <>
-            {/* Recording overlay */}
+            {/* Subtle recording overlay */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className={`fixed inset-0 z-40 ${isDark ? 'bg-black/50' : 'bg-white/50'} backdrop-blur-sm`}
+                className={`fixed inset-0 z-40 ${isDark ? 'bg-black/40' : 'bg-white/40'} backdrop-blur-sm`}
                 onClick={onStop}
             />
             
-            {/* Recording modal */}
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
-            >
-                <div className="relative">
-                    <motion.div
-                        className="w-24 h-24 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl"
-                        animate={{
-                            scale: [1, 1 + audioLevel * 0.3],
-                        }}
-                        transition={{
-                            duration: 0.1,
-                            ease: "easeOut",
-                        }}
-                    >
-                        <Mic className="w-10 h-10 text-white" />
-                    </motion.div>
-                    
-                    {/* Pulsing rings */}
-                    {[0, 1, 2].map((i) => (
-                        <motion.div
-                            key={i}
-                            className="absolute inset-0 border-2 border-red-500 rounded-full"
+            {/* Minimalistic recording modal */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="relative flex flex-col items-center"
+                >
+                    <div className="relative">
+                        {/* Ultra minimal mic button */}
+                        <motion.button
+                            onClick={onStop}
+                            className="relative w-12 h-12 bg-red-500 rounded-full flex items-center justify-center cursor-pointer shadow-2xl"
                             animate={{
-                                scale: [1, 2.5],
-                                opacity: [0.6, 0],
+                                scale: [1, 1 + audioLevel * 0.15],
+                                boxShadow: [
+                                    '0 0 20px rgba(239, 68, 68, 0.4)',
+                                    `0 0 ${30 + audioLevel * 20}px rgba(239, 68, 68, ${0.6 + audioLevel * 0.3})`
+                                ]
                             }}
                             transition={{
-                                duration: 2,
+                                duration: 0.1,
+                                ease: "easeOut",
+                            }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <Mic className="w-4 h-4 text-white" />
+                        </motion.button>
+                        
+                        {/* Rapid ring effects - multiple fast concentric rings */}
+                        {[0, 1, 2, 3, 4].map((i) => (
+                            <motion.div
+                                key={i}
+                                className="absolute inset-0 border-2 border-red-400/60 rounded-full pointer-events-none"
+                                style={{
+                                    width: `${100 + (i + 1) * 15}%`,
+                                    height: `${100 + (i + 1) * 15}%`,
+                                    left: `${-(i + 1) * 7.5}%`,
+                                    top: `${-(i + 1) * 7.5}%`,
+                                }}
+                                animate={{
+                                    scale: [1, 1.8],
+                                    opacity: [0.8, 0],
+                                    borderWidth: [2, 0]
+                                }}
+                                transition={{
+                                    duration: 0.8,
+                                    repeat: Infinity,
+                                    delay: i * 0.15,
+                                    ease: "easeOut",
+                                }}
+                            />
+                        ))}
+                        
+                        {/* Intense pulsing glow */}
+                        <motion.div
+                            className="absolute inset-0 bg-red-500/30 rounded-full blur-lg pointer-events-none"
+                            animate={{
+                                scale: [1, 1.5, 1],
+                                opacity: [0.4, 0.8, 0.4],
+                            }}
+                            transition={{
+                                duration: 1,
                                 repeat: Infinity,
-                                delay: i * 0.6,
+                                ease: "easeInOut",
+                            }}
+                        />
+                        
+                        {/* Audio level reactive outer glow */}
+                        <motion.div
+                            className="absolute inset-0 bg-red-400/20 rounded-full blur-xl pointer-events-none"
+                            animate={{
+                                scale: [1.2, 1.2 + audioLevel * 0.8],
+                                opacity: [0.3, 0.3 + audioLevel * 0.5],
+                            }}
+                            transition={{
+                                duration: 0.1,
                                 ease: "easeOut",
                             }}
                         />
-                    ))}
+                    </div>
                     
-                    {/* Glowing effect */}
+                    {/* Minimal text */}
                     <motion.div
-                        className="absolute inset-0 rounded-full bg-red-500/20 blur-xl"
-                        animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [0.5, 0.8, 0.5],
-                        }}
-                        transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                        }}
-                    />
-                </div>
-                
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center mt-6"
-                >
-                    <p className={`text-lg font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Listening...
-                    </p>
-                    <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Tap the mic to stop recording
-                    </p>
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-center mt-6 px-4"
+                    >
+                        <p className={`text-lg font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            Listening...
+                        </p>
+                        <p className={`text-sm mt-1 ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                            Tap the mic or anywhere to stop recording
+                        </p>
+                    </motion.div>
                 </motion.div>
-            </motion.div>
+            </div>
         </>
     );
 };
@@ -356,42 +426,42 @@ export default function AgenticSearchPage() {
         >
             <FloatingParticles count={isDark ? 20 : 15} />
             
-            {/* Background Glow Effects - Persistent throughout the page */}
-            <div className="fixed inset-0 -z-10 pointer-events-none">
+            {/* Background Glow Effects - Persistent and Minimal */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 overflow-hidden">
-                    {/* Static purple glow in top-left */}
+                    {/* Minimal purple glow in top-left */}
                     <div 
-                        className={`absolute w-[40vw] h-[40vh] rounded-full blur-[140px] ${
-                            isDark ? 'bg-purple-500/20' : 'bg-purple-300/30'
+                        className={`absolute w-[35vw] h-[35vh] rounded-full blur-[120px] ${
+                            isDark ? 'bg-purple-500/8' : 'bg-purple-300/12'
                         }`}
-                        style={{ left: '10%', top: '10%' }}
+                        style={{ left: '15%', top: '15%' }}
                     />
-                    {/* Static blue glow in top-right */}
+                    {/* Minimal blue glow in top-right */}
                     <div 
-                        className={`absolute w-[35vw] h-[50vh] rounded-full blur-[140px] ${
-                            isDark ? 'bg-blue-500/20' : 'bg-blue-300/30'
+                        className={`absolute w-[30vw] h-[40vh] rounded-full blur-[120px] ${
+                            isDark ? 'bg-blue-500/8' : 'bg-blue-300/12'
                         }`}
-                        style={{ right: '10%', top: '15%' }}
+                        style={{ right: '15%', top: '20%' }}
                     />
-                    {/* Additional purple glow in bottom-right */}
-                    <div 
-                        className={`absolute w-[30vw] h-[35vh] rounded-full blur-[120px] ${
-                            isDark ? 'bg-indigo-500/15' : 'bg-indigo-300/25'
-                        }`}
-                        style={{ right: '15%', bottom: '20%' }}
-                    />
-                    {/* Additional blue glow in bottom-left */}
+                    {/* Subtle purple glow in bottom-right */}
                     <div 
                         className={`absolute w-[25vw] h-[30vh] rounded-full blur-[100px] ${
-                            isDark ? 'bg-cyan-500/15' : 'bg-cyan-300/25'
+                            isDark ? 'bg-indigo-500/6' : 'bg-indigo-300/10'
                         }`}
-                        style={{ left: '15%', bottom: '25%' }}
+                        style={{ right: '20%', bottom: '25%' }}
+                    />
+                    {/* Subtle cyan glow in bottom-left */}
+                    <div 
+                        className={`absolute w-[20vw] h-[25vh] rounded-full blur-[80px] ${
+                            isDark ? 'bg-cyan-500/6' : 'bg-cyan-300/10'
+                        }`}
+                        style={{ left: '20%', bottom: '30%' }}
                     />
                 </div>
-                {/* Static horizontal glow line */}
+                {/* Minimal horizontal glow line */}
                 <div 
                     className={`absolute top-1/2 left-0 w-full h-px ${
-                        isDark ? 'bg-gradient-to-r from-transparent via-blue-400/30 via-purple-400/30 to-transparent' : 'bg-gradient-to-r from-transparent via-blue-500/25 via-purple-500/25 to-transparent'
+                        isDark ? 'bg-gradient-to-r from-transparent via-blue-400/15 to-transparent' : 'bg-gradient-to-r from-transparent via-blue-500/12 to-transparent'
                     }`}
                     style={{ top: '50%' }}
                 />
@@ -410,7 +480,7 @@ export default function AgenticSearchPage() {
                         }
                     }
                 }}
-                className="relative z-10 flex flex-col justify-between min-h-screen w-full mx-auto max-w-3xl p-4"
+                className="relative z-20 flex flex-col justify-between min-h-screen w-full mx-auto max-w-3xl p-4"
             >
                 {/* Header */}
                 <motion.div
@@ -553,21 +623,24 @@ export default function AgenticSearchPage() {
 
             <AnimatePresence>
                 {isSending && (
-                    <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} transition={{ duration: 0.4, ease: "easeInOut" }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
-                        <div className={`rounded-2xl px-4 py-3 shadow-lg border backdrop-blur-xl ${isDark ? 'bg-gray-800/90 border-gray-700' : 'bg-white/90 border-gray-200'}`}>
-                            <div className="flex items-center gap-3">
-                                <motion.div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-medium" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
-                                    AI
-                                </motion.div>
-                                <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    <span>Searching...</span>
-                                    <div className="flex gap-1">
-                                        {[0, 1, 2].map((i) => (
-                                            <motion.div key={i} className="w-1.5 h-1.5 bg-blue-500 rounded-full" animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }} />
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        exit={{ opacity: 0, y: -10 }} 
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }} 
+                        className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-30"
+                    >
+                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm shadow-lg ${
+                            isDark ? 'bg-gray-900/80 text-white/90 border border-gray-700/50' : 'bg-white/90 text-gray-700 border border-gray-200/60'
+                        } backdrop-blur-md`}>
+                            <motion.div 
+                                className={`w-2 h-2 rounded-full ${
+                                    isDark ? 'bg-blue-400' : 'bg-blue-500'
+                                }`}
+                                animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }} 
+                                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                            <span className="font-medium">AI searching...</span>
                         </div>
                     </motion.div>
                 )}
