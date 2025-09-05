@@ -32,9 +32,9 @@ const Navbar: React.FC = () => {
   // Memoize nav items to prevent recreation
   const navItems: NavItem[] = useMemo(() => [
     { name: 'Home', url: '/', icon: Home },
+    { name: 'Agentic Search', url: '/search', icon: Bot },
     { name: 'About', url: '/about', icon: Info },
     { name: 'Contact', url: '/contact', icon: Mail },
-    { name: 'Agentic Search', url: '/search', icon: Bot },
   ], []);
 
   // Memoized handlers
@@ -364,7 +364,9 @@ const Navbar: React.FC = () => {
                   layout
                   layoutId="theme-toggle"
                 >
-                  <SkyToggle isDark={isDark} onToggle={toggleTheme} />
+                  <div className="scale-90 sm:scale-100">
+                    <SkyToggle isDark={isDark} onToggle={toggleTheme} />
+                  </div>
                 </motion.div>
                 
                 {/* User Profile */}
@@ -381,7 +383,9 @@ const Navbar: React.FC = () => {
                   layout
                   layoutId="theme-toggle"
                 >
-                  <SkyToggle isDark={isDark} onToggle={toggleTheme} />
+                  <div className="scale-90 sm:scale-100">
+                    <SkyToggle isDark={isDark} onToggle={toggleTheme} />
+                  </div>
                 </motion.div>
 
                 {/* Sign In Button */}
