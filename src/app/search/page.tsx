@@ -1,4 +1,5 @@
 "use client";
+// page.tsx
 import React, { useEffect, useRef, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -50,7 +51,7 @@ function useAutoResizeTextarea({ minHeight, maxHeight }: { minHeight: number, ma
 }
 
 // Voice recorder hook
-function useVoiceRecorder({ onStop }: { onStop: (audioBlob: Blob) => void }) {
+function useVoiceRecorder({ onStop }: { onStop?: (audioBlob: Blob) => void }) {
     const [isRecording, setIsRecording] = useState(false);
     const [audioLevel, setAudioLevel] = useState(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -63,6 +64,7 @@ function useVoiceRecorder({ onStop }: { onStop: (audioBlob: Blob) => void }) {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             
+            // Set up audio analysis for visualization
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
             analyserRef.current = audioContextRef.current.createAnalyser();
             const source = audioContextRef.current.createMediaStreamSource(stream);
@@ -93,11 +95,11 @@ function useVoiceRecorder({ onStop }: { onStop: (audioBlob: Blob) => void }) {
             };
             mediaRecorderRef.current.onstop = () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                onStop(audioBlob);
+                if (onStop) onStop(audioBlob);
                 
                 stream.getTracks().forEach(track => track.stop());
-                if (audioContextRef.current?.state !== 'closed') {
-                    audioContextRef.current?.close();
+                if (audioContextRef.current) {
+                    audioContextRef.current.close();
                 }
                 if (animationFrameRef.current) {
                     cancelAnimationFrame(animationFrameRef.current);
@@ -116,7 +118,7 @@ function useVoiceRecorder({ onStop }: { onStop: (audioBlob: Blob) => void }) {
     };
 
     const stopRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.stop();
         }
     };
@@ -181,6 +183,93 @@ const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: ()
                 <Trash2 className="w-4 h-4" />
             </motion.button>
         </div>
+    );
+};
+
+// Recording indicator component - updated to match sample.tsx
+const RecordingIndicator = ({ onStop, audioLevel }: { onStop: () => void, audioLevel: number }) => {
+    const { isDark } = useTheme();
+    
+    return (
+        <>
+            {/* Recording overlay */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={`fixed inset-0 z-40 ${isDark ? 'bg-black/50' : 'bg-white/50'} backdrop-blur-sm`}
+                onClick={onStop}
+            />
+            
+            {/* Recording modal */}
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+            >
+                <div className="relative">
+                    <motion.div
+                        className="w-24 h-24 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-2xl"
+                        animate={{
+                            scale: [1, 1 + audioLevel * 0.3],
+                        }}
+                        transition={{
+                            duration: 0.1,
+                            ease: "easeOut",
+                        }}
+                    >
+                        <Mic className="w-10 h-10 text-white" />
+                    </motion.div>
+                    
+                    {/* Pulsing rings */}
+                    {[0, 1, 2].map((i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute inset-0 border-2 border-red-500 rounded-full"
+                            animate={{
+                                scale: [1, 2.5],
+                                opacity: [0.6, 0],
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                delay: i * 0.6,
+                                ease: "easeOut",
+                            }}
+                        />
+                    ))}
+                    
+                    {/* Glowing effect */}
+                    <motion.div
+                        className="absolute inset-0 rounded-full bg-red-500/20 blur-xl"
+                        animate={{
+                            scale: [1, 1.5, 1],
+                            opacity: [0.5, 0.8, 0.5],
+                        }}
+                        transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                    />
+                </div>
+                
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center mt-6"
+                >
+                    <p className={`text-lg font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Listening...
+                    </p>
+                    <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Tap the mic to stop recording
+                    </p>
+                </motion.div>
+            </motion.div>
+        </>
     );
 };
 
@@ -259,44 +348,80 @@ export default function AgenticSearchPage() {
     }
 
     return (
-        <div className={`relative min-h-screen w-full overflow-hidden transition-colors duration-500 ${isDark ? 'bg-black' : 'bg-gray-50'}`}>
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className={`relative min-h-screen w-full overflow-hidden transition-colors duration-500 ${isDark ? 'bg-black' : 'bg-gray-50'}`}
+        >
             <FloatingParticles count={isDark ? 20 : 15} />
             
-            {/* Background Glow Effects */}
+            {/* Background Glow Effects - Persistent throughout the page */}
             <div className="fixed inset-0 -z-10 pointer-events-none">
                 <div className="absolute inset-0 overflow-hidden">
-                    <motion.div 
-                        className={`absolute w-[50vw] h-[50vh] rounded-full blur-[120px] ${
-                            isDark ? 'bg-purple-500/30' : 'bg-purple-300/40'
+                    {/* Static purple glow in top-left */}
+                    <div 
+                        className={`absolute w-[40vw] h-[40vh] rounded-full blur-[140px] ${
+                            isDark ? 'bg-purple-500/20' : 'bg-purple-300/30'
                         }`}
-                        initial={{ x: '10vw', y: '10vh' }}
-                        animate={{ x: '30vw', y: '40vh' }}
-                        transition={{ duration: 20, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
+                        style={{ left: '10%', top: '10%' }}
                     />
-                    <motion.div 
-                        className={`absolute w-[40vw] h-[60vh] rounded-full blur-[120px] ${
-                            isDark ? 'bg-blue-500/30' : 'bg-blue-300/40'
+                    {/* Static blue glow in top-right */}
+                    <div 
+                        className={`absolute w-[35vw] h-[50vh] rounded-full blur-[140px] ${
+                            isDark ? 'bg-blue-500/20' : 'bg-blue-300/30'
                         }`}
-                        initial={{ x: '80vw', y: '20vh' }}
-                        animate={{ x: '50vw', y: '60vh' }}
-                        transition={{ duration: 25, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
+                        style={{ right: '10%', top: '15%' }}
+                    />
+                    {/* Additional purple glow in bottom-right */}
+                    <div 
+                        className={`absolute w-[30vw] h-[35vh] rounded-full blur-[120px] ${
+                            isDark ? 'bg-indigo-500/15' : 'bg-indigo-300/25'
+                        }`}
+                        style={{ right: '15%', bottom: '20%' }}
+                    />
+                    {/* Additional blue glow in bottom-left */}
+                    <div 
+                        className={`absolute w-[25vw] h-[30vh] rounded-full blur-[100px] ${
+                            isDark ? 'bg-cyan-500/15' : 'bg-cyan-300/25'
+                        }`}
+                        style={{ left: '15%', bottom: '25%' }}
                     />
                 </div>
-                <motion.div 
+                {/* Static horizontal glow line */}
+                <div 
                     className={`absolute top-1/2 left-0 w-full h-px ${
-                        isDark ? 'bg-gradient-to-r from-transparent via-blue-400/50 to-transparent' : 'bg-gradient-to-r from-transparent via-blue-500/40 to-transparent'
+                        isDark ? 'bg-gradient-to-r from-transparent via-blue-400/30 via-purple-400/30 to-transparent' : 'bg-gradient-to-r from-transparent via-blue-500/25 via-purple-500/25 to-transparent'
                     }`}
-                    animate={{ y: [0, -20, 0] }}
-                    transition={{ duration: 15, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
+                    style={{ top: '50%' }}
                 />
             </div>
 
-            <div className="relative z-10 flex flex-col justify-between min-h-screen w-full mx-auto max-w-3xl p-4">
+            <motion.div 
+                initial="hidden"
+                animate="visible"
+                variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                        opacity: 1,
+                        transition: {
+                            staggerChildren: 0.2,
+                            delayChildren: 0.3
+                        }
+                    }
+                }}
+                className="relative z-10 flex flex-col justify-between min-h-screen w-full mx-auto max-w-3xl p-4"
+            >
                 {/* Header */}
                 <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    variants={{
+                        hidden: { opacity: 0, y: -20 },
+                        visible: { 
+                            opacity: 1, 
+                            y: 0,
+                            transition: { duration: 0.8, ease: "easeInOut" }
+                        }
+                    }}
                     className="text-center pt-10 sm:pt-20"
                 >
                     <h1 className={`text-4xl md:text-5xl font-light tracking-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
@@ -305,19 +430,44 @@ export default function AgenticSearchPage() {
                     <p className={`mt-4 text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                         Describe the item in detail. The more information, the better.
                     </p>
+                    
+                    {/* Glowing horizontal line - more minimalistic */}
+                    <motion.div 
+                        className="relative mx-auto mt-8 w-full max-w-md overflow-hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
+                    >
+                        <motion.div
+                            className={`h-px bg-gradient-to-r from-transparent ${isDark ? 'via-blue-400/70' : 'via-blue-500/60'} to-transparent`}
+                            initial={{ width: 0 }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
+                        />
+                        <motion.div 
+                            className={`absolute inset-0 h-px bg-gradient-to-r from-transparent ${isDark ? 'via-purple-400/50' : 'via-purple-500/40'} to-transparent blur-sm`}
+                            animate={{ x: ["-100%", "100%"] }}
+                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                    </motion.div>
                 </motion.div>
 
                 {/* Chat Input Section */}
                 <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2, ease: "easeInOut" }}
+                    variants={{
+                        hidden: { opacity: 0, y: 50 },
+                        visible: { 
+                            opacity: 1, 
+                            y: 0,
+                            transition: { duration: 0.8, ease: "easeInOut" }
+                        }
+                    }}
                     className="w-full pb-4"
                 >
-                    <div className={`w-full rounded-2xl border overflow-hidden transition-all duration-300 shadow-2xl shadow-black/10 ${
+                    <div className={`w-full rounded-2xl border overflow-hidden transition-all duration-300 shadow-lg ${
                         isDark 
-                            ? 'bg-gray-900/50 border-gray-700/50 backdrop-blur-xl focus-within:border-blue-400/80 focus-within:ring-2 focus-within:ring-blue-400/40' 
-                            : 'bg-white/70 border-gray-200/80 backdrop-blur-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/40'
+                            ? 'bg-gray-900/40 border-gray-800/40 backdrop-blur-xl focus-within:border-blue-400/60 focus-within:ring-1 focus-within:ring-blue-400/30' 
+                            : 'bg-white/60 border-gray-200/60 backdrop-blur-xl focus-within:border-blue-500/60 focus-within:ring-1 focus-within:ring-blue-500/30'
                     }`}>
                         
                         <AnimatePresence>
@@ -399,7 +549,7 @@ export default function AgenticSearchPage() {
                         </div>
                     </div>
                 </motion.div>
-            </div>
+            </motion.div>
 
             <AnimatePresence>
                 {isSending && (
@@ -421,7 +571,10 @@ export default function AgenticSearchPage() {
                         </div>
                     </motion.div>
                 )}
+                
+                {/* Recording indicator overlay */}
+                {isRecording && <RecordingIndicator onStop={stopRecording} audioLevel={audioLevel} />}
             </AnimatePresence>
-        </div>
+        </motion.div>
     );
 }
