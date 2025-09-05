@@ -6,6 +6,7 @@ import { Search, CheckCircle, Zap, Globe, Shield, Star, ArrowRight, Users, BarCh
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useSearchRedirect } from '../hooks/useAuthRedirect';
 
 // GSAP plugin registration will be done in useEffect to ensure proper timing
 
@@ -216,6 +217,12 @@ const useCounter = (end: number, duration: number = 2000, start: number = 0): Co
 
 // Hero section with Aurora Background
 const HeroSection = () => {
+  const { handleProtectedAction, isSignedIn } = useSearchRedirect();
+
+  const handleStartSearch = useCallback(() => {
+    handleProtectedAction('/search');
+  }, [handleProtectedAction]);
+
   return (
     <AuroraBackground>
       <motion.div
@@ -267,11 +274,12 @@ const HeroSection = () => {
           transition={{ delay: 0.9, duration: 0.8 }}
         >
           <motion.button
+            onClick={handleStartSearch}
             className="px-8 py-3 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-full font-medium flex items-center justify-center gap-2 group hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            Start Free Search
+            {isSignedIn ? 'Continue Search' : 'Start Free Search'}
             <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
           </motion.button>
           
@@ -943,6 +951,12 @@ const HowItWorksSection = () => {
 
 // Enhanced CTA with cosmic convergence
 const CTASection = () => {
+  const { handleProtectedAction, isSignedIn } = useSearchRedirect();
+
+  const handleStartSearch = useCallback(() => {
+    handleProtectedAction('/search');
+  }, [handleProtectedAction]);
+
   return (
     <section className="relative py-32 bg-gradient-to-b from-zinc-50/45 via-zinc-50/40 via-indigo-50/30 to-zinc-200/95 dark:from-zinc-900/45 dark:via-zinc-900/40 dark:via-indigo-950/18 dark:to-zinc-800/95 overflow-hidden">
       {/* Enhanced flowing aurora conclusion */}
@@ -1014,11 +1028,12 @@ const CTASection = () => {
             transition={{ delay: 0.5, duration: 0.8 }}
           >
             <motion.button
+              onClick={handleStartSearch}
               className="px-10 py-4 bg-white/80 dark:bg-zinc-100/90 text-zinc-900 rounded-2xl font-light tracking-wide backdrop-blur-sm border border-white/50 hover:bg-white/95 hover:scale-105 transition-all duration-500 shadow-lg hover:shadow-blue-500/20"
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
             >
-              Start Free Search
+              {isSignedIn ? 'Continue Search' : 'Start Free Search'}
             </motion.button>
             
             <motion.button
