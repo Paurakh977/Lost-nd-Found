@@ -5,11 +5,20 @@ import Navbar from './Navbar';
 
 export default function ConditionalNavbar() {
   const pathname = usePathname();
-  
-  // Don't show navbar on auth pages
-  if (pathname?.startsWith('/sign-in') || pathname?.startsWith('/sign-up')) {
+
+  // Paths where navbar should not appear
+  const hiddenPaths = [
+    '/sign-in',
+    '/sign-up',
+    '/admin/dashboard',
+    '/officer/dashboard',
+    '/institution/dashboard',
+  ];
+
+  // Check if pathname starts with any of the hidden paths
+  if (hiddenPaths.some(path => pathname?.startsWith(path))) {
     return null;
   }
-  
+
   return <Navbar />;
 }

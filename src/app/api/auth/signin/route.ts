@@ -17,16 +17,23 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Find user by email (check isActive in query)
+    // Find user by email (don't check isActive yet)
     const user = await User.findOne({ 
-      email: email.toLowerCase(), 
-      isActive: true 
+      email: email.toLowerCase()
     });
     
     if (!user) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
+      );
+    }
+    
+    // Check if user is active
+    if (!user.isActive) {
+      return NextResponse.json(
+        { error: 'Your account has been deactivated. Please contact an administrator.' },
+        { status: 403 }
       );
     }
     

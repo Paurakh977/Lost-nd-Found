@@ -18,6 +18,7 @@ import {
 import { useRouter } from 'next/navigation';
 import CreateUserModal from '../../../components/CreateUserModal';
 import UserActionsDropdown from '../../../components/UserActionsDropdown';
+import { ToastContainer, ToastType } from '../../../components/Toast';
 
 interface User {
   id: string;
@@ -55,7 +56,24 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [toasts, setToasts] = useState<Array<{
+    id: string;
+    type: ToastType;
+    title: string;
+    message?: string;
+    duration?: number;
+  }>>([]);
   const router = useRouter();
+
+  // Toast helper functions
+  const addToast = (type: ToastType, title: string, message?: string, duration?: number) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, type, title, message, duration }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   useEffect(() => {
     // Get current user from localStorage
@@ -146,7 +164,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteUser = async (user: User) => {
-    if (confirm(`Are you sure you want to delete ${user.firstName} ${user.lastName}?`)) {
+    if (confirm(`Are you sure you want to delete ${user.firstName} ${user.lastName}? This action cannot be undone.`)) {
       try {
         const response = await fetch(`/api/admin/users/${user.id}`, {
           method: 'DELETE',
@@ -154,19 +172,21 @@ export default function AdminDashboard() {
         });
         
         if (response.ok) {
+          addToast('success', 'User Deleted', `${user.firstName} ${user.lastName} has been permanently deleted.`);
           fetchUsers(); // Refresh the list
         } else {
           const data = await response.json();
-          alert(data.error || 'Failed to delete user');
+          addToast('error', 'Delete Failed', data.error || 'Failed to delete user');
         }
       } catch (error) {
         console.error('Error deleting user:', error);
-        alert('An error occurred while deleting the user');
+        addToast('error', 'Delete Failed', 'An error occurred while deleting the user');
       }
     }
   };
 
   const handleToggleUserStatus = async (user: User) => {
+    console.log('Toggling status for user:', user.id, 'Current status:', user.isActive);
     try {
       const response = await fetch(`/api/admin/users/${user.id}`, {
         method: 'PUT',
@@ -179,21 +199,36 @@ export default function AdminDashboard() {
         }),
       });
       
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
+        const action = user.isActive ? 'deactivated' : 'activated';
+        addToast('success', 'User Status Updated', `${user.firstName} ${user.lastName} has been ${action}.`);
         fetchUsers(); // Refresh the list
       } else {
         const data = await response.json();
-        alert(data.error || 'Failed to update user status');
+        console.error('Error response:', data);
+        addToast('error', 'Status Update Failed', data.error || 'Failed to update user status');
       }
     } catch (error) {
       console.error('Error updating user status:', error);
-      alert('An error occurred while updating the user status');
+      addToast('error', 'Status Update Failed', 'An error occurred while updating the user status');
     }
   };
 
   const handleModalClose = () => {
     setShowCreateModal(false);
     setEditingUser(null);
+  };
+
+  const handleUserCreated = () => {
+    fetchUsers();
+    addToast('success', 'User Created', 'New user has been successfully created.');
+  };
+
+  const handleUserUpdated = () => {
+    fetchUsers();
+    addToast('success', 'User Updated', 'User information has been successfully updated.');
   };
 
   const getRoleIcon = (role: string) => {
@@ -410,73 +445,73 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department/Institution</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
-                            {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                          </span>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500">{user.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        {getRoleIcon(user.role)}
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(user.role)}`}>
-                          {user.role}
+          
+        <div className="overflow-x-auto overflow-y-visible">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department/Institution</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-gray-600">
+                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.department || user.institutionName || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.isActive 
-                          ? 'bg-green-100 text-green-800 border border-green-200' 
-                          : 'bg-red-100 text-red-800 border border-red-200'
-                      }`}>
-                        {user.isActive ? 'Active' : 'Inactive'}
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.firstName} {user.lastName}
+                        </div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      {getRoleIcon(user.role)}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(user.role)}`}>
+                        {user.role}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <UserActionsDropdown
-                        user={user}
-                        onEdit={handleEditUser}
-                        onDelete={handleDeleteUser}
-                        onToggleStatus={handleToggleUserStatus}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.department || user.institutionName || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      user.isActive 
+                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                        : 'bg-red-100 text-red-800 border border-red-200'
+                    }`}>
+                      {user.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <UserActionsDropdown
+                      user={user}
+                      onEdit={handleEditUser}
+                      onDelete={handleDeleteUser}
+                      onToggleStatus={handleToggleUserStatus}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         </motion.div>
       </main>
 
@@ -484,9 +519,13 @@ export default function AdminDashboard() {
       <CreateUserModal
         isOpen={showCreateModal}
         onClose={handleModalClose}
-        onUserCreated={fetchUsers}
+        onUserCreated={handleUserCreated}
+        onUserUpdated={handleUserUpdated}
         editingUser={editingUser}
       />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

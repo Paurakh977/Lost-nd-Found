@@ -104,6 +104,8 @@ export async function PUT(
     const { id } = await params;
     const updateData = await request.json();
     
+    console.log('Updating user:', id, 'with data:', updateData);
+    
     // Find user
     const user = await User.findById(id);
     if (!user) {
@@ -139,6 +141,8 @@ export async function PUT(
       updateData,
       { new: true, runValidators: true }
     ).select('-password').populate('createdBy', 'firstName lastName email');
+    
+    console.log('Updated user:', updatedUser);
     
     // Transform user response to include id field
     const transformedUser = {
@@ -219,8 +223,8 @@ export async function DELETE(
       }
     }
     
-    // Soft delete - just deactivate the user
-    await User.findByIdAndUpdate(id, { isActive: false });
+    // Hard delete - actually remove the user from database
+    await User.findByIdAndDelete(id);
     
     return NextResponse.json({
       success: true,

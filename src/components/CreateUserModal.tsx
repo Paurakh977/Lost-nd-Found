@@ -9,6 +9,7 @@ interface CreateUserModalProps {
   onClose: () => void;
   onUserCreated: () => void;
   editingUser?: User | null;
+  onUserUpdated?: () => void;
 }
 
 interface User {
@@ -34,7 +35,7 @@ interface FormData {
   institutionName: string;
 }
 
-export default function CreateUserModal({ isOpen, onClose, onUserCreated, editingUser }: CreateUserModalProps) {
+export default function CreateUserModal({ isOpen, onClose, onUserCreated, editingUser, onUserUpdated }: CreateUserModalProps) {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -131,7 +132,11 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
       const data = await response.json();
 
       if (response.ok) {
-        onUserCreated();
+        if (editingUser) {
+          onUserUpdated?.();
+        } else {
+          onUserCreated();
+        }
         onClose();
         // Reset form
         setFormData({
