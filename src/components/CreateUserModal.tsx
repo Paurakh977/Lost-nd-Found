@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Eye, EyeOff, User, Mail, Lock, Building, Briefcase } from 'lucide-react';
+import { X, Eye, EyeOff, User, Mail, Lock, Building, Briefcase, MapPin } from 'lucide-react';
+import MapLocationSelector from './MapLocationSelector';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -23,6 +24,17 @@ interface User {
   isActive: boolean;
   createdAt: string;
   lastLogin?: string;
+  address?: {
+    province?: string;
+    district?: string;
+    municipality?: string;
+    ward?: string;
+  };
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+  };
 }
 
 interface FormData {
@@ -33,6 +45,17 @@ interface FormData {
   role: 'admin' | 'officer' | 'institutional';
   department: string;
   institutionName: string;
+  address: {
+    province: string;
+    district: string;
+    municipality: string;
+    ward: string;
+  };
+  location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
 }
 
 export default function CreateUserModal({ isOpen, onClose, onUserCreated, editingUser, onUserUpdated }: CreateUserModalProps) {
@@ -44,10 +67,85 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
     role: 'officer',
     department: '',
     institutionName: '',
+    address: {
+      province: '',
+      district: '',
+      municipality: '',
+      ward: '',
+    },
+    location: {
+      latitude: 0,
+      longitude: 0,
+      address: '',
+    },
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<FormData & { general: string }>>({});
+  
+  // Address data state
+  const [provinces, setProvinces] = useState<string[]>([]);
+  const [districts, setDistricts] = useState<string[]>([]);
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
+  const [wards, setWards] = useState<string[]>([]);
+  const [addressData, setAddressData] = useState<any>(null);
+
+  // Load address data
+  useEffect(() => {
+    const loadAddressData = async () => {
+      try {
+        const [provincesRes, districtsRes, provinceDistrictsRes, districtMunicipalitiesRes, municipalityWardsRes] = await Promise.all([
+          fetch('/address/all-provinces.json').then(res => res.json()),
+          fetch('/address/all-districts.json').then(res => res.json()),
+          fetch('/address/map-province-districts.json').then(res => res.json()),
+          fetch('/address/map-districts-municipalities.json').then(res => res.json()),
+          fetch('/address/map-municipalities-wards.json').then(res => res.json()),
+        ]);
+        
+        setProvinces(provincesRes);
+        setAddressData({
+          districts: districtsRes,
+          provinceDistricts: provinceDistrictsRes,
+          districtMunicipalities: districtMunicipalitiesRes,
+          municipalityWards: municipalityWardsRes,
+        });
+      } catch (error) {
+        console.error('Error loading address data:', error);
+      }
+    };
+    
+    loadAddressData();
+  }, []);
+
+  // Update districts when province changes
+  useEffect(() => {
+    if (formData.address.province && addressData?.provinceDistricts) {
+      const provinceDistricts = addressData.provinceDistricts[formData.address.province] || [];
+      setDistricts(provinceDistricts);
+    } else {
+      setDistricts([]);
+    }
+  }, [formData.address.province, addressData]);
+
+  // Update municipalities when district changes
+  useEffect(() => {
+    if (formData.address.district && addressData?.districtMunicipalities) {
+      const districtMunicipalities = addressData.districtMunicipalities[formData.address.district] || [];
+      setMunicipalities(districtMunicipalities);
+    } else {
+      setMunicipalities([]);
+    }
+  }, [formData.address.district, addressData]);
+
+  // Update wards when municipality changes
+  useEffect(() => {
+    if (formData.address.municipality && addressData?.municipalityWards) {
+      const municipalityWards = addressData.municipalityWards[formData.address.municipality] || [];
+      setWards(municipalityWards);
+    } else {
+      setWards([]);
+    }
+  }, [formData.address.municipality, addressData]);
 
   // Populate form when editing
   useEffect(() => {
@@ -60,6 +158,17 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
         role: editingUser.role,
         department: editingUser.department || '',
         institutionName: editingUser.institutionName || '',
+        address: {
+          province: editingUser.address?.province || '',
+          district: editingUser.address?.district || '',
+          municipality: editingUser.address?.municipality || '',
+          ward: editingUser.address?.ward || '',
+        },
+        location: {
+          latitude: editingUser.location?.latitude || 0,
+          longitude: editingUser.location?.longitude || 0,
+          address: editingUser.location?.address || '',
+        },
       });
     } else {
       // Reset form for creating new user
@@ -71,6 +180,17 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
         role: 'officer',
         department: '',
         institutionName: '',
+        address: {
+          province: '',
+          district: '',
+          municipality: '',
+          ward: '',
+        },
+        location: {
+          latitude: 0,
+          longitude: 0,
+          address: '',
+        },
       });
     }
   }, [editingUser, isOpen]);
@@ -103,6 +223,26 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
     
     if (formData.role === 'institutional' && !formData.institutionName) {
       newErrors.institutionName = 'Institution name is required';
+    }
+    
+    // Validate address for officers and institutional users
+    if (formData.role === 'officer' || formData.role === 'institutional') {
+      const addressErrors: any = {};
+      if (!formData.address.province) addressErrors.province = 'Province is required';
+      if (!formData.address.district) addressErrors.district = 'District is required';
+      if (!formData.address.municipality) addressErrors.municipality = 'Municipality is required';
+      if (!formData.address.ward) addressErrors.ward = 'Ward is required';
+      
+      if (Object.keys(addressErrors).length > 0) {
+        newErrors.address = addressErrors;
+      }
+    }
+    
+    // Validate location for institutional users
+    if (formData.role === 'institutional') {
+      if (!formData.location.latitude || !formData.location.longitude) {
+        newErrors.location = { latitude: 'Location coordinates are required' } as any;
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -147,6 +287,17 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
           role: 'officer',
           department: '',
           institutionName: '',
+          address: {
+            province: '',
+            district: '',
+            municipality: '',
+            ward: '',
+          },
+          location: {
+            latitude: 0,
+            longitude: 0,
+            address: '',
+          },
         });
       } else {
         setErrors({ general: data.error || `Failed to ${editingUser ? 'update' : 'create'} user` });
@@ -164,6 +315,50 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleAddressChange = (field: keyof FormData['address'], value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      address: {
+        province: prev.address.province,
+        district: prev.address.district,
+        municipality: prev.address.municipality,
+        ward: prev.address.ward,
+        [field]: value,
+        // Reset dependent fields when parent changes
+        ...(field === 'province' && { district: '', municipality: '', ward: '' }),
+        ...(field === 'district' && { municipality: '', ward: '' }),
+        ...(field === 'municipality' && { ward: '' }),
+      }
+    }));
+    
+    // Clear address errors
+    if (errors.address) {
+      setErrors(prev => ({ 
+        ...prev, 
+        address: { 
+          ...prev.address, 
+          [field]: undefined 
+        } 
+      } as any));
+    }
+  };
+
+  const handleLocationChange = (location: { latitude: number; longitude: number; address?: string; district?: string }) => {
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        address: location.address || '',
+      }
+    }));
+    
+    // Clear location errors
+    if (errors.location) {
+      setErrors(prev => ({ ...prev, location: undefined }));
     }
   };
 
@@ -362,6 +557,155 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                     {errors.institutionName && (
                       <p className="mt-1 text-xs text-red-600">{errors.institutionName}</p>
                     )}
+                  </div>
+                )}
+
+                {/* Address Information - For officer and institutional users */}
+                {(formData.role === 'officer' || formData.role === 'institutional') && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <MapPin className="w-5 h-5" />
+                      Address Information
+                    </h3>
+                    
+                    {/* Province */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Province *
+                      </label>
+                      <select
+                        value={formData.address.province}
+                        onChange={(e) => handleAddressChange('province', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.address?.province ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select Province</option>
+                        {provinces.map((province) => (
+                          <option key={province} value={province}>
+                            {province}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.address?.province && (
+                        <p className="mt-1 text-xs text-red-600">{errors.address.province}</p>
+                      )}
+                    </div>
+
+                    {/* District */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        District *
+                      </label>
+                      <select
+                        value={formData.address.district}
+                        onChange={(e) => handleAddressChange('district', e.target.value)}
+                        disabled={!formData.address.province}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.address?.district ? 'border-red-300' : 'border-gray-300'
+                        } ${!formData.address.province ? 'bg-gray-100' : ''}`}
+                      >
+                        <option value="">Select District</option>
+                        {districts.map((district) => (
+                          <option key={district} value={district}>
+                            {district}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.address?.district && (
+                        <p className="mt-1 text-xs text-red-600">{errors.address.district}</p>
+                      )}
+                    </div>
+
+                    {/* Municipality */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Municipality *
+                      </label>
+                      <select
+                        value={formData.address.municipality}
+                        onChange={(e) => handleAddressChange('municipality', e.target.value)}
+                        disabled={!formData.address.district}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.address?.municipality ? 'border-red-300' : 'border-gray-300'
+                        } ${!formData.address.district ? 'bg-gray-100' : ''}`}
+                      >
+                        <option value="">Select Municipality</option>
+                        {municipalities.map((municipality) => (
+                          <option key={municipality} value={municipality}>
+                            {municipality}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.address?.municipality && (
+                        <p className="mt-1 text-xs text-red-600">{errors.address.municipality}</p>
+                      )}
+                    </div>
+
+                    {/* Ward */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ward *
+                      </label>
+                      <select
+                        value={formData.address.ward}
+                        onChange={(e) => handleAddressChange('ward', e.target.value)}
+                        disabled={!formData.address.municipality}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.address?.ward ? 'border-red-300' : 'border-gray-300'
+                        } ${!formData.address.municipality ? 'bg-gray-100' : ''}`}
+                      >
+                        <option value="">Select Ward</option>
+                        {wards.map((ward) => (
+                          <option key={ward} value={ward}>
+                            Ward {ward}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.address?.ward && (
+                        <p className="mt-1 text-xs text-red-600">{errors.address.ward}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Location Information - Only for institutional users */}
+                {formData.role === 'institutional' && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <MapPin className="w-5 h-5" />
+                      Institution Location
+                    </h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Location on Map *
+                      </label>
+                      <div className="border rounded-lg overflow-hidden">
+                        <MapLocationSelector
+                          value={{
+                            latitude: formData.location.latitude || undefined,
+                            longitude: formData.location.longitude || undefined,
+                            address: formData.location.address,
+                          }}
+                          onChange={handleLocationChange}
+                        />
+                      </div>
+                      {errors.location && (
+                        <p className="mt-1 text-xs text-red-600">{errors.location.latitude}</p>
+                      )}
+                      
+                      {/* Display selected coordinates */}
+                      {formData.location.latitude && formData.location.longitude && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-600">
+                          <p>Latitude: {formData.location.latitude.toFixed(6)}</p>
+                          <p>Longitude: {formData.location.longitude.toFixed(6)}</p>
+                          {formData.location.address && (
+                            <p>Address: {formData.location.address}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

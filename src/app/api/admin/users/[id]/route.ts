@@ -57,6 +57,8 @@ export async function GET(
       createdAt: user.createdAt,
       lastLogin: user.lastLogin,
       createdBy: user.createdBy,
+      address: user.address,
+      location: user.location,
     };
     
     return NextResponse.json({
@@ -130,6 +132,26 @@ export async function PUT(
       );
     }
     
+    // Validate address fields for officers and institutional users
+    if (updateData.role === 'officer' || updateData.role === 'institutional') {
+      if (!updateData.address || !updateData.address.province || !updateData.address.district || !updateData.address.municipality || !updateData.address.ward) {
+        return NextResponse.json(
+          { error: 'Complete address information (province, district, municipality, ward) is required' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Validate location for institutional users
+    if (updateData.role === 'institutional') {
+      if (!updateData.location || !updateData.location.latitude || !updateData.location.longitude) {
+        return NextResponse.json(
+          { error: 'Location coordinates (latitude, longitude) are required for institutional users' },
+          { status: 400 }
+        );
+      }
+    }
+    
     // Hash password if provided
     if (updateData.password) {
       updateData.password = await hashPassword(updateData.password);
@@ -157,6 +179,8 @@ export async function PUT(
       createdAt: updatedUser.createdAt,
       lastLogin: updatedUser.lastLogin,
       createdBy: updatedUser.createdBy,
+      address: updatedUser.address,
+      location: updatedUser.location,
     };
     
     return NextResponse.json({

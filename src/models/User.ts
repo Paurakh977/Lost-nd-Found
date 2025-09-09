@@ -17,6 +17,19 @@ export interface IUser extends Document {
   department?: string; // For officers
   institutionName?: string; // For institutional users
   permissions?: string[]; // For role-based permissions
+  // Address fields for officers and institutional users
+  address?: {
+    province?: string;
+    district?: string;
+    municipality?: string;
+    ward?: string;
+  };
+  // Location coordinates for institutional users
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    address?: string; // Full address from reverse geocoding
+  };
 }
 
 const UserSchema = new Schema<IUser>({
@@ -78,6 +91,33 @@ const UserSchema = new Schema<IUser>({
   permissions: [{
     type: String,
   }],
+  // Address fields
+  address: {
+    province: {
+      type: String,
+    },
+    district: {
+      type: String,
+    },
+    municipality: {
+      type: String,
+    },
+    ward: {
+      type: String,
+    },
+  },
+  // Location coordinates
+  location: {
+    latitude: {
+      type: Number,
+    },
+    longitude: {
+      type: Number,
+    },
+    address: {
+      type: String,
+    },
+  },
 }, {
   timestamps: true,
 });

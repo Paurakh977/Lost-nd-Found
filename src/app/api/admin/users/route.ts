@@ -73,6 +73,8 @@ export async function GET(request: NextRequest) {
       createdAt: user.createdAt,
       lastLogin: user.lastLogin,
       createdBy: user.createdBy,
+      address: user.address,
+      location: user.location,
     }));
     
     return NextResponse.json({
@@ -128,7 +130,9 @@ export async function POST(request: NextRequest) {
       role, 
       department, 
       institutionName,
-      permissions 
+      permissions,
+      address,
+      location
     } = await request.json();
     
     // Validation
@@ -160,6 +164,26 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Validate address fields for officers and institutional users
+    if (role === 'officer' || role === 'institutional') {
+      if (!address || !address.province || !address.district || !address.municipality || !address.ward) {
+        return NextResponse.json(
+          { error: 'Complete address information (province, district, municipality, ward) is required' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Validate location for institutional users
+    if (role === 'institutional') {
+      if (!location || !location.latitude || !location.longitude) {
+        return NextResponse.json(
+          { error: 'Location coordinates (latitude, longitude) are required for institutional users' },
+          { status: 400 }
+        );
+      }
+    }
+    
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
@@ -182,6 +206,8 @@ export async function POST(request: NextRequest) {
       department: role === 'officer' ? department : undefined,
       institutionName: role === 'institutional' ? institutionName : undefined,
       permissions: permissions || [],
+      address: address || undefined,
+      location: location || undefined,
       createdBy: payload.userId,
     });
     
@@ -205,6 +231,8 @@ export async function POST(request: NextRequest) {
       createdAt: userResponse.createdAt,
       lastLogin: userResponse.lastLogin,
       createdBy: userResponse.createdBy,
+      address: userResponse.address,
+      location: userResponse.location,
     };
     
     return NextResponse.json({
