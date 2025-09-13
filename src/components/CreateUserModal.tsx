@@ -382,6 +382,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
+              <div className="[&_*]:!text-gray-900 [&_input]:!text-gray-900 [&_select]:!text-gray-900 [&_option]:!text-gray-900 [&_label]:!text-gray-700 [&_span]:!text-gray-600 [&_p]:!text-gray-600 [&_h3]:!text-gray-900 [&_h4]:!text-gray-900 [&_button]:!text-gray-700">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">
                   {editingUser ? 'Edit User' : 'Create New User'}
@@ -730,6 +731,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                   </button>
                 </div>
               </form>
+              </div>
             </motion.div>
           </div>
         </div>
