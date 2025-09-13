@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Search, 
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import OfficerNavbar from './OfficerNavbar';
+import Lenis from 'lenis';
 
 interface OfficerStats {
   totalCases: number;
@@ -43,9 +44,10 @@ interface RecentActivity {
   title: string;
   description: string;
   time: string;
-  status: 'pending' | 'active' | 'resolved' | 'verified';
+  status: 'pending' | 'active' | 'closed';
   location?: string;
   priority: 'low' | 'medium' | 'high';
+  imageUrl: string;
 }
 
 interface PendingCase {
@@ -57,6 +59,7 @@ interface PendingCase {
   timeAgo: string;
   priority: 'low' | 'medium' | 'high';
   status: string;
+  imageUrl: string;
 }
 
 export default function OfficerDashboard() {
@@ -76,6 +79,23 @@ export default function OfficerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  // Search + Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'active' | 'closed'>('all');
+
+  const filteredRecentActivity = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return recentActivity.filter((a) => {
+      const matchesQuery = q
+        ? [a.title, a.description, a.location ?? '', a.type].join(' ').toLowerCase().includes(q)
+        : true;
+      const matchesStatus = statusFilter === 'all' ? true : a.status === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [recentActivity, searchQuery, statusFilter]);
+
+  // Smooth scroll with Lenis
+  const lenisRef = useRef<Lenis | null>(null);
   useEffect(() => {
     // Get current user from localStorage or mock data
     const mockUser = {
@@ -100,6 +120,7 @@ export default function OfficerDashboard() {
         weeklyGrowth: 12.5
       });
 
+      // Update the recent activity image URLs
       setRecentActivity([
         {
           id: '1',
@@ -109,7 +130,8 @@ export default function OfficerDashboard() {
           time: '2 hours ago',
           status: 'pending',
           location: 'Central Mall',
-          priority: 'high'
+          priority: 'high',
+          imageUrl: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=80&h=80&fit=crop&crop=center'
         },
         {
           id: '2',
@@ -119,7 +141,8 @@ export default function OfficerDashboard() {
           time: '4 hours ago',
           status: 'active',
           location: 'Metro Station',
-          priority: 'medium'
+          priority: 'medium',
+          imageUrl: 'https://plus.unsplash.com/premium_photo-1681589453747-53fd893fa420?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
         },
         {
           id: '3',
@@ -128,19 +151,24 @@ export default function OfficerDashboard() {
           description: 'Owner claiming Apple Watch Series 9',
           time: '6 hours ago',
           status: 'pending',
-          priority: 'high'
+          location: 'Metro Station',
+          priority: 'high',
+          imageUrl: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=80&h=80&fit=crop&crop=center'
         },
         {
           id: '4',
           type: 'resolved',
-          title: 'Case Resolved',
+          title: 'Case Closed',
           description: 'Laptop returned to original owner',
           time: '1 day ago',
-          status: 'resolved',
-          priority: 'low'
+          status: 'closed',
+          location: 'High School',
+          priority: 'low',
+          imageUrl: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=80&h=80&fit=crop&crop=center'
         }
       ]);
 
+      // Update the pending cases image URLs
       setPendingCases([
         {
           id: 'CASE-2024-001',
@@ -150,7 +178,8 @@ export default function OfficerDashboard() {
           location: 'University Campus',
           timeAgo: '3 hours ago',
           priority: 'high',
-          status: 'Under Investigation'
+          status: 'Under Investigation',
+          imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=80&h=80&fit=crop&crop=center'
         },
         {
           id: 'CASE-2024-002',
@@ -160,7 +189,8 @@ export default function OfficerDashboard() {
           location: 'Shopping Center',
           timeAgo: '5 hours ago',
           priority: 'medium',
-          status: 'Pending Match'
+          status: 'Pending Match',
+          imageUrl: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?w=80&h=80&fit=crop&crop=center'
         },
         {
           id: 'CASE-2024-003',
@@ -170,7 +200,8 @@ export default function OfficerDashboard() {
           location: 'City Park',
           timeAgo: '1 day ago',
           priority: 'high',
-          status: 'Verification Required'
+          status: 'Verification Required',
+          imageUrl: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=80&h=80&fit=crop&crop=center'
         }
       ]);
 
@@ -376,20 +407,33 @@ export default function OfficerDashboard() {
             transition={{ delay: 0.5, duration: 0.6 }}
           >
             <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="text-xl font-semibold text-gray-900">Recent Activity</h3>
-                <div className="flex items-center space-x-2">
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <Filter className="w-4 h-4 text-gray-500" />
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreVertical className="w-4 h-4 text-gray-500" />
-                  </button>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search activities..."
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="active">Active</option>
+                    <option value="closed">Closed</option>
+                  </select>
                 </div>
               </div>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              {recentActivity.map((activity, index) => (
+              {filteredRecentActivity.map((activity, index) => (
                 <motion.div
                   key={activity.id}
                   className="p-6 border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer"
@@ -399,17 +443,20 @@ export default function OfficerDashboard() {
                   whileHover={{ x: 5 }}
                 >
                   <div className="flex items-start space-x-4">
-                    <div className={`flex-shrink-0 w-10 h-10 ${getPriorityColor(activity.priority)} rounded-xl flex items-center justify-center`}>
-                      {getTypeIcon(activity.type)}
-                    </div>
+                    <img src={activity.imageUrl} alt={activity.title} className="flex-shrink-0 w-10 h-10 rounded-xl object-cover" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h4 className="text-sm font-semibold text-gray-900 truncate">
                           {activity.title}
                         </h4>
-                        <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                          {activity.time}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(activity.priority)}`}>
+                            {activity.priority}
+                          </span>
+                          <span className="text-xs text-gray-500 flex-shrink-0">
+                            {activity.time}
+                          </span>
+                        </div>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
                       <div className="flex items-center space-x-3">
@@ -422,7 +469,7 @@ export default function OfficerDashboard() {
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                           activity.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                          activity.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                          activity.status === 'closed' ? 'bg-green-100 text-green-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
                           {activity.status}
@@ -460,13 +507,16 @@ export default function OfficerDashboard() {
                   whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-gray-900 truncate mb-1">
-                        {case_.title}
-                      </h4>
-                      <p className="text-xs text-gray-600 mb-2">
-                        Case ID: {case_.id}
-                      </p>
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <img src={case_.imageUrl} alt={case_.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-gray-900 truncate mb-1">
+                          {case_.title}
+                        </h4>
+                        <p className="text-xs text-gray-600 mb-2">
+                          Case ID: {case_.id}
+                        </p>
+                      </div>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(case_.priority)}`}>
                       {case_.priority}
