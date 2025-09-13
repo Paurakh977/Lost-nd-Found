@@ -12,7 +12,8 @@ export default function ConditionalNavbar() {
     '/sign-up',
     '/admin/dashboard',
     '/officer/dashboard',
-    '/institution/dashboard',
+    '/institutional/dashboard',
+    
   ];
 
   // Check if pathname starts with any of the hidden paths
