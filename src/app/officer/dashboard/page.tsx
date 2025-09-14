@@ -82,6 +82,10 @@ export default function OfficerDashboard() {
   // Search + Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'active' | 'closed'>('all');
+  
+  // Separate filter states for Recent Activity and Urgent Cases
+  const [activityTypeFilter, setActivityTypeFilter] = useState<'all' | 'lost' | 'found' | 'verification'>('all');
+  const [urgentCaseTypeFilter, setUrgentCaseTypeFilter] = useState<'all' | 'lost' | 'found' | 'verification'>('all');
 
   const filteredRecentActivity = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -90,9 +94,16 @@ export default function OfficerDashboard() {
         ? [a.title, a.description, a.location ?? '', a.type].join(' ').toLowerCase().includes(q)
         : true;
       const matchesStatus = statusFilter === 'all' ? true : a.status === statusFilter;
-      return matchesQuery && matchesStatus;
+      const matchesType = activityTypeFilter === 'all' ? true : a.type === activityTypeFilter;
+      return matchesQuery && matchesStatus && matchesType;
     });
-  }, [recentActivity, searchQuery, statusFilter]);
+  }, [recentActivity, searchQuery, statusFilter, activityTypeFilter]);
+
+  const filteredPendingCases = useMemo(() => {
+    return pendingCases.filter((c) => {
+      return urgentCaseTypeFilter === 'all' ? true : c.type === urgentCaseTypeFilter;
+    });
+  }, [pendingCases, urgentCaseTypeFilter]);
 
   // Smooth scroll with Lenis
   const lenisRef = useRef<Lenis | null>(null);
@@ -409,8 +420,8 @@ export default function OfficerDashboard() {
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="text-xl font-semibold text-gray-900">Recent Activity</h3>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <div className="relative w-full sm:w-64">
+                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                  <div className="relative w-full sm:w-64 mb-2 sm:mb-0">
                     <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       value={searchQuery}
@@ -419,16 +430,36 @@ export default function OfficerDashboard() {
                       className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="active">Active</option>
-                    <option value="closed">Closed</option>
-                  </select>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1 bg-gray-50 rounded-md border border-gray-100">
+                      <Filter className="w-3.5 h-3.5 text-gray-400 ml-2" />
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                        className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 focus:outline-none appearance-none"
+                        style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
+                      >
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="active">Active</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-1 bg-gray-50 rounded-md border border-gray-100">
+                      <Package className="w-3.5 h-3.5 text-gray-400 ml-2" />
+                      <select
+                        value={activityTypeFilter}
+                        onChange={(e) => setActivityTypeFilter(e.target.value as any)}
+                        className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 focus:outline-none appearance-none"
+                        style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
+                      >
+                        <option value="all">All Types</option>
+                        <option value="lost">Lost Items</option>
+                        <option value="found">Found Items</option>
+                        <option value="verification">Verification</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -474,6 +505,21 @@ export default function OfficerDashboard() {
                         }`}>
                           {activity.status}
                         </span>
+                        <span className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          activity.type === 'lost' ? 'bg-red-50 text-red-700' :
+                          activity.type === 'found' ? 'bg-green-50 text-green-700' :
+                          activity.type === 'verification' ? 'bg-purple-50 text-purple-700' :
+                          activity.type === 'resolved' ? 'bg-blue-50 text-blue-700' :
+                          'bg-gray-50 text-gray-700'
+                        }`}>
+                          {getTypeIcon(activity.type)}
+                          <span className="ml-1">
+                            {activity.type === 'lost' ? 'Lost Item' :
+                             activity.type === 'found' ? 'Found Item' :
+                             activity.type === 'verification' ? 'Verification' :
+                             activity.type === 'resolved' ? 'Resolved' : activity.type}
+                          </span>
+                        </span>
                       </div>
                     </div>
                     <button className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -493,11 +539,29 @@ export default function OfficerDashboard() {
             transition={{ delay: 0.6, duration: 0.6 }}
           >
             <div className="p-6 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Urgent Cases</h3>
-              <p className="text-sm text-gray-600">Requires immediate attention</p>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Urgent Cases</h3>
+                  <p className="text-sm text-gray-600">Requires immediate attention</p>
+                </div>
+                <div className="flex items-center gap-1 bg-gray-50 rounded-md border border-gray-100">
+                  <Package className="w-3.5 h-3.5 text-gray-400 ml-2" />
+                  <select
+                    value={urgentCaseTypeFilter}
+                    onChange={(e) => setUrgentCaseTypeFilter(e.target.value as any)}
+                    className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 focus:outline-none appearance-none"
+                    style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
+                  >
+                    <option value="all">All Types</option>
+                    <option value="lost">Lost Items</option>
+                    <option value="found">Found Items</option>
+                    <option value="verification">Verification</option>
+                  </select>
+                </div>
+              </div>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              {pendingCases.map((case_, index) => (
+              {filteredPendingCases.map((case_, index) => (
                 <motion.div
                   key={case_.id}
                   className="p-4 border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer"
@@ -540,7 +604,22 @@ export default function OfficerDashboard() {
                   
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-700">{case_.status}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-medium text-gray-700">{case_.status}</span>
+                        <span className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          case_.type === 'lost' ? 'bg-red-50 text-red-700' :
+                          case_.type === 'found' ? 'bg-green-50 text-green-700' :
+                          case_.type === 'verification' ? 'bg-purple-50 text-purple-700' :
+                          'bg-gray-50 text-gray-700'
+                        }`}>
+                          {getTypeIcon(case_.type)}
+                          <span className="ml-1">
+                            {case_.type === 'lost' ? 'Lost Item' :
+                             case_.type === 'found' ? 'Found Item' :
+                             case_.type === 'verification' ? 'Verification' : case_.type}
+                          </span>
+                        </span>
+                      </div>
                       <div className="flex items-center space-x-1">
                         <motion.button
                           className="p-1 hover:bg-green-100 rounded text-green-600 transition-colors"
