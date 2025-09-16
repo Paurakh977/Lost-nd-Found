@@ -20,11 +20,43 @@ export default function RefinedMinimalistLogin() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Redirect if user is already signed in
+  // Redirect if user is already signed in (Clerk or Custom)
   useEffect(() => {
+    // Check Clerk authentication
     if (isSignedIn) {
       const redirectUrl = searchParams.get('redirect_url') || '/';
       router.replace(redirectUrl);
+      return;
+    }
+
+    // Check custom authentication
+    const customUser = localStorage.getItem('customUser');
+    if (customUser) {
+      try {
+        const userData = JSON.parse(customUser);
+        const redirectUrl = searchParams.get('redirect_url');
+        let dashboardUrl = '/';
+        
+        switch (userData.role) {
+          case 'admin':
+            dashboardUrl = '/admin/dashboard';
+            break;
+          case 'officer':
+            dashboardUrl = '/officer/dashboard';
+            break;
+          case 'institutional':
+            dashboardUrl = '/institutional/dashboard';
+            break;
+          default:
+            dashboardUrl = '/';
+        }
+        
+        // Use hard redirect for custom users to ensure proper navigation
+        window.location.href = redirectUrl || dashboardUrl;
+      } catch (error) {
+        // Invalid stored user data, clear it
+        localStorage.removeItem('customUser');
+      }
     }
   }, [isSignedIn, router, searchParams]);
 
@@ -56,27 +88,86 @@ export default function RefinedMinimalistLogin() {
     }
 
     try {
-      // Start the sign-in process with Clerk
-      const result = await signIn.create({
+      // Try Clerk authentication first
+      console.log('Attempting Clerk authentication...');
+      const clerkResult = await signIn.create({
         identifier: email,
         password: password,
       });
       
       // Check the status of the sign-in
-      if (result.status === 'complete') {
-        // Sign-in was successful, set the active session
-        await setActive({ session: result.createdSessionId });
+      if (clerkResult.status === 'complete') {
+        // Clerk sign-in was successful, set the active session
+        await setActive({ session: clerkResult.createdSessionId });
         
         // Get the redirect URL from search params or default to '/'
         const redirectUrl = searchParams.get('redirect_url') || '/';
         router.push(redirectUrl);
+        return;
       } else {
         // Handle 2FA or other cases
         setErrors({ general: 'Sign in requires additional steps. Please continue in the flow.' });
+        return;
       }
-    } catch (err: any) {
-      console.error('Sign-in error:', err);
-      setErrors({ general: err.errors?.[0]?.message || 'Invalid email or password. Please try again.' });
+    } catch (clerkError: any) {
+      console.log('Clerk authentication failed, trying custom auth...', clerkError);
+      
+      // If Clerk fails, try custom authentication
+      try {
+        const customAuthResponse = await fetch('/api/auth/signin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        });
+
+        const customAuthData = await customAuthResponse.json();
+
+        if (customAuthResponse.ok && customAuthData.success) {
+          // Custom auth successful
+          console.log('Custom authentication successful:', customAuthData.user);
+          
+          // Store user data in localStorage for client-side access
+          localStorage.setItem('customUser', JSON.stringify(customAuthData.user));
+          
+          // Redirect based on user role - use replace instead of push to avoid back button issues
+          const redirectUrl = searchParams.get('redirect_url');
+          let dashboardUrl = '/';
+          
+          switch (customAuthData.user.role) {
+            case 'admin':
+              dashboardUrl = '/admin/dashboard';
+              break;
+            case 'officer':
+              dashboardUrl = '/officer/dashboard';
+              break;
+            case 'institutional':
+              dashboardUrl = '/institutional/dashboard';
+              break;
+            default:
+              dashboardUrl = '/';
+          }
+          
+          // Use redirect URL if provided, otherwise use role-based dashboard
+          // Force a hard redirect to ensure proper navigation
+          window.location.href = redirectUrl || dashboardUrl;
+          return;
+        } else {
+          // Both authentications failed
+          setErrors({ 
+            general: customAuthData.error || 'Invalid email or password. Please try again.' 
+          });
+        }
+      } catch (customError) {
+        console.error('Custom authentication error:', customError);
+        setErrors({ 
+          general: 'Authentication failed. Please check your credentials and try again.' 
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +197,7 @@ export default function RefinedMinimalistLogin() {
   };
   
   // If user is already signed in and we're in the process of redirecting, show a loading state
-  if (isLoaded && isSignedIn) {
+  if ((isLoaded && isSignedIn) || (typeof window !== 'undefined' && localStorage.getItem('customUser'))) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center">
         <div className="text-center">
