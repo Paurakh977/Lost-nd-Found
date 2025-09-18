@@ -8,6 +8,8 @@ const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/profile(.*)',
   '/settings(.*)',
+  // Protect agent proxy API so we always have identity server-side
+  '/api/agent(.*)'
 ])
 
 // Define routes that require admin access
