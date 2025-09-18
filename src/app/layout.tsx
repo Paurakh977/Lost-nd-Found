@@ -28,8 +28,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GOTUS",
   description: "Global Online Tracking for Unclaimed Stuff",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
   icons: {
-    icon: '/Logo.png', 
+    icon: "/Logo.png",
+    apple: "/icons/icon-192x192.png",
   },
 };
 
