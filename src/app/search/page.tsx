@@ -201,8 +201,8 @@ const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: ()
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
-            className={`flex items-center gap-3 w-full p-3 rounded-xl ${
-                isDark ? 'bg-white/5 border border-white/10' : 'bg-gray-900/5 border border-gray-200/50'
+            className={`flex items-center gap-2 w-full p-2 rounded-lg ${
+                isDark ? 'bg-neutral-800/50 border border-neutral-700/50' : 'bg-neutral-100/80 border border-neutral-200/60'
             }`}
         >
             <audio ref={audioRef} src={audioUrl} preload="auto" />
@@ -210,19 +210,19 @@ const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: ()
                 onClick={togglePlay} 
                 whileHover={{ scale: 1.05 }} 
                 whileTap={{ scale: 0.95 }}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                     isDark 
-                        ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
-                        : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
+                        ? 'bg-neutral-700/60 text-neutral-300 hover:bg-neutral-600/60' 
+                        : 'bg-neutral-200/80 text-neutral-600 hover:bg-neutral-300/80'
                 }`}
             >
-                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
             </motion.button>
-            <div className={`flex-1 h-1 rounded-full overflow-hidden ${
-                isDark ? 'bg-white/10' : 'bg-gray-900/10'
+            <div className={`flex-1 h-0.5 rounded-full overflow-hidden ${
+                isDark ? 'bg-neutral-700/60' : 'bg-neutral-300/60'
             }`}>
                 <motion.div 
-                    className={`h-full ${isDark ? 'bg-blue-400' : 'bg-blue-500'}`}
+                    className={`h-full ${isDark ? 'bg-neutral-400' : 'bg-neutral-600'}`}
                     style={{ width: `${progress}%` }}
                     transition={{ duration: 0.1 }}
                 />
@@ -231,13 +231,13 @@ const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: ()
                 onClick={onDiscard} 
                 whileHover={{ scale: 1.05 }} 
                 whileTap={{ scale: 0.95 }}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                     isDark 
-                        ? 'text-white/40 hover:text-red-400 hover:bg-red-500/20' 
-                        : 'text-gray-500 hover:text-red-500 hover:bg-red-500/10'
+                        ? 'text-neutral-500 hover:text-red-400 hover:bg-red-500/10' 
+                        : 'text-neutral-400 hover:text-red-500 hover:bg-red-500/10'
                 }`}
             >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-3 h-3" />
             </motion.button>
         </motion.div>
     );
@@ -371,7 +371,7 @@ export default function AgenticSearchPage() {
             body.attachments = attPayload;
         }
 
-        const userMessageText = audioPreview ? "[Voice message]" : (message.trim() || (attachments.length > 0 ? "[Attachments]" : ""));
+        const userMessageText = audioPreview ? "" : (message.trim() || (attachments.length > 0 ? "[Attachments]" : ""));
         const userMsg: ChatMessage = {
             id: crypto.randomUUID(),
             role: "user",
@@ -390,7 +390,14 @@ export default function AgenticSearchPage() {
             // keep URL for bubble; will be released on refresh/navigation
             setAudioPreview(null);
         }
-        adjustHeight(true);
+        
+        // Reset textarea height after clearing message
+        setTimeout(() => {
+            adjustHeight(true);
+            if (textareaRef.current) {
+                textareaRef.current.value = "";
+            }
+        }, 0);
 
         try {
             const res = await fetch(`/api/agent/send`, {
@@ -514,7 +521,7 @@ export default function AgenticSearchPage() {
                         transition: { staggerChildren: 0.2, delayChildren: 0.3 }
                     }
                 }}
-                className="relative z-20 flex flex-col min-h-screen w-full mx-auto max-w-3xl p-4"
+                className="relative z-20 flex flex-col min-h-screen w-full mx-auto max-w-3xl p-4 overflow-x-hidden"
             >
                 <motion.div
                     variants={{ hidden: { opacity: 0, y: -20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeInOut" } } }}
@@ -547,33 +554,159 @@ export default function AgenticSearchPage() {
                 </motion.div>
 
                 {/* Conversation */}
-                <div className="flex-1 mt-6 mb-4 overflow-y-auto space-y-3">
+                <div className="flex-1 mt-6 mb-4 overflow-y-auto overflow-x-hidden space-y-5">
                     {chat.map((m) => (
-                        <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-md ${
-                                m.role === 'user'
-                                    ? (isDark ? 'bg-blue-600 text-white shadow-blue-900/30' : 'bg-blue-600 text-white shadow-blue-300/40')
-                                    : (isDark ? 'bg-zinc-900/60 border border-white/10 text-gray-100 shadow-black/20' : 'bg-white/90 border border-gray-200 text-gray-900 shadow-gray-300/40 backdrop-blur')
-                            }`}>
-                                <div className="flex items-center gap-2 mb-1 opacity-80 text-xs">
-                                    {m.role === 'user' ? <UserIcon className="w-3.5 h-3.5" /> : <BotIcon className="w-3.5 h-3.5" />}
+                        <motion.div 
+                            key={m.id} 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                            className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                            <div 
+                                className={`relative max-w-[80%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${
+                                    m.role === 'user'
+                                        ? (isDark 
+                                            ? 'bg-gradient-to-br from-indigo-900/40 to-purple-900/40 text-neutral-50 backdrop-blur-md' 
+                                            : 'bg-gradient-to-br from-white to-purple-50/30 border border-purple-100/40 text-neutral-800')
+                                        : (isDark 
+                                            ? 'bg-neutral-900/30 text-neutral-50 backdrop-blur-md' 
+                                            : 'bg-white/90 text-neutral-800 backdrop-blur-md')
+                                }`}
+                                style={{
+    boxShadow: m.role === 'user'
+        ? (isDark 
+            ? '0 4px 12px -2px rgba(124, 58, 237, 0.25), inset 0 0 0 0.5px rgba(139, 92, 246, 0.3)' 
+            : '0 12px 24px -6px rgba(0, 0, 0, 0.15), 0 4px 10px -3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.02)')
+        : (isDark 
+            ? '0 4px 12px -2px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08)' 
+            : '0 16px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 12px -3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)')
+}}
+                            >
+                                {/* Glow effect for dark mode */}
+                                {isDark && (
+                                    <>
+                                        <div className={`absolute inset-0 rounded-2xl opacity-40 blur-xl -z-10 ${
+                                            m.role === 'user' 
+                                                ? 'bg-purple-600/25' 
+                                                : 'bg-blue-600/15'
+                                        }`} />
+                                        <div className={`absolute -inset-1 rounded-3xl opacity-20 blur-2xl -z-20 ${
+                                            m.role === 'user' 
+                                                ? 'bg-purple-500/20' 
+                                                : 'bg-blue-500/10'
+                                        }`} />
+                                    </>
+                                )}
+                                
+                                {/* Subtle gradient border */}
+                                <div className={`absolute inset-0 rounded-2xl -z-5 ${
+                                    m.role === 'user'
+                                        ? (isDark 
+                                            ? 'bg-gradient-to-br from-indigo-500/10 to-purple-500/10' 
+                                            : 'bg-gradient-to-br from-zinc-700/5 to-zinc-900/5')
+                                        : (isDark 
+                                            ? 'bg-gradient-to-br from-neutral-700/10 to-neutral-800/10' 
+                                            : 'bg-gradient-to-br from-neutral-200/30 to-neutral-300/30')
+                                }`} style={{
+                                    mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                    maskComposite: 'xor',
+                                    maskBorder: '1px',
+                                    WebkitMaskComposite: 'xor',
+                                    padding: '1px'
+                                }} />
+                                
+                                <div className={`flex items-center gap-2 mb-2 text-xs font-medium ${
+                                    m.role === 'user' 
+                                        ? (isDark ? 'text-indigo-300' : 'text-indigo-100')
+                                        : (isDark ? 'text-blue-300' : 'text-blue-500')
+                                }`}>
+                                    {m.role === 'user' 
+                                        ? <UserIcon className="w-3 h-3" /> 
+                                        : <BotIcon className="w-3 h-3" />
+                                    }
                                     <span>{m.role === 'user' ? 'You' : 'Agent'}</span>
                                 </div>
+                                
                                 {m.attachments && m.attachments.length > 0 && (
-                                    <div className="mb-2 grid grid-cols-2 gap-2">
+                                    <div className="mb-3 grid grid-cols-2 gap-2">
                                         {m.attachments.map((url, idx) => (
-                                            <img key={idx} src={url} className="w-full h-28 object-cover rounded-lg" alt="sent attachment" />
+                                            <motion.img 
+                                                key={idx} 
+                                                src={url} 
+                                                className="w-full h-24 object-cover rounded-xl border border-neutral-200/20" 
+                                                alt="sent attachment"
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ duration: 0.2, delay: idx * 0.1 }}
+                                            />
                                         ))}
                                     </div>
                                 )}
+                                
                                 {m.audioUrl && (
-                                    <div className="mb-2">
-                                        <audio controls src={m.audioUrl} className="w-full" />
+                                    <div className="mb-3">
+                                        <div className={`flex items-center gap-2 p-2 rounded-lg ${
+                                            isDark 
+                                                ? 'bg-neutral-800/40 backdrop-blur-md' 
+                                                : 'bg-neutral-100/70 backdrop-blur-md'
+                                        }`} style={{
+                                            boxShadow: isDark 
+                                                ? 'inset 0 0 0 0.5px rgba(255, 255, 255, 0.1)' 
+                                                : 'inset 0 0 0 0.5px rgba(0, 0, 0, 0.05)'
+                                        }}>
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                                isDark ? 'bg-neutral-700/60' : 'bg-neutral-200/80'
+                                            }`}>
+                                                <Mic className={`w-3 h-3 ${isDark ? 'text-neutral-300' : 'text-neutral-600'}`} />
+                                            </div>
+                                            <span className={`text-xs font-medium ${
+                                                isDark ? 'text-neutral-300' : 'text-neutral-600'
+                                            }`}>Voice message</span>
+                                            <audio controls src={m.audioUrl} className="flex-1 h-6" style={{ filter: isDark ? 'invert(0.8)' : 'invert(0.2)' }} />
+                                        </div>
                                     </div>
                                 )}
-                                <div className="whitespace-pre-wrap">{m.content}</div>
+                                
+                                {m.content?.trim() ? (
+                                    <div className="whitespace-pre-wrap">{m.content}</div>
+                                ) : null}
+                                
+                                {/* Subtle animated highlight for dark mode */}
+                                {isDark && m.role === 'user' && (
+                                    <motion.div 
+                                        className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-purple-500/10 to-transparent opacity-0"
+                                        animate={{ 
+                                            opacity: [0, 0.5, 0],
+                                            x: ['-100%', '200%', '200%']
+                                        }}
+                                        transition={{ 
+                                            duration: 3, 
+                                            repeat: Infinity, 
+                                            repeatDelay: 5,
+                                            ease: "easeInOut" 
+                                        }}
+                                    />
+                                )}
+                                
+                                {/* Subtle animated highlight for assistant in dark mode */}
+                                {isDark && m.role === 'assistant' && (
+                                    <motion.div 
+                                        className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-blue-500/10 to-transparent opacity-0"
+                                        animate={{ 
+                                            opacity: [0, 0.5, 0],
+                                            x: ['-100%', '200%', '200%']
+                                        }}
+                                        transition={{ 
+                                            duration: 3, 
+                                            repeat: Infinity, 
+                                            repeatDelay: 7,
+                                            ease: "easeInOut" 
+                                        }}
+                                    />
+                                )}
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
 
