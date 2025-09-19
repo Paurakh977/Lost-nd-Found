@@ -618,7 +618,7 @@ export default function AgenticSearchPage() {
                                 
                                 <div className={`flex items-center gap-2 mb-2 text-xs font-medium ${
                                     m.role === 'user' 
-                                        ? (isDark ? 'text-indigo-300' : 'text-indigo-100')
+                                        ? (isDark ? 'text-indigo-300' : 'text-indigo-900')
                                         : (isDark ? 'text-blue-300' : 'text-blue-500')
                                 }`}>
                                     {m.role === 'user' 
