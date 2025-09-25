@@ -337,6 +337,48 @@ export default function AgenticSearchPage() {
     const { isDark, mounted } = useTheme();
 
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 48, maxHeight: 200 });
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
+
+    // Auto-scroll to bottom when new messages are added
+    const scrollToBottom = useCallback((smooth = true) => {
+        if (chatContainerRef.current) {
+            const scrollOptions: ScrollToOptions = {
+                top: chatContainerRef.current.scrollHeight,
+                behavior: smooth ? 'smooth' : 'auto'
+            };
+            chatContainerRef.current.scrollTo(scrollOptions);
+        }
+    }, []);
+
+    // Check if user has scrolled up from bottom
+    const handleScroll = useCallback(() => {
+        if (chatContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50; // 50px threshold for better sensitivity
+            setShowScrollButton(!isAtBottom && chat.length > 0);
+        }
+    }, [chat.length]);
+
+    // Scroll to bottom when chat updates
+    useEffect(() => {
+        // Small delay to ensure DOM has updated
+        const timer = setTimeout(() => {
+            scrollToBottom();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [chat, scrollToBottom]);
+
+    // Also scroll to bottom when sending state changes (for better UX during agent responses)
+    useEffect(() => {
+        if (isSending) {
+            // Scroll to bottom when agent starts thinking
+            const timer = setTimeout(() => {
+                scrollToBottom();
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [isSending, scrollToBottom]);
 
     // No client auth fetch; access is already enforced by middleware and proxy
 
@@ -554,8 +596,42 @@ export default function AgenticSearchPage() {
                 </motion.div>
 
                 {/* Conversation */}
-                <div className="flex-1 mt-6 mb-4 overflow-y-auto overflow-x-hidden space-y-5">
-                    {chat.map((m) => (
+                <div 
+                    ref={chatContainerRef}
+                    onScroll={handleScroll}
+                    className={`flex-1 mt-6 mb-4 overflow-y-auto overflow-x-hidden space-y-5 scrollbar-thin scrollbar-track-transparent ${
+                        isDark 
+                            ? 'scrollbar-thumb-gray-600/40 hover:scrollbar-thumb-gray-500/60' 
+                            : 'scrollbar-thumb-gray-400/30 hover:scrollbar-thumb-gray-400/50'
+                    }`}
+                    style={{ 
+                        maxHeight: 'calc(100vh - 280px)',
+                        minHeight: '200px'
+                    }}
+                >
+                    {chat.length === 0 ? (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            className="flex flex-col items-center justify-center py-16 text-center"
+                        >
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                                isDark 
+                                    ? 'bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30' 
+                                    : 'bg-gradient-to-br from-indigo-100/50 to-purple-100/50 border border-indigo-200/50'
+                            }`}>
+                                <BotIcon className={`w-8 h-8 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                            </div>
+                            <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                                Start a conversation
+                            </h3>
+                            <p className={`text-sm max-w-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Describe what you lost or found, and I'll help you with the search process.
+                            </p>
+                        </motion.div>
+                    ) : (
+                        chat.map((m) => (
                         <motion.div 
                             key={m.id} 
                             initial={{ opacity: 0, y: 10 }}
@@ -707,7 +783,8 @@ export default function AgenticSearchPage() {
                                 )}
                             </div>
                         </motion.div>
-                    ))}
+                    ))
+                    )}
                 </div>
 
                 {/* Chat Input Section */}
@@ -808,6 +885,26 @@ export default function AgenticSearchPage() {
             </motion.div>
 
             <AnimatePresence>
+                {showScrollButton && (
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        onClick={() => scrollToBottom()}
+                        className={`fixed ${isSending ? 'bottom-32' : 'bottom-24'} right-6 z-30 p-3 rounded-full shadow-lg transition-all duration-200 ${
+                            isDark 
+                                ? 'bg-gray-800/90 text-gray-200 hover:bg-gray-700/90 border border-gray-600/50' 
+                                : 'bg-white/90 text-gray-700 hover:bg-gray-50/90 border border-gray-200/60'
+                        } backdrop-blur-md hover:shadow-xl`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </motion.button>
+                )}
                 {isSending && (
                     <motion.div 
                         initial={{ opacity: 0, y: 10 }} 
