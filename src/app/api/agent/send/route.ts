@@ -7,7 +7,7 @@ const AGENT_URL = process.env.AGENT_SERVER_URL || process.env.NEXT_PUBLIC_AGENT_
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { mime_type, data, attachments } = body || {};
+    const { mime_type, data, attachments, session_id } = body || {};
 
     // Resolve identity from custom JWT first (admins/officers/institutional)
     let clerk_id: string | undefined;
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
       clerk_id,
       clerk_name,
       auth_token,
+      session_id,
     };
 
     const res = await fetch(`${AGENT_URL}/send/${encodeURIComponent(clerk_id)}`, {
