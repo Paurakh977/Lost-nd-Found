@@ -332,8 +332,12 @@ export default function AgenticSearchPage() {
     const [audioPreview, setAudioPreview] = useState<{ url: string, blob: Blob } | null>(null);
     const [isSending, setIsSending] = useState(false);
     const [chat, setChat] = useState<ChatMessage[]>([]);
+    // Track if a conversation has been initiated with the agent
+    const [conversationInitiated, setConversationInitiated] = useState(false);
     // Remove reliance on /api/auth/me for Clerk users; server proxy injects identity
     const [userInfo] = useState<{ id: string; firstName?: string; lastName?: string } | null>(null);
+    // Generate a new session ID on each page load to ensure fresh conversations
+    const [sessionId] = useState<string>(() => crypto.randomUUID());
     const { isDark, mounted } = useTheme();
 
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 48, maxHeight: 200 });
@@ -368,6 +372,21 @@ export default function AgenticSearchPage() {
         }, 100);
         return () => clearTimeout(timer);
     }, [chat, scrollToBottom]);
+    
+    // Add beforeunload event handler to show confirmation dialog when leaving the page
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (conversationInitiated) {
+                // Standard way to show a confirmation dialog
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        };
+        
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [conversationInitiated]);
 
     // Also scroll to bottom when sending state changes (for better UX during agent responses)
     useEffect(() => {
@@ -392,6 +411,8 @@ export default function AgenticSearchPage() {
     const sendToAgent = useCallback(async () => {
         if (!message.trim() && attachments.length === 0 && !audioPreview) return;
         setIsSending(true);
+        // Mark conversation as initiated when sending a message to the agent
+        setConversationInitiated(true);
 
         let mime = "text/plain";
         let data = message.trim();
@@ -445,7 +466,7 @@ export default function AgenticSearchPage() {
             const res = await fetch(`/api/agent/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
+                body: JSON.stringify({...body, session_id: sessionId}),
             });
             const json = await res.json();
             const text = json?.response_text || json?.error || "No response";
