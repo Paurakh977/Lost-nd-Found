@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../components/ThemeProvider";
 import FloatingParticles from "../../components/ui/FloatingParticles";
+import CaseDetailModal from "../../components/CaseDetailModal";
 
 // Types
 type ChatMessage = {
@@ -25,6 +26,14 @@ type ChatMessage = {
     content: string;
     attachments?: string[];
     audioUrl?: string;
+    foundItemsIds?: string[]; // Add found items IDs to chat messages
+};
+
+type FeedResult = {
+    id: string;
+    timestamp: Date;
+    query: string;
+    cases: any[];
 };
 
 // Helpers
@@ -339,6 +348,10 @@ export default function AgenticSearchPage() {
     // Generate a new session ID on each page load to ensure fresh conversations
     const [sessionId] = useState<string>(() => crypto.randomUUID());
     const { isDark, mounted } = useTheme();
+    const [matchedCases, setMatchedCases] = useState<any[]>([]);
+    const [feedResults, setFeedResults] = useState<FeedResult[]>([]);
+    const [selectedCase, setSelectedCase] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 48, maxHeight: 200 });
     const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -469,9 +482,47 @@ export default function AgenticSearchPage() {
                 body: JSON.stringify({...body, session_id: sessionId}),
             });
             const json = await res.json();
+            console.log('[search] agent reply', { status: res.status, success: json?.success, ids: json?.found_items_ids });
             const text = json?.response_text || json?.error || "No response";
-            const botMsg: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: text };
+            const botMsg: ChatMessage = { 
+                id: crypto.randomUUID(), 
+                role: "assistant", 
+                content: text,
+                foundItemsIds: json?.found_items_ids
+            };
             setChat((prev) => [...prev, botMsg]);
+
+            // If backend returned matched ids, fetch their details and add to feed results
+            const ids: string[] | undefined = json?.found_items_ids;
+            console.log('[search] processing found_items_ids', { ids, length: ids?.length });
+            if (Array.isArray(ids) && ids.length > 0) {
+                try {
+                    const casesRes = await fetch('/api/cases/by-ids', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids }),
+                    });
+                    const casesJson = await casesRes.json();
+                    console.log('[search] by-ids result', { status: casesRes.status, count: casesJson?.cases?.length, ids: ids });
+                    if (Array.isArray(casesJson?.cases) && casesJson.cases.length > 0) {
+                        // Create a new feed result entry
+                        const newFeedResult: FeedResult = {
+                            id: crypto.randomUUID(),
+                            timestamp: new Date(),
+                            query: userMessageText,
+                            cases: casesJson.cases
+                        };
+                        setFeedResults((prev) => [...prev, newFeedResult]);
+                        console.log('[search] successfully loaded cases', casesJson.cases.map((c: any) => ({ id: c._id, title: c.title, imageCount: c.images?.length || 0 })));
+                    } else {
+                        console.warn('[search] by-ids returned 0 cases for ids', ids);
+                    }
+                } catch (e) {
+                    console.error('[search] by-ids fetch failed', e);
+                }
+            } else {
+                console.log('[search] no found_items_ids');
+            }
         } catch (e) {
             const botMsg: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: "Failed to reach agent server." };
             setChat((prev) => [...prev, botMsg]);
@@ -525,6 +576,16 @@ export default function AgenticSearchPage() {
     const discardAudio = () => {
         if (audioPreview) URL.revokeObjectURL(audioPreview.url);
         setAudioPreview(null);
+    };
+
+    const openCaseDetail = (caseData: any) => {
+        setSelectedCase(caseData);
+        setIsModalOpen(true);
+    };
+
+    const closeCaseDetail = () => {
+        setIsModalOpen(false);
+        setSelectedCase(null);
     };
 
     if (!mounted) {
@@ -652,14 +713,14 @@ export default function AgenticSearchPage() {
                             </p>
                         </motion.div>
                     ) : (
-                        chat.map((m) => (
-                        <motion.div 
-                            key={m.id} 
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                            className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
+                        chat.map((m, chatIndex) => (
+                        <React.Fragment key={m.id}>
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                                className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            >
                             <div 
                                 className={`relative max-w-[80%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${
                                     m.role === 'user'
@@ -803,7 +864,96 @@ export default function AgenticSearchPage() {
                                     />
                                 )}
                             </div>
-                        </motion.div>
+                            </motion.div>
+                            
+                            {/* Render feed results after assistant messages with found items */}
+                            {m.role === 'assistant' && m.foundItemsIds && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+                                    className="w-full mt-4"
+                                >
+                                    {feedResults
+                                        .filter(result => 
+                                            // Find the feed result that matches this assistant message's found items
+                                            result.cases.some(c => m.foundItemsIds?.includes(c._id))
+                                        )
+                                        .slice(-1) // Get the most recent matching result
+                                        .map(result => (
+                                            <div
+                                                key={result.id}
+                                                className={`w-full rounded-2xl border ${isDark ? 'border-gray-800/60 bg-gray-900/40' : 'border-gray-200/80 bg-white/70'} backdrop-blur-xl`}
+                                            >
+                                                <div className={`px-4 py-3 border-b ${isDark ? 'border-gray-800/60 text-blue-300' : 'border-gray-200 text-blue-700'} text-sm font-medium`}>
+                                                    📍 Similar found items for: "{result.query}"
+                                                </div>
+                                                <div className="max-h-80 overflow-y-auto px-3 py-3 space-y-3">
+                                                    {result.cases.map((c: any) => (
+                                                        <div key={String(c._id)} className={`rounded-xl p-3 ${isDark ? 'bg-black/30 border border-white/10' : 'bg-gray-50/60 border border-gray-200/60'}`}>
+                                                            <div className="flex gap-3">
+                                                                {/* Image gallery - show first image, with indicator if more exist */}
+                                                                <div className="relative">
+                                                                    {Array.isArray(c.images) && c.images.length > 0 ? (
+                                                                        <div className="relative">
+                                                                            <img 
+                                                                                src={`/uploads/${c.images[0]}`} 
+                                                                                alt={c.title || 'image'} 
+                                                                                className="w-20 h-20 object-cover rounded-lg border border-black/10" 
+                                                                            />
+                                                                            {c.images.length > 1 && (
+                                                                                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium ${isDark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}>
+                                                                                    +{c.images.length - 1}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className={`w-20 h-20 rounded-lg flex items-center justify-center text-xs ${isDark ? 'bg-gray-800/60 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>No image</div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center justify-between gap-2">
+                                                                        <div className={`font-medium truncate ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{c.title}</div>
+                                                                        <span className={`text-xs px-2 py-0.5 rounded-full ${c.type === 'found' ? (isDark ? 'bg-green-500/20 text-green-300' : 'bg-green-100 text-green-700') : (isDark ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-700')}`}>{c.type}</span>
+                                                                    </div>
+                                                                    <div className={`text-xs mt-1 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c.description}</div>
+                                                                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                                                                        <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>By {c?.reportedBy?.name || 'Unknown'}</span>
+                                                                        <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                                                                        <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c?.location?.address || 'No address'}</span>
+                                                                        <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                                                                        <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{new Date(c.createdAt || c.reportedTime).toLocaleString()}</span>
+                                                                    </div>
+                                                                    {/* Show additional images count if more than 1 */}
+                                                                    {Array.isArray(c.images) && c.images.length > 1 && (
+                                                                        <div className={`mt-1 text-xs ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
+                                                                            {c.images.length} image{c.images.length !== 1 ? 's' : ''} available
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {/* View Details Button */}
+                                                                    <div className="mt-3 flex justify-end">
+                                                                        <button
+                                                                            onClick={() => openCaseDetail(c)}
+                                                                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                                                                                isDark 
+                                                                                    ? 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/30' 
+                                                                                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                                                                            }`}
+                                                                        >
+                                                                            View Details
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                </motion.div>
+                            )}
+                        </React.Fragment>
                     ))
                     )}
                 </div>
@@ -813,6 +963,8 @@ export default function AgenticSearchPage() {
                     variants={{ hidden: { opacity: 0, y: 50 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeInOut" } } }}
                     className="w-full pb-4"
                 >
+                    {/* Feed Results integrated into chat */}
+                    {/* This section is now empty as feed results are rendered inline with messages */}
                     <div className={`w-full rounded-2xl border overflow-hidden transition-all duration-300 shadow-lg ${
                         isDark 
                             ? 'bg-gray-900/40 border-gray-800/40 backdrop-blur-xl focus-within:border-blue-400/60 focus-within:ring-1 focus-within:ring-blue-400/30' 
@@ -908,6 +1060,7 @@ export default function AgenticSearchPage() {
             <AnimatePresence>
                 {showScrollButton && (
                     <motion.button
+                        key="scrollBtn"
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8 }}
@@ -928,6 +1081,7 @@ export default function AgenticSearchPage() {
                 )}
                 {isSending && (
                     <motion.div 
+                        key="thinking"
                         initial={{ opacity: 0, y: 10 }} 
                         animate={{ opacity: 1, y: 0 }} 
                         exit={{ opacity: 0, y: -10 }} 
@@ -948,8 +1102,15 @@ export default function AgenticSearchPage() {
                         </div>
                     </motion.div>
                 )}
-                {isRecording && <RecordingIndicator onStop={stopRecording} audioLevel={audioLevel} />}
+                {isRecording && <RecordingIndicator key="recOverlay" onStop={stopRecording} audioLevel={audioLevel} />}
             </AnimatePresence>
+
+            {/* Case Detail Modal */}
+            <CaseDetailModal
+                case={selectedCase}
+                isOpen={isModalOpen}
+                onClose={closeCaseDetail}
+            />
         </motion.div>
     );
 }
