@@ -52,6 +52,14 @@ export async function POST(req: NextRequest) {
       session_id,
     };
 
+    // Debug: log outbound request (without large payloads)
+    console.log('[agent/send] outbound', {
+      url: `${AGENT_URL}/send/${encodeURIComponent(clerk_id!)}`,
+      hasData: Boolean(data),
+      hasAttachments: Boolean(attachments?.length),
+      session_id
+    });
+
     const res = await fetch(`${AGENT_URL}/send/${encodeURIComponent(clerk_id)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,6 +67,7 @@ export async function POST(req: NextRequest) {
     });
 
     const json = await res.json();
+    console.log('[agent/send] inbound', { status: res.status, success: json?.success, found_items_ids: json?.found_items_ids, author: json?.author });
     return NextResponse.json(json, { status: res.status });
   } catch (e) {
     console.error('Agent proxy error:', e);
