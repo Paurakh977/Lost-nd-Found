@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     let clerk_id: string | undefined;
     let clerk_name: string | undefined;
     let auth_token: string | undefined;
+    let clerk_email: string | undefined;
 
     const token = getJWTFromRequest(req);
     if (token) {
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
         const user = await currentUser();
         clerk_id = user?.id;
         clerk_name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || 'User';
+        clerk_email = user?.emailAddresses[0]?.emailAddress || 'User';
         // Include Clerk session token if needed downstream (opaque)
         // Note: We avoid exposing cookies; FastAPI doesn't need to verify this token right now
       }
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest) {
       attachments,
       clerk_id,
       clerk_name,
+      clerk_email,
       auth_token,
       session_id,
     };
