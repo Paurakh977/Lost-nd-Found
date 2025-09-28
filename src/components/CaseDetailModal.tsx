@@ -306,11 +306,23 @@ export default function CaseDetailModal({ case: caseData, isOpen, onClose }: Cas
                         <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                           Reported By
                         </h3>
-                        <div className="flex items-center gap-2">
-                          <User className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
-                          <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                            {caseData.reportedBy.name}
-                          </span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <User className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                            <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {caseData.reportedBy.name}
+                            </span>
+                          </div>
+                          {caseData.reportedBy.email && (
+                            <div className="flex items-center gap-2 ml-6">
+                              <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Email:
+                              </span>
+                              <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {caseData.reportedBy.email}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
