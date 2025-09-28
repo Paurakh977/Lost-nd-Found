@@ -919,6 +919,12 @@ export default function AgenticSearchPage() {
                                                                     <div className={`text-xs mt-1 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c.description}</div>
                                                                     <div className="mt-2 flex flex-wrap gap-2 text-xs">
                                                                         <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>By {c?.reportedBy?.name || 'Unknown'}</span>
+                                                                        {c?.reportedBy?.email && (
+                                                                            <>
+                                                                                <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                                                                                <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c.reportedBy.email}</span>
+                                                                            </>
+                                                                        )}
                                                                         <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
                                                                         <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c?.location?.address || 'No address'}</span>
                                                                         <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
