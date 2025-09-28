@@ -32,6 +32,7 @@ export interface ICase extends Document {
   reportedBy: {
     clerkId: string; // Clerk user ID
     name: string;
+    email?: string; // Clerk user email
   };
   assignedOfficer?: mongoose.Types.ObjectId; // Reference to User model (officer)
   resolution?: {
@@ -148,6 +149,10 @@ const CaseSchema = new Schema<ICase>({
     name: {
       type: String,
       required: true
+    },
+    email: {
+      type: String,
+      required: false
     }
   },
   assignedOfficer: {
