@@ -885,9 +885,6 @@ export default function AgenticSearchPage() {
                                                 key={result.id}
                                                 className={`w-full rounded-2xl border ${isDark ? 'border-gray-800/60 bg-gray-900/40' : 'border-gray-200/80 bg-white/70'} backdrop-blur-xl`}
                                             >
-                                                <div className={`px-4 py-3 border-b ${isDark ? 'border-gray-800/60 text-blue-300' : 'border-gray-200 text-blue-700'} text-sm font-medium`}>
-                                                    📍 Similar found items for: "{result.query}"
-                                                </div>
                                                 <div className="max-h-80 overflow-y-auto px-3 py-3 space-y-3">
                                                     {result.cases.map((c: any) => (
                                                         <div key={String(c._id)} className={`rounded-xl p-3 ${isDark ? 'bg-black/30 border border-white/10' : 'bg-gray-50/60 border border-gray-200/60'}`}>
