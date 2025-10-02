@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { getJWTFromRequest, verifyJWT } from '../../../../lib/jwt';
 
 const AGENT_URL = process.env.AGENT_SERVER_URL || process.env.NEXT_PUBLIC_AGENT_SERVER_URL || 'http://localhost:8000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000';
 
 export async function POST(req: NextRequest) {
   try {
@@ -75,42 +76,31 @@ export async function POST(req: NextRequest) {
       lost_items_ids: json?.lost_items_ids, 
       author: json?.author 
     });
-
-    // ============================================================
-    // NEW: Auto-send email notifications for lost items
-    // ============================================================
     const lostIds = json?.lost_items_ids || [];
     
-    if (lostIds.length > 0) {
-      console.log('[agent/send] Triggering email notifications for lost items:', lostIds);
-      
-      try {
-        // Call the notify-unresolved route asynchronously
-        // We don't await this to avoid blocking the agent response
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        
-        fetch(`${appUrl}/api/cases/notify-unresolved`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: lostIds })
-        })
-          .then(async (emailRes) => {
-            const emailJson = await emailRes.json();
-            console.log('[agent/send] Email notification result:', emailJson);
-          })
-          .catch((emailError) => {
-            console.error('[agent/send] Email notification error:', emailError);
+    // Fire-and-forget: trigger unresolved case notification emails when lost item IDs are present
+    if (Array.isArray(lostIds) && lostIds.length > 0) {
+      (async () => {
+        try {
+          const notifyRes = await fetch(`${APP_URL}/api/cases/notify-unresolved`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: lostIds }),
           });
-        
-        // Optionally add a note in the response
-        json.email_notification_triggered = true;
-        json.email_notification_count = lostIds.length;
-        
-      } catch (emailTriggerError) {
-        console.error('[agent/send] Failed to trigger email notifications:', emailTriggerError);
-        // Don't fail the main request
-      }
+          let notifyJson: any = {};
+          try { notifyJson = await notifyRes.json(); } catch {}
+          console.log('[agent/send] notify-unresolved', {
+            status: notifyRes.status,
+            sent: notifyJson?.sent,
+            failed: notifyJson?.failed,
+            processed: notifyJson?.processed,
+          });
+        } catch (err) {
+          console.error('[agent/send] notify-unresolved trigger failed', err);
+        }
+      })();
     }
+    
 
     return NextResponse.json(json, { status: res.status });
   } catch (e) {
