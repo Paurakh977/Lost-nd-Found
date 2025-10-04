@@ -19,6 +19,12 @@ export default function CaseDetailModal({ case: caseData, isOpen, onClose }: Cas
   const images = Array.isArray(caseData.images) ? caseData.images : [];
   const hasMultipleImages = images.length > 1;
 
+  const resolveImageSrc = (img: string) => {
+    if (!img) return '';
+    if (img.startsWith('http') || img.startsWith('/')) return img;
+    return `/uploads/${img}`;
+  };
+
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
@@ -101,7 +107,7 @@ export default function CaseDetailModal({ case: caseData, isOpen, onClose }: Cas
                       <div className="relative">
                         <div className="aspect-square overflow-hidden rounded-xl border border-gray-200/20">
                           <img
-                            src={`/uploads/${images[currentImageIndex]}`}
+                            src={resolveImageSrc(images[currentImageIndex])}
                             alt={`${caseData.title} - Image ${currentImageIndex + 1}`}
                             className="w-full h-full object-cover"
                           />
@@ -161,7 +167,7 @@ export default function CaseDetailModal({ case: caseData, isOpen, onClose }: Cas
                             }`}
                           >
                             <img
-                              src={`/uploads/${img}`}
+                              src={resolveImageSrc(img)}
                               alt={`Thumbnail ${idx + 1}`}
                               className="w-full h-full object-cover"
                             />

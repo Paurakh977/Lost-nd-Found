@@ -355,9 +355,9 @@ export async function POST(req: NextRequest) {
             itemImageUrl = `${appUrl}/uploads/${imagePath}`;
           }
         }
-        
-        const caseDetailUrl = `${appUrl}/cases/${caseId}`;
-        const logoUrl = `${appUrl}/Logo.png`;
+                const caseDetailUrl = `${appUrl}/cases/${caseId}`;
+        const envLogo = process.env.NEXT_PUBLIC_LOGO_URL || process.env.LOGO_URL;
+        const logoUrl = envLogo || `${appUrl}/Logo.png`;
 
         if (!reporterEmail) {
           console.warn(`[notify-unresolved] No email for case ${caseId}, skipping`);
