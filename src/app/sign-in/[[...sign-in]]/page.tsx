@@ -45,7 +45,7 @@ export default function RefinedMinimalistLogin() {
             dashboardUrl = '/officer/dashboard';
             break;
           case 'institutional':
-            dashboardUrl = '/institutional/dashboard';
+            dashboardUrl = '/search';
             break;
           default:
             dashboardUrl = '/';
@@ -146,7 +146,7 @@ export default function RefinedMinimalistLogin() {
               dashboardUrl = '/officer/dashboard';
               break;
             case 'institutional':
-              dashboardUrl = '/institutional/dashboard';
+              dashboardUrl = '/search';
               break;
             default:
               dashboardUrl = '/';
