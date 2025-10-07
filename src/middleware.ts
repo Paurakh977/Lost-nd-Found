@@ -108,7 +108,8 @@ export default clerkMiddleware(async (auth, req) => {
           dashboardUrl = '/officer/dashboard';
           break;
         case 'institutional':
-          dashboardUrl = '/institutional/dashboard';
+          // Institutional users go to search page instead of dashboard
+          dashboardUrl = '/search';
           break;
       }
       return NextResponse.redirect(new URL(dashboardUrl, req.url))
