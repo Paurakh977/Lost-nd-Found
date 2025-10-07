@@ -343,8 +343,15 @@ export default function AgenticSearchPage() {
     const [chat, setChat] = useState<ChatMessage[]>([]);
     // Track if a conversation has been initiated with the agent
     const [conversationInitiated, setConversationInitiated] = useState(false);
-    // Remove reliance on /api/auth/me for Clerk users; server proxy injects identity
-    const [userInfo] = useState<{ id: string; firstName?: string; lastName?: string } | null>(null);
+    // User info state for both Clerk and JWT users
+    const [userInfo, setUserInfo] = useState<{ 
+        id: string; 
+        firstName?: string; 
+        lastName?: string; 
+        email?: string;
+        role?: string;
+        userType: 'clerk' | 'jwt';
+    } | null>(null);
     // Generate a new session ID on each page load to ensure fresh conversations
     const [sessionId] = useState<string>(() => crypto.randomUUID());
     const { isDark, mounted } = useTheme();
@@ -412,7 +419,52 @@ export default function AgenticSearchPage() {
         }
     }, [isSending, scrollToBottom]);
 
-    // No client auth fetch; access is already enforced by middleware and proxy
+    // Fetch user info on component mount
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                // Try to get JWT user first (institutional/officer/admin)
+                const response = await fetch('/api/auth/me', {
+                    credentials: 'include',
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.user) {
+                        setUserInfo({
+                            id: data.user.id,
+                            firstName: data.user.firstName,
+                            lastName: data.user.lastName,
+                            email: data.user.email,
+                            role: data.user.role,
+                            userType: 'jwt'
+                        });
+                        return;
+                    }
+                }
+                
+                // Fallback: Check if Clerk user is available
+                // This will be handled by the agent API proxy
+                setUserInfo({
+                    id: 'clerk-user',
+                    firstName: 'User',
+                    lastName: '',
+                    userType: 'clerk'
+                });
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+                // Set default for Clerk user
+                setUserInfo({
+                    id: 'clerk-user',
+                    firstName: 'User',
+                    lastName: '',
+                    userType: 'clerk'
+                });
+            }
+        };
+
+        fetchUserInfo();
+    }, []);
 
     const handleRecordingStop = (audioBlob: Blob) => {
         const url = URL.createObjectURL(audioBlob);
