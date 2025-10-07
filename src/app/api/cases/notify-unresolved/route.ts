@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import nodemailer from 'nodemailer';
 import connectDB from '../../../../lib/mongodb';
 import Case from '../../../../models/Case';
+import User from '../../../../models/User';
 
 interface EmailTemplateData {
   logo_url: string;
@@ -171,6 +172,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const ids: string[] = body?.ids || [];
+    const finder: { id?: string; name?: string; email?: string } | undefined = body?.finder;
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json(
@@ -325,15 +327,36 @@ export async function POST(req: NextRequest) {
         const itemType = caseDoc.type || 'lost';
         const title = caseDoc.title || 'Untitled Item';
         const description = caseDoc.description || 'No description provided';
-        const reporterName = caseDoc.reportedBy?.name || 'Anonymous';
-        const reporterEmail = caseDoc.reportedBy?.email || '';
-        
+
+        // Determine reporter info (lost reporter)
+        let lostReporterName = caseDoc.reportedBy?.name || 'Anonymous';
+        let lostReporterEmail = caseDoc.reportedBy?.email || '';
+
+        // Only attempt DB lookup if the clerkId looks like an ObjectId
+        const possibleId = caseDoc.reportedBy?.clerkId;
+        if (possibleId && mongoose.Types.ObjectId.isValid(String(possibleId))) {
+          try {
+            const user = await User.findById(possibleId).select('-password');
+            if (user && user.isActive) {
+              lostReporterName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+              lostReporterEmail = user.email;
+            }
+          } catch (error) {
+            console.error(`Error fetching user data for case ${caseId}:`, error);
+            // Fallback to case data
+          }
+        }
+
+        // Finder info comes from the agent proxy (institutional or clerk finder)
+        const finderName = finder?.name || 'A GOTUS user';
+        const finderEmail = finder?.email || '';
+
         const locationAddress = caseDoc.location?.address || 'Unknown location';
         const locationDetails = caseDoc.location?.details || '';
         const fullLocation = locationDetails 
           ? `${locationAddress} - ${locationDetails}`
           : locationAddress;
-        
+
         const reportedTime = caseDoc.reportedTime 
           ? new Date(caseDoc.reportedTime).toLocaleString('en-US', {
               year: 'numeric',
@@ -343,7 +366,7 @@ export async function POST(req: NextRequest) {
               minute: '2-digit'
             })
           : 'Unknown';
-        
+
         let itemImageUrl = `${appUrl}/placeholder-item.png`;
         if (caseDoc.images && caseDoc.images.length > 0) {
           const imagePath = caseDoc.images[0];
@@ -355,11 +378,11 @@ export async function POST(req: NextRequest) {
             itemImageUrl = `${appUrl}/uploads/${imagePath}`;
           }
         }
-                const caseDetailUrl = `${appUrl}/cases/${caseId}`;
+        const caseDetailUrl = `${appUrl}/cases/${caseId}`;
         const envLogo = process.env.NEXT_PUBLIC_LOGO_URL || process.env.LOGO_URL;
         const logoUrl = envLogo || `${appUrl}/Logo.png`;
 
-        if (!reporterEmail) {
+        if (!lostReporterEmail) {
           console.warn(`[notify-unresolved] No email for case ${caseId}, skipping`);
           emailResults.failed++;
           emailResults.errors.push({
@@ -375,10 +398,10 @@ export async function POST(req: NextRequest) {
           item_image_url: itemImageUrl,
           item_title: title,
           item_description: description,
-          reporter_name: reporterName,
+          reporter_name: finderName, // Found By: use finder
           location: fullLocation,
           reported_time: reportedTime,
-          reporter_email: reporterEmail,
+          reporter_email: finderEmail || lostReporterEmail, // Contact: prefer finder email, fallback to lost reporter
           case_detail_url: caseDetailUrl
         };
 
@@ -386,13 +409,13 @@ export async function POST(req: NextRequest) {
 
         const mailOptions = {
           from: `"GOTUS - Unclaimed Items Tracker" <${smtpFrom}>`,
-          to: reporterEmail,
+          to: lostReporterEmail, // Email the lost reporter
           subject: `📢 Perfect Match! A ${itemType} similar to yours has been found`,
           html: htmlContent,
         };
 
         await transporter.sendMail(mailOptions);
-        console.log(`[notify-unresolved] Email sent successfully to ${reporterEmail} for case ${caseId}`);
+        console.log(`[notify-unresolved] Email sent successfully to ${lostReporterEmail} for case ${caseId}`);
         emailResults.sent++;
 
         // Small delay to avoid rate limiting
