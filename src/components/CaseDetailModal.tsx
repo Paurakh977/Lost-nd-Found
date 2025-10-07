@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, MapPin, Calendar, User, Tag, DollarSign, AlertCircle } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
@@ -13,6 +13,56 @@ interface CaseDetailModalProps {
 export default function CaseDetailModal({ case: caseData, isOpen, onClose }: CaseDetailModalProps) {
   const { isDark } = useTheme();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [reporterInfo, setReporterInfo] = useState<{
+    name: string;
+    email?: string;
+    isJWTUser?: boolean;
+  } | null>(null);
+
+  // Fetch reporter information when case data changes
+  useEffect(() => {
+    const fetchReporterInfo = async () => {
+      if (!caseData?.reportedBy?.clerkId) return;
+
+      try {
+        // Check if it's a JWT user (institutional/officer/admin) by trying to fetch from our API
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user && data.user.id === caseData.reportedBy.clerkId) {
+            // It's a JWT user, use the data from our API
+            setReporterInfo({
+              name: `${data.user.firstName} ${data.user.lastName}`.trim() || data.user.email,
+              email: data.user.email,
+              isJWTUser: true
+            });
+            return;
+          }
+        }
+        
+        // If not a JWT user, it's likely a Clerk user
+        // For Clerk users, we'll use the data from the case
+        setReporterInfo({
+          name: caseData.reportedBy.name || 'Unknown',
+          email: caseData.reportedBy.email,
+          isJWTUser: false
+        });
+      } catch (error) {
+        console.error('Error fetching reporter info:', error);
+        // Fallback to case data
+        setReporterInfo({
+          name: caseData.reportedBy.name || 'Unknown',
+          email: caseData.reportedBy.email,
+          isJWTUser: false
+        });
+      }
+    };
+
+    fetchReporterInfo();
+  }, [caseData]);
 
   if (!caseData) return null;
 
@@ -316,16 +366,23 @@ export default function CaseDetailModal({ case: caseData, isOpen, onClose }: Cas
                           <div className="flex items-center gap-2">
                             <User className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
                             <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                              {caseData.reportedBy.name}
+                              {reporterInfo?.name || caseData.reportedBy.name || 'Unknown'}
                             </span>
+                            {reporterInfo?.isJWTUser && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                Institutional
+                              </span>
+                            )}
                           </div>
-                          {caseData.reportedBy.email && (
+                          {(reporterInfo?.email || caseData.reportedBy.email) && (
                             <div className="flex items-center gap-2 ml-6">
                               <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                 Email:
                               </span>
                               <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                                {caseData.reportedBy.email}
+                                {reporterInfo?.email || caseData.reportedBy.email}
                               </span>
                             </div>
                           )}
