@@ -195,4 +195,12 @@ CaseSchema.index({ type: 1, status: 1, createdAt: -1 });
 CaseSchema.index({ 'reportedBy.clerkId': 1 });
 CaseSchema.index({ assignedOfficer: 1 });
 
+// Officer-specific indexes for optimized queries
+// Index for unassigned cases feed (null assignedOfficer, sorted by creation date)
+CaseSchema.index({ assignedOfficer: 1, status: 1, createdAt: -1 });
+// Index for urgent cases feed (high urgency, unassigned)
+CaseSchema.index({ assignedOfficer: 1, urgencyLevel: 1, createdAt: -1 });
+// Index for officer's assigned cases with status filtering
+CaseSchema.index({ assignedOfficer: 1, type: 1, status: 1, createdAt: -1 });
+
 export default mongoose.models.Case || mongoose.model<ICase>('Case', CaseSchema);
