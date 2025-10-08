@@ -82,8 +82,8 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
   };
 
   const handleProfileClick = () => {
+    router.push('/profile');
     setIsOpen(false);
-    // Navigate to profile page if you have one, or just close for now
   };
 
   // Don't render if neither user type is available
