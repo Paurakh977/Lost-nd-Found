@@ -334,7 +334,8 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               {/* Mobile Menu Button */}
-              <motion.button
+                <motion.button
+                  type="button"
                 className="lg:hidden p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
                 onClick={toggleMobileMenu}
                 whileHover={{ scale: 1.05 }}
@@ -346,6 +347,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               {/* Notifications */}
               <div className="relative">
                 <motion.button
+                  type="button"
                   className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
                   onClick={() => toggleDropdown('notifications')}
                   whileHover={{ scale: 1.05 }}
@@ -429,6 +431,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               {/* User Profile Dropdown */}
               <div className="relative">
                 <motion.button
+                  type="button"
                   className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50/50 rounded-lg transition-all duration-200"
                   onClick={() => toggleDropdown('profile')}
                   whileHover={{ scale: 1.02 }}
@@ -470,6 +473,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                       </div>
                       
                       <motion.button
+                        type="button"
                         className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150"
                         onClick={() => handleNavigation('/officer/profile')}
                         whileHover={{ x: 4 }}
@@ -479,6 +483,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                       </motion.button>
                       
                       <motion.button
+                        type="button"
                         className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150"
                         onClick={() => handleNavigation('/officer/settings')}
                         whileHover={{ x: 4 }}
@@ -490,6 +495,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                       <div className="border-t border-gray-100 my-2"></div>
                       
                       <motion.button
+                        type="button"
                         className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-150 ${
                           isSigningOut 
                             ? 'bg-red-50 text-red-400 cursor-not-allowed' 
@@ -537,6 +543,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               <div className="px-4 py-6 space-y-4">
                 {/* Dashboard */}
                 <motion.button
+                  type="button"
                   className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => handleNavigation('/officer/dashboard')}
                   whileHover={{ x: 4 }}
@@ -560,6 +567,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                     <div className="ml-6 space-y-1">
                       {menu.items.map((item, itemIndex) => (
                         <motion.button
+                          type="button"
                           key={item.name}
                           className="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
                           onClick={() => handleNavigation(item.href)}
@@ -582,6 +590,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                 {/* Mobile Sign Out Button */}
                 <div className="border-t border-gray-200 pt-4 mt-6">
                   <motion.button
+                    type="button"
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                       isSigningOut 
                         ? 'bg-red-50 text-red-400 cursor-not-allowed' 
