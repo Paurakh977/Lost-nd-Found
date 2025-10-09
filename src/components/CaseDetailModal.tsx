@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, MapPin, Calendar, User, Tag, DollarSign, AlertCircle } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, MapPin, Calendar, User, Tag, DollarSign, AlertCircle, CheckCircle, FileText, UserCheck } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 
 interface CaseDetailModalProps {
@@ -97,21 +98,18 @@ export default function CaseDetailModal({ case: caseData, isOpen, onClose }: Cas
     }
   };
 
-  return (
+  const modal = (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[10000] bg-black/50 backdrop-blur-sm"
             onClick={onClose}
           />
-          
-          {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -411,6 +409,119 @@ export default function CaseDetailModal({ case: caseData, isOpen, onClose }: Cas
                         </span>
                       )}
                     </div>
+
+                    {/* Resolution Information */}
+                    {caseData.status === 'resolved' && caseData.resolution && (
+                      <div className={`mt-6 p-4 rounded-xl border-2 ${
+                        isDark ? 'bg-green-500/10 border-green-500/20' : 'bg-green-50 border-green-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-4">
+                          <CheckCircle className={`w-5 h-5 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+                          <h3 className={`text-lg font-semibold ${isDark ? 'text-green-300' : 'text-green-900'}`}>
+                            Resolution Details
+                          </h3>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {/* Outcome */}
+                          <div>
+                            <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-green-300/70' : 'text-green-700'}`}>
+                              Outcome
+                            </label>
+                            <p className={`text-sm ${isDark ? 'text-green-200' : 'text-green-900'}`}>
+                              {caseData.resolution.outcome}
+                            </p>
+                          </div>
+
+                          {/* Notes */}
+                          {caseData.resolution.notes && (
+                            <div>
+                              <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-green-300/70' : 'text-green-700'}`}>
+                                <FileText className="w-3 h-3 inline mr-1" />
+                                Notes
+                              </label>
+                              <p className={`text-sm ${isDark ? 'text-green-200' : 'text-green-900'}`}>
+                                {caseData.resolution.notes}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Resolved By */}
+                          {caseData.resolution.resolvedBy && (
+                            <div className="flex items-center gap-2">
+                              <UserCheck className={`w-4 h-4 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+                              <span className={`text-sm ${isDark ? 'text-green-200' : 'text-green-900'}`}>
+                                Resolved by: {typeof caseData.resolution.resolvedBy === 'object' 
+                                  ? `${caseData.resolution.resolvedBy.firstName} ${caseData.resolution.resolvedBy.lastName}` 
+                                  : 'Officer'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Resolved At */}
+                          {caseData.resolution.resolvedAt && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className={`w-4 h-4 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+                              <span className={`text-sm ${isDark ? 'text-green-200' : 'text-green-900'}`}>
+                                Resolved on: {formatDate(caseData.resolution.resolvedAt)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Item Assigned To */}
+                          {caseData.resolution.itemAssignedTo && (
+                            <div className={`mt-3 p-3 rounded-lg ${
+                              isDark ? 'bg-green-600/10' : 'bg-white'
+                            }`}>
+                              <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-green-300/70' : 'text-green-700'}`}>
+                                Item Assigned To
+                              </label>
+                              <div className="space-y-1">
+                                <p className={`text-sm font-medium ${isDark ? 'text-green-100' : 'text-green-900'}`}>
+                                  {caseData.resolution.itemAssignedTo.name}
+                                </p>
+                                {caseData.resolution.itemAssignedTo.contactInfo && (
+                                  <p className={`text-xs ${isDark ? 'text-green-200/70' : 'text-green-700'}`}>
+                                    Contact: {caseData.resolution.itemAssignedTo.contactInfo}
+                                  </p>
+                                )}
+                                {caseData.resolution.itemAssignedTo.clerkId && (
+                                  <p className={`text-xs ${isDark ? 'text-green-200/70' : 'text-green-700'}`}>
+                                    User ID: {caseData.resolution.itemAssignedTo.clerkId}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Found By */}
+                          {caseData.resolution.foundBy && (
+                            <div className={`mt-3 p-3 rounded-lg ${
+                              isDark ? 'bg-green-600/10' : 'bg-white'
+                            }`}>
+                              <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-green-300/70' : 'text-green-700'}`}>
+                                Found By
+                              </label>
+                              <div className="space-y-1">
+                                <p className={`text-sm font-medium ${isDark ? 'text-green-100' : 'text-green-900'}`}>
+                                  {caseData.resolution.foundBy.name}
+                                </p>
+                                {caseData.resolution.foundBy.contactInfo && (
+                                  <p className={`text-xs ${isDark ? 'text-green-200/70' : 'text-green-700'}`}>
+                                    Contact: {caseData.resolution.foundBy.contactInfo}
+                                  </p>
+                                )}
+                                {caseData.resolution.foundBy.clerkId && (
+                                  <p className={`text-xs ${isDark ? 'text-green-200/70' : 'text-green-700'}`}>
+                                    User ID: {caseData.resolution.foundBy.clerkId}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -420,4 +531,11 @@ export default function CaseDetailModal({ case: caseData, isOpen, onClose }: Cas
       )}
     </AnimatePresence>
   );
+
+  // Render in a portal to avoid clipping within transformed/overflow ancestors
+  if (typeof window !== 'undefined') {
+    const root = document.body;
+    return createPortal(modal, root);
+  }
+  return modal;
 }
