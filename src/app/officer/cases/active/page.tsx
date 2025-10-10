@@ -1,50 +1,91 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useMyActiveCases } from '../../hooks/useMyActiveCases';
 import { CaseCard } from '../../components/CaseCard';
 import { Pagination } from '../../components/Pagination';
 import { EmptyState } from '../../components/EmptyState';
-import { Search, Package } from 'lucide-react';
+import { Search, Package, ArrowLeft, Activity } from 'lucide-react';
 import CaseDetailModal from '../../../../components/CaseDetailModal';
 import { useResolveCase } from '../../hooks/useResolveCase';
 import { ToastContainer } from '../../../../components/Toast';
 import type { ToastType } from '../../../../components/Toast';
 import ResolveCaseModal from '../../components/ResolveCaseModal';
+import type { CaseItem } from '../../types';
+import { useRouter } from 'next/navigation';
 
 export default function MyActiveCasesPage() {
+  const router = useRouter();
   const { cases, pagination, loading, error, filters, setFilters, goToPage, refetch } = useMyActiveCases(1, 10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCase, setSelectedCase] = useState<any | null>(null);
+  const [selectedCase, setSelectedCase] = useState<CaseItem | null>(null);
   const { resolveCase } = useResolveCase();
   const [toasts, setToasts] = useState<Array<{ id: string; type: ToastType; title: string; message?: string }>>([]);
   const pushToast = (type: ToastType, title: string, message?: string) => { const id = Math.random().toString(36).slice(2); setToasts((p) => [...p, { id, type, title, message }]); };
   const removeToast = (id: string) => setToasts((p) => p.filter(t => t.id !== id));
-  const [resolveForCase, setResolveForCase] = useState<any | null>(null);
+  const [resolveForCase, setResolveForCase] = useState<CaseItem | null>(null);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">My Active Cases</h1>
-      </div>
+      {/* Header with Back Button */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-6 relative z-10"
+      >
+        <div className="flex items-center gap-4 mb-4">
+          <motion.button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Button clicked!');
+              router.push('/officer/dashboard');
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200 group cursor-pointer relative z-20"
+            whileHover={{ scale: 1.02, x: -2 }}
+            whileTap={{ scale: 0.98 }}
+            style={{ pointerEvents: 'auto' }}
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+            <span className="font-medium">Back to Dashboard</span>
+          </motion.button>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+            <Activity className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">My Active Cases</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Cases currently assigned to you</p>
+          </div>
+        </div>
+      </motion.div>
 
-      <div className="bg-white rounded-2xl border overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm"
+      >
         <div className="p-4 flex items-center gap-2 flex-wrap">
           <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setFilters({ ...filters, search: e.target.value }); }}
               placeholder="Search my cases..."
-              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="flex items-center gap-1 bg-gray-50 rounded-md border border-gray-100">
-            <Package className="w-3.5 h-3.5 text-gray-400 ml-2" />
+          <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-100 dark:border-gray-600">
+            <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 ml-2" />
             <select
               value={filters.type}
-              onChange={(e) => setFilters({ ...filters, type: e.target.value as any })}
-              className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 focus:outline-none appearance-none"
+              onChange={(e) => setFilters({ ...filters, type: e.target.value as 'all' | 'lost' | 'found' | 'verification' })}
+              className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none appearance-none"
               style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
             >
               <option value="all">All Types</option>
@@ -57,9 +98,9 @@ export default function MyActiveCasesPage() {
 
         <div>
           {loading ? (
-            <div className="p-6 text-gray-500">Loading...</div>
+            <div className="p-6 text-gray-500 dark:text-gray-400">Loading...</div>
           ) : error ? (
-            <div className="p-6 text-red-600">{error}</div>
+            <div className="p-6 text-red-600 dark:text-red-400">{error}</div>
           ) : cases.length === 0 ? (
             <div className="p-6"><EmptyState type="general" message="No active cases assigned to you." /></div>
           ) : (
@@ -71,7 +112,7 @@ export default function MyActiveCasesPage() {
                 showResolveButton={true}
                 onResolveClick={(caseItem) => setResolveForCase(caseItem)}
                 index={index}
-                onViewDetails={(id) => { const c = cases.find(x => x._id === id); setSelectedCase(c); }}
+                onViewDetails={(id) => { const c = cases.find(x => x._id === id); setSelectedCase(c || null); }}
               />
             ))
           )}
@@ -80,7 +121,7 @@ export default function MyActiveCasesPage() {
         {pagination && (
           <Pagination pagination={pagination} onPageChange={goToPage} />
         )}
-      </div>
+      </motion.div>
       <CaseDetailModal case={selectedCase} isOpen={!!selectedCase} onClose={() => setSelectedCase(null)} />
       <ResolveCaseModal
         isOpen={!!resolveForCase}
