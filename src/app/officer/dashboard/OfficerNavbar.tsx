@@ -243,7 +243,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
 
   return (
     <>
-      <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-50">
+      <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Brand */}
@@ -258,10 +258,10 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                   <span className="text-white font-bold text-lg">G</span>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                     GOTUS
                   </h1>
-                  <p className="text-xs text-gray-500 font-medium">Officer Portal</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Officer Portal</p>
                 </div>
               </div>
             </motion.div>
@@ -269,7 +269,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
             {/* Desktop Navigation Menu */}
             <div className="hidden lg:flex items-center space-x-1" ref={dropdownRef}>
               <motion.button
-                className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
+                className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200"
                 onClick={() => handleNavigation('/officer/dashboard')}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -281,7 +281,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               {menuItems.map((menu) => (
                 <div key={menu.name} className="relative">
                   <motion.button
-                    className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
+                    className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200"
                     onClick={() => toggleDropdown(menu.name)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -298,7 +298,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                   <AnimatePresence>
                     {activeDropdown === menu.name && (
                       <motion.div
-                        className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200/50 py-2 z-50"
+                        className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700 py-2 z-50"
                         variants={dropdownVariants}
                         initial="hidden"
                         animate="visible"
@@ -307,14 +307,14 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                         {menu.items.map((item, index) => (
                           <motion.button
                             key={item.name}
-                            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150"
+                            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
                             onClick={() => handleNavigation(item.href)}
                             whileHover={{ x: 4 }}
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
                           >
-                            <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.name}</span>
                             {item.count > 0 && (
                               <span className={`text-xs font-bold px-2 py-1 rounded-full bg-gray-100 ${item.color}`}>
                                 {item.count}
@@ -339,7 +339,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               {/* Mobile Menu Button */}
                 <motion.button
                   type="button"
-                className="lg:hidden p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
+                className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200"
                 onClick={toggleMobileMenu}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -351,7 +351,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               <div className="relative">
                 <motion.button
                   type="button"
-                  className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all duration-200"
+                  className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200"
                   onClick={() => toggleDropdown('notifications')}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -372,16 +372,16 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                 <AnimatePresence>
                   {activeDropdown === 'notifications' && (
                     <motion.div
-                      className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200/50 py-2 z-50 max-h-96 overflow-y-auto"
+                      className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700 py-2 z-50 max-h-96 overflow-y-auto"
                       variants={dropdownVariants}
                       initial="hidden"
                       animate="visible"
                       exit="hidden"
                     >
-                      <div className="px-4 py-3 border-b border-gray-100">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-                          <button className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                          <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
                             Mark all as read
                           </button>
                         </div>
@@ -390,8 +390,8 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                       {notificationItems.map((notification, index) => (
                         <motion.div
                           key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer border-l-2 ${
-                            notification.read ? 'border-transparent' : 'border-blue-500 bg-blue-50/30'
+                          className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer border-l-2 ${
+                            notification.read ? 'border-transparent' : 'border-blue-500 dark:border-blue-400 bg-blue-50/30 dark:bg-blue-900/20'
                           }`}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -403,16 +403,16 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={`text-sm font-medium ${
-                                notification.read ? 'text-gray-700' : 'text-gray-900'
+                                notification.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-white'
                               }`}>
                                 {notification.title}
                               </p>
                               <p className={`text-xs mt-1 ${
-                                notification.read ? 'text-gray-500' : 'text-gray-600'
+                                notification.read ? 'text-gray-500 dark:text-gray-400' : 'text-gray-600 dark:text-gray-300'
                               }`}>
                                 {notification.description}
                               </p>
-                              <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{notification.time}</p>
                             </div>
                             {!notification.read && (
                               <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2"></div>
@@ -421,8 +421,8 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                         </motion.div>
                       ))}
                       
-                      <div className="px-4 py-3 border-t border-gray-100">
-                        <button className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                      <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
+                        <button className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
                           View all notifications
                         </button>
                       </div>
@@ -435,16 +435,16 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               <div className="relative">
                 <motion.button
                   type="button"
-                  className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50/50 rounded-lg transition-all duration-200"
+                  className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 rounded-lg transition-all duration-200"
                   onClick={() => toggleDropdown('profile')}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
                       {currentUser?.firstName} {currentUser?.lastName}
                     </p>
-                    <p className="text-xs text-gray-500 font-medium">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                       {currentUser?.department} • Officer
                     </p>
                   </div>
@@ -452,7 +452,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                     <UserCheck className="w-4 h-4 text-white" />
                   </div>
                   <ChevronDown 
-                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 hidden sm:block ${
+                    className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 hidden sm:block ${
                       activeDropdown === 'profile' ? 'rotate-180' : ''
                     }`} 
                   />
@@ -461,48 +461,48 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                 <AnimatePresence>
                   {activeDropdown === 'profile' && (
                     <motion.div
-                      className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200/50 py-2 z-50"
+                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-700 py-2 z-50"
                       variants={dropdownVariants}
                       initial="hidden"
                       animate="visible"
                       exit="hidden"
                     >
-                      <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-sm font-semibold text-gray-900">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
                           {currentUser?.firstName} {currentUser?.lastName}
                         </p>
-                        <p className="text-xs text-gray-500">{currentUser?.email}</p>
-                        <p className="text-xs text-gray-500">{currentUser?.department}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.department}</p>
                       </div>
                       
                       <motion.button
                         type="button"
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150"
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
                         onClick={() => handleNavigation('/officer/profile')}
                         whileHover={{ x: 4 }}
                       >
-                        <UserCheck className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">Profile</span>
+                        <UserCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile</span>
                       </motion.button>
                       
                       <motion.button
                         type="button"
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-150"
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
                         onClick={() => handleNavigation('/officer/settings')}
                         whileHover={{ x: 4 }}
                       >
-                        <Settings className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">Settings</span>
+                        <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Settings</span>
                       </motion.button>
                       
-                      <div className="border-t border-gray-100 my-2"></div>
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-2"></div>
                       
                       <motion.button
                         type="button"
                         className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-150 ${
                           isSigningOut 
-                            ? 'bg-red-50 text-red-400 cursor-not-allowed' 
-                            : 'hover:bg-red-50 text-red-600'
+                            ? 'bg-red-50 dark:bg-red-900/20 text-red-400 cursor-not-allowed' 
+                            : 'hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400'
                         }`}
                         onClick={handleSignOut}
                         disabled={isSigningOut}
@@ -537,7 +537,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
             
             {/* Mobile Menu Panel */}
             <motion.div
-              className="fixed top-16 left-0 right-0 bg-white shadow-xl z-50 lg:hidden max-h-[calc(100vh-4rem)] overflow-y-auto"
+              className="fixed top-16 left-0 right-0 bg-white dark:bg-gray-800 shadow-xl z-50 lg:hidden max-h-[calc(100vh-4rem)] overflow-y-auto"
               variants={mobileMenuVariants}
               initial="hidden"
               animate="visible"
@@ -547,12 +547,12 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                 {/* Dashboard */}
                 <motion.button
                   type="button"
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   onClick={() => handleNavigation('/officer/dashboard')}
                   whileHover={{ x: 4 }}
                 >
-                  <Home className="w-5 h-5 text-gray-600" />
-                  <span className="text-base font-medium text-gray-900">Dashboard</span>
+                  <Home className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  <span className="text-base font-medium text-gray-900 dark:text-white">Dashboard</span>
                 </motion.button>
 
                 {/* Menu Items */}
@@ -564,21 +564,21 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: menuIndex * 0.1 }}
                     >
-                      <menu.icon className="w-5 h-5 text-gray-600" />
-                      <span className="text-base font-semibold text-gray-900">{menu.name}</span>
+                      <menu.icon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                      <span className="text-base font-semibold text-gray-900 dark:text-white">{menu.name}</span>
                     </motion.div>
                     <div className="ml-6 space-y-1">
                       {menu.items.map((item, itemIndex) => (
                         <motion.button
                           type="button"
                           key={item.name}
-                          className="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                          className="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                           onClick={() => handleNavigation(item.href)}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: (menuIndex * 0.1) + (itemIndex * 0.05) }}
                         >
-                          <span className="text-sm text-gray-700">{item.name}</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{item.name}</span>
                           {item.count > 0 && (
                             <span className={`text-xs font-bold px-2 py-1 rounded-full bg-gray-100 ${item.color}`}>
                               {item.count}
@@ -591,13 +591,13 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                 ))}
 
                 {/* Mobile Sign Out Button */}
-                <div className="border-t border-gray-200 pt-4 mt-6">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-6">
                   <motion.button
                     type="button"
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                       isSigningOut 
-                        ? 'bg-red-50 text-red-400 cursor-not-allowed' 
-                        : 'hover:bg-red-50 text-red-600'
+                        ? 'bg-red-50 dark:bg-red-900/20 text-red-400 cursor-not-allowed' 
+                        : 'hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400'
                     }`}
                     onClick={handleSignOut}
                     disabled={isSigningOut}

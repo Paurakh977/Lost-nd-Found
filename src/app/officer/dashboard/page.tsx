@@ -118,14 +118,12 @@ export default function OfficerDashboard() {
   if (isLoading) return <DashboardLoadingSkeleton />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-      <OfficerNavbar currentUser={officer} onSignOut={() => { navigateTo('/sign-in'); }} />
-      
+    <>
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <motion.div
-          className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-8 text-white mb-8 overflow-hidden"
+          className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 dark:from-indigo-700 dark:via-indigo-800 dark:to-purple-900 rounded-2xl p-8 text-white mb-8 overflow-hidden"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -149,7 +147,7 @@ export default function OfficerDashboard() {
                 Welcome back, {officer?.firstName}! 👋
               </motion.h1>
               <motion.p 
-                className="text-blue-100 text-lg mb-4"
+                className="text-blue-100 dark:text-blue-200 text-lg mb-4"
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
@@ -178,8 +176,8 @@ export default function OfficerDashboard() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5, duration: 0.6 }}
             >
-              <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <Activity className="w-16 h-16 text-blue-200" />
+              <div className="w-32 h-32 bg-white/10 dark:bg-white/5 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <Activity className="w-16 h-16 text-blue-200 dark:text-blue-300" />
               </div>
             </motion.div>
           </div>
@@ -229,7 +227,7 @@ export default function OfficerDashboard() {
           ].map((stat, index) => (
             <motion.div
               key={stat.title}
-              className={`${stat.bgColor} p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-lg transition-all duration-300`}
+              className={`${stat.bgColor} dark:bg-gray-800 p-6 rounded-2xl border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index, duration: 0.6 }}
@@ -248,7 +246,7 @@ export default function OfficerDashboard() {
                   <stat.icon className="w-6 h-6 text-white" />
                 </div>
                 <div className={`flex items-center space-x-1 text-sm font-medium ${
-                  stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                  stat.changeType === 'increase' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 }`}>
                   {stat.changeType === 'increase' ? (
                     <ArrowUpRight className="w-4 h-4" />
@@ -259,8 +257,8 @@ export default function OfficerDashboard() {
                 </div>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
               </div>
             </motion.div>
           ))}
@@ -272,23 +270,23 @@ export default function OfficerDashboard() {
 
           {/* Urgent Cases Sidebar */}
           <motion.div
-            className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 overflow-hidden"
+            className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 dark:border-gray-700 overflow-hidden"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <div className="p-6 border-b border-gray-100">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Urgent Cases</h3>
-                  <p className="text-sm text-gray-600">Requires immediate attention</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Urgent Cases</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Requires immediate attention</p>
                 </div>
-                <div className="flex items-center gap-1 bg-gray-50 rounded-md border border-gray-100">
-                  <Package className="w-3.5 h-3.5 text-gray-400 ml-2" />
+                <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-100 dark:border-gray-600">
+                  <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 ml-2" />
                   <select
                     value={urgentCaseTypeFilter}
                     onChange={(e) => setUrgentCaseTypeFilter(e.target.value as any)}
-                    className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 focus:outline-none appearance-none"
+                    className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none appearance-none"
                     style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
                   >
                     <option value="all">All Types</option>
@@ -392,7 +390,7 @@ export default function OfficerDashboard() {
           ].map((action, index) => (
             <motion.button
               key={action.title}
-              className={`${action.bgColor} ${action.hoverColor} p-6 rounded-2xl border border-white/50 text-left transition-all duration-300 hover:shadow-lg group`}
+              className={`${action.bgColor} dark:bg-gray-800 ${action.hoverColor} dark:hover:bg-gray-700 p-6 rounded-2xl border border-white/50 dark:border-gray-700 text-left transition-all duration-300 hover:shadow-lg group`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9 + (index * 0.1), duration: 0.4 }}
@@ -404,12 +402,12 @@ export default function OfficerDashboard() {
                 <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
                   <action.icon className="w-6 h-6 text-white" />
                 </div>
-                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                <ArrowUpRight className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-gray-700 transition-colors">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
                 {action.title}
               </h3>
-              <p className="text-sm text-gray-600 group-hover:text-gray-500 transition-colors">
+              <p className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300 transition-colors">
                 {action.description}
               </p>
             </motion.button>
@@ -418,7 +416,7 @@ export default function OfficerDashboard() {
 
         {/* Performance Summary */}
         <motion.div
-          className="mt-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-8 text-white"
+          className="mt-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-2xl p-8 text-white"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.6 }}
@@ -433,7 +431,7 @@ export default function OfficerDashboard() {
               >
                 {stats?.lostReports ?? 0}
               </motion.div>
-              <p className="text-gray-300">Lost Reports</p>
+              <p className="text-gray-300 dark:text-gray-400">Lost Reports</p>
             </div>
             <div className="text-center">
               <motion.div
@@ -444,7 +442,7 @@ export default function OfficerDashboard() {
               >
                 {stats?.foundReports ?? 0}
               </motion.div>
-              <p className="text-gray-300">Found Reports</p>
+              <p className="text-gray-300 dark:text-gray-400">Found Reports</p>
             </div>
             <div className="text-center">
               <motion.div
@@ -455,7 +453,7 @@ export default function OfficerDashboard() {
               >
                 {stats && stats.totalCases > 0 ? Math.round((stats.resolvedCases / stats.totalCases) * 100) : 0}%
               </motion.div>
-              <p className="text-gray-300">Success Rate</p>
+              <p className="text-gray-300 dark:text-gray-400">Success Rate</p>
             </div>
             <div className="text-center">
               <motion.div
@@ -466,12 +464,12 @@ export default function OfficerDashboard() {
               >
                 4.8
               </motion.div>
-              <p className="text-gray-300">Satisfaction Rating</p>
+              <p className="text-gray-300 dark:text-gray-400">Satisfaction Rating</p>
             </div>
           </div>
         </motion.div>
       </main>
       <ToastContainer toasts={toasts} onClose={removeToast} />
-    </div>
+    </>
   );
 }
