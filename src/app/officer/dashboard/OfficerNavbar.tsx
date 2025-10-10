@@ -22,6 +22,7 @@ import {
   Eye,
   Activity
 } from 'lucide-react';
+import { useNavigation } from '@/components/SplashLayout';
 
 interface OfficerNavbarProps {
   currentUser: any;
@@ -29,6 +30,7 @@ interface OfficerNavbarProps {
 }
 
 export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarProps) {
+  const { navigateTo } = useNavigation();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [notifications] = useState(12); // Mock notification count
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -88,8 +90,8 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
         onSignOut();
       }
       
-      // Force redirect to sign-in page
-      window.location.href = '/sign-in';
+      // Use navigateTo for smooth navigation without splash screen
+      navigateTo('/sign-in');
       
     } catch (error) {
       console.error('Sign out error:', error);
@@ -100,7 +102,8 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
         onSignOut();
       }
       
-      window.location.href = '/sign-in';
+      // Use navigateTo for smooth navigation without splash screen
+      navigateTo('/sign-in');
     } finally {
       setIsSigningOut(false);
     }
@@ -224,7 +227,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
   ];
 
   const handleNavigation = (href: string) => {
-    console.log(`Navigate to: ${href}`);
+    navigateTo(href);
     setActiveDropdown(null);
     setIsMobileMenuOpen(false);
   };

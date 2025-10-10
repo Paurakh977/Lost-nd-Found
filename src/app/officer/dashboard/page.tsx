@@ -32,8 +32,10 @@ import { DashboardLoadingSkeleton } from '../components/LoadingSkeleton';
 import UnassignedCasesPanel from '../components/UnassignedCasesPanel';
 import { ToastContainer } from '../../../components/Toast';
 import type { ToastType } from '../../../components/Toast';
+import { useNavigation } from '../../../components/SplashLayout';
 
 export default function OfficerDashboard() {
+  const { navigateTo } = useNavigation();
   const { officer, stats, loading: statsLoading } = useOfficerDashboard();
   const {
     cases: unassignedCases,
@@ -66,6 +68,10 @@ export default function OfficerDashboard() {
     setToasts((prev) => [...prev, { id, type, title, message }]);
   };
   const removeToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id));
+
+  const handleNavigation = (path: string) => {
+    navigateTo(path);
+  };
 
   // Wire search and filters to server-side unassigned cases endpoint (status is always pending for unassigned)
   useEffect(() => {
@@ -113,7 +119,7 @@ export default function OfficerDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-      <OfficerNavbar currentUser={officer} onSignOut={() => { window.location.href = '/sign-in'; }} />
+      <OfficerNavbar currentUser={officer} onSignOut={() => { navigateTo('/sign-in'); }} />
       
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -231,7 +237,7 @@ export default function OfficerDashboard() {
               onClick={() => {
                 // Navigate for Active Cases card
                 if ((stat as any).href) {
-                  window.location.href = (stat as any).href;
+                  handleNavigation((stat as any).href);
                 }
               }}
               role={(stat as any).href ? 'button' : undefined}
@@ -310,7 +316,7 @@ export default function OfficerDashboard() {
                       window.dispatchEvent(new Event('officer:refresh-stats'));
                     }}
                     onViewDetails={(id) => {
-                      window.location.href = `/officer/cases/${id}`;
+                      handleNavigation(`/officer/cases/${id}`);
                     }}
                     onAssignError={(message) => {
                       pushToast('error', 'Assignment failed', message);
@@ -392,7 +398,7 @@ export default function OfficerDashboard() {
               transition={{ delay: 0.9 + (index * 0.1), duration: 0.4 }}
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => console.log(`${action.title} clicked`)}
+              onClick={() => handleNavigation(`/officer/${action.title.toLowerCase().replace(/\s+/g, '-')}`)}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
