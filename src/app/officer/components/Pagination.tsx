@@ -52,11 +52,11 @@ export function Pagination({ pagination, onPageChange }: PaginationProps) {
   }
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-      <div className="text-sm text-gray-600">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+      <div className="text-sm text-gray-600 dark:text-gray-400">
         Showing page <span className="font-semibold">{page}</span> of{' '}
         <span className="font-semibold">{pages}</span>{' '}
-        <span className="text-gray-400">({total} total items)</span>
+        <span className="text-gray-400 dark:text-gray-500">({total} total items)</span>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -66,8 +66,8 @@ export function Pagination({ pagination, onPageChange }: PaginationProps) {
           disabled={!hasPrevPage}
           className={`p-2 rounded-lg transition-colors ${
             hasPrevPage
-              ? 'hover:bg-gray-100 text-gray-700'
-              : 'text-gray-300 cursor-not-allowed'
+              ? 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+              : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
           }`}
           whileHover={hasPrevPage ? { scale: 1.05 } : {}}
           whileTap={hasPrevPage ? { scale: 0.95 } : {}}
@@ -80,7 +80,7 @@ export function Pagination({ pagination, onPageChange }: PaginationProps) {
         {getPageNumbers().map((pageNum, index) => {
           if (pageNum === '...') {
             return (
-              <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
+              <span key={`ellipsis-${index}`} className="px-2 text-gray-400 dark:text-gray-500">
                 ...
               </span>
             );
@@ -94,8 +94,8 @@ export function Pagination({ pagination, onPageChange }: PaginationProps) {
               onClick={() => onPageChange(pageNum as number)}
               className={`min-w-[36px] h-9 px-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
               whileHover={!isActive ? { scale: 1.05 } : {}}
               whileTap={!isActive ? { scale: 0.95 } : {}}
@@ -111,8 +111,8 @@ export function Pagination({ pagination, onPageChange }: PaginationProps) {
           disabled={!hasNextPage}
           className={`p-2 rounded-lg transition-colors ${
             hasNextPage
-              ? 'hover:bg-gray-100 text-gray-700'
-              : 'text-gray-300 cursor-not-allowed'
+              ? 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+              : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
           }`}
           whileHover={hasNextPage ? { scale: 1.05 } : {}}
           whileTap={hasNextPage ? { scale: 0.95 } : {}}

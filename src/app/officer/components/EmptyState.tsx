@@ -49,7 +49,7 @@ export function EmptyState({ type = 'general', message, icon }: EmptyStateProps)
 
   return (
     <motion.div
-      className={`flex flex-col items-center justify-center py-12 px-6 bg-gradient-to-br ${defaultContent.color} rounded-xl`}
+      className={`flex flex-col items-center justify-center py-12 px-6 bg-gradient-to-br ${defaultContent.color} dark:from-gray-700 dark:to-gray-800 rounded-xl`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -64,7 +64,7 @@ export function EmptyState({ type = 'general', message, icon }: EmptyStateProps)
       </motion.div>
       
       <motion.h3
-        className="text-lg font-semibold text-gray-900 mb-2 text-center"
+        className="text-lg font-semibold text-gray-900 dark:text-white mb-2 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -73,7 +73,7 @@ export function EmptyState({ type = 'general', message, icon }: EmptyStateProps)
       </motion.h3>
       
       <motion.p
-        className="text-sm text-gray-600 text-center max-w-md"
+        className="text-sm text-gray-600 dark:text-gray-400 text-center max-w-md"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
@@ -83,12 +83,12 @@ export function EmptyState({ type = 'general', message, icon }: EmptyStateProps)
       
       {type === 'urgent' && (
         <motion.div
-          className="mt-4 px-4 py-2 bg-white rounded-lg shadow-sm border border-green-100"
+          className="mt-4 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-green-100 dark:border-green-700"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <p className="text-xs text-green-700 font-medium">
+          <p className="text-xs text-green-700 dark:text-green-400 font-medium">
             ✨ Keep up the excellent work!
           </p>
         </motion.div>

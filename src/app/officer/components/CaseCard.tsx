@@ -113,8 +113,8 @@ export function CaseCard({
 
   return (
     <motion.div
-      className={`p-6 border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
-        isUrgent ? 'bg-red-50/30' : ''
+      className={`p-6 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors ${
+        isUrgent ? 'bg-red-50/30 dark:bg-red-900/10' : ''
       }`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -135,10 +135,10 @@ export function CaseCard({
         {/* Case Details */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h4 className="text-sm font-semibold text-gray-900 truncate flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate flex items-center gap-2">
               {caseItem.title}
               {isUrgent && (
-                <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0" />
               )}
             </h4>
             <div className="flex items-center space-x-2">
@@ -147,18 +147,18 @@ export function CaseCard({
                   {caseItem.urgencyLevel}
                 </span>
               )}
-              <span className="text-xs text-gray-500 flex-shrink-0">
+              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                 {formatTimeAgo(caseItem.createdAt)}
               </span>
             </div>
           </div>
           
-          <p className="text-sm text-gray-600 mb-2 line-clamp-1">{caseItem.description}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-1">{caseItem.description}</p>
           
           <div className="flex items-center space-x-3 flex-wrap gap-y-1">
             {/* Location */}
             {caseItem.location.address && (
-              <div className="flex items-center space-x-1 text-xs text-gray-500">
+              <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
                 <MapPin className="w-3 h-3" />
                 <span className="truncate max-w-[150px]">{caseItem.location.address}</span>
               </div>
@@ -190,7 +190,7 @@ export function CaseCard({
             </span>
             
             {/* Reporter */}
-            <div className="flex items-center space-x-1 text-xs text-gray-500">
+            <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
               <User className="w-3 h-3" />
               <span className="truncate max-w-[120px]">{caseItem.reportedBy.name}</span>
             </div>
