@@ -51,6 +51,24 @@ export interface ICase extends Document {
       contactInfo?: string;
     };
   };
+  // Claim evidence for verification cases
+  claimEvidence?: {
+    description: string; // Required description proving ownership
+    images?: string[]; // Optional evidence images
+    claimantInfo: {
+      name: string;
+      email: string;
+      phone?: string;
+      address: {
+        province?: string;
+        district?: string;
+        municipality?: string;
+        ward?: string;
+        fullAddress?: string;
+      };
+    };
+    submittedAt: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -169,19 +187,49 @@ const CaseSchema = new Schema<ICase>({
     notes: String,
     itemAssignedTo: {
       clerkId: String,
-      name: {
-        type: String,
-        required: function() { return !!this.resolution?.itemAssignedTo; }
-      },
+      name: String,
       contactInfo: String
     },
     foundBy: {
       clerkId: String,
+      name: String,
+      contactInfo: String
+    }
+  },
+  // Claim evidence for verification cases
+  claimEvidence: {
+    description: {
+      type: String,
+      trim: true,
+      minlength: 20,
+      maxlength: 2000
+    },
+    images: [String], // Optional evidence images
+    claimantInfo: {
       name: {
         type: String,
-        required: function() { return !!this.resolution?.foundBy; }
+        trim: true
       },
-      contactInfo: String
+      email: {
+        type: String,
+        trim: true,
+        lowercase: true
+      },
+      phone: {
+        type: String,
+        trim: true
+      },
+      address: {
+        province: String,
+        district: String,
+        municipality: String,
+        ward: String,
+        fullAddress: String
+      }
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now
     }
   }
 }, {
