@@ -9,12 +9,12 @@ import Case from '../../../../models/Case';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { caseId: string } }
+  { params }: { params: Promise<{ caseId: string }> }
 ) {
   try {
     await connectDB();
 
-    const { caseId } = params;
+    const { caseId } = await params;
     
     // Validate ObjectId format
     if (!/^[0-9a-fA-F]{24}$/.test(caseId)) {

@@ -1,8 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, CheckCircle, XCircle, User, Mail, Phone } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, User, Mail, Phone, ChevronDown, ChevronUp } from 'lucide-react';
+
+interface Claim {
+  id: string;
+  claimantInfo: {
+    name: string;
+    email: string;
+    phone?: string;
+    address: any;
+  };
+  evidence: {
+    description: string;
+    images?: string[];
+  };
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
 
 interface VerifyCaseModalProps {
   isOpen: boolean;
@@ -21,9 +37,72 @@ export default function VerifyCaseModal({ isOpen, onClose, onConfirm, case: case
     contactInfo: ''
   });
   const [showAssignee, setShowAssignee] = useState(false);
+  
+  // Claims state
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [claimsLoading, setClaimsLoading] = useState(false);
+  const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
+  const [expandedClaimId, setExpandedClaimId] = useState<string | null>(null);
+
+  // Fetch claims when modal opens
+  useEffect(() => {
+    if (isOpen && caseItem?._id) {
+      fetchClaims();
+    }
+  }, [isOpen, caseItem?._id]);
+
+  const fetchClaims = async () => {
+    if (!caseItem?._id) return;
+    
+    try {
+      setClaimsLoading(true);
+      const res = await fetch(`/api/cases/${caseItem._id}/claims`);
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        const allClaims = data.claims || [];
+        
+        // Merge legacy claimEvidence if exists and not in new claims
+        if (caseItem.claimEvidence) {
+          const legacyExists = allClaims.some(
+            (c: Claim) => c.claimantInfo.email === caseItem.claimEvidence.claimantInfo.email
+          );
+          
+          if (!legacyExists) {
+            allClaims.unshift({
+              id: 'legacy',
+              claimantInfo: caseItem.claimEvidence.claimantInfo,
+              evidence: {
+                description: caseItem.claimEvidence.description,
+                images: caseItem.claimEvidence.images || []
+              },
+              status: 'pending',
+              createdAt: caseItem.claimEvidence.submittedAt || caseItem.createdAt
+            });
+          }
+        }
+        
+        setClaims(allClaims);
+        // Auto-select first pending claim
+        const firstPending = allClaims.find((c: Claim) => c.status === 'pending');
+        if (firstPending) {
+          setSelectedClaimId(firstPending.id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch claims:', error);
+    } finally {
+      setClaimsLoading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedClaimId && claims.length > 0) {
+      alert('Please select a claim to review');
+      return;
+    }
     
     if (!outcome.trim()) {
       alert('Outcome is required');
@@ -36,6 +115,7 @@ export default function VerifyCaseModal({ isOpen, onClose, onConfirm, case: case
     }
 
     const payload = {
+      claimId: selectedClaimId,
       outcome: outcome.trim(),
       notes: notes.trim() || undefined,
       isVerified,
@@ -57,6 +137,9 @@ export default function VerifyCaseModal({ isOpen, onClose, onConfirm, case: case
     setIsVerified(null);
     setAssignee({ name: '', contactInfo: '' });
     setShowAssignee(false);
+    setClaims([]);
+    setSelectedClaimId(null);
+    setExpandedClaimId(null);
     onClose();
   };
 
@@ -92,8 +175,126 @@ export default function VerifyCaseModal({ isOpen, onClose, onConfirm, case: case
           </div>
         )}
 
-        {/* Claim Evidence Section */}
-        {caseItem?.claimEvidence && (
+        {/* Claims List Section */}
+        {claimsLoading ? (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center">
+            <p className="text-gray-600">Loading claims...</p>
+          </div>
+        ) : claims.length > 0 ? (
+          <div className="mb-6">
+            <h4 className="font-medium text-gray-900 mb-3 flex items-center justify-between">
+              <span className="flex items-center">
+                <Shield className="w-4 h-4 mr-2" />
+                All Claims ({claims.length})
+              </span>
+              <span className="text-xs text-gray-500">Select a claim to review</span>
+            </h4>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {claims.map((claim) => (
+                <div
+                  key={claim.id}
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    selectedClaimId === claim.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setSelectedClaimId(claim.id)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <input
+                          type="radio"
+                          checked={selectedClaimId === claim.id}
+                          onChange={() => setSelectedClaimId(claim.id)}
+                          className="mr-1"
+                        />
+                        <span className="font-medium text-sm">{claim.claimantInfo.name}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          claim.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          claim.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {claim.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-600 ml-5">
+                        <span className="flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          {claim.claimantInfo.email}
+                        </span>
+                        {claim.claimantInfo.phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="w-3 h-3" />
+                            {claim.claimantInfo.phone}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedClaimId(expandedClaimId === claim.id ? null : claim.id);
+                      }}
+                      className="text-blue-600 hover:text-blue-700 text-xs flex items-center gap-1"
+                    >
+                      {expandedClaimId === claim.id ? (
+                        <><ChevronUp className="w-4 h-4" /> Hide</>
+                      ) : (
+                        <><ChevronDown className="w-4 h-4" /> View</>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {/* Expanded Details */}
+                  {expandedClaimId === claim.id && (
+                    <div className="mt-3 pt-3 border-t space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500">Evidence:</label>
+                        <p className="text-sm text-gray-700 mt-1">{claim.evidence.description}</p>
+                      </div>
+                      
+                      {claim.evidence.images && claim.evidence.images.length > 0 && (
+                        <div>
+                          <label className="text-xs font-medium text-gray-500">Images:</label>
+                          <div className="grid grid-cols-3 gap-2 mt-1">
+                            {claim.evidence.images.map((img, idx) => (
+                              <img
+                                key={idx}
+                                src={`/uploads/evidence/${img}`}
+                                alt={`Evidence ${idx + 1}`}
+                                className="w-full h-20 object-cover rounded"
+                                onError={(e) => { e.currentTarget.src = '/icons/icon-512x512.png'; }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {claim.claimantInfo.address?.fullAddress && (
+                        <div>
+                          <label className="text-xs font-medium text-gray-500">Address:</label>
+                          <p className="text-sm text-gray-700 mt-1">{claim.claimantInfo.address.fullAddress}</p>
+                        </div>
+                      )}
+                      
+                      <div className="text-xs text-gray-500">
+                        Submitted: {new Date(claim.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <p className="text-yellow-800 text-sm">No claims have been submitted for this case yet.</p>
+          </div>
+        )}
+
+        {/* Legacy Claim Evidence Section (if no new claims) */}
+        {!claimsLoading && claims.length === 0 && caseItem?.claimEvidence && (
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h4 className="font-medium text-blue-900 mb-3 flex items-center">
               <Shield className="w-4 h-4 mr-2" />

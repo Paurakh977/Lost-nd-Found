@@ -76,6 +76,7 @@ export interface CaseItem {
   resolution?: any;
   createdAt: string;
   updatedAt: string;
+  claimsCount?: number; // Number of claims for verification cases
 }
 
 export interface PaginationMeta {

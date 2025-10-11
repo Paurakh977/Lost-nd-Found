@@ -5,6 +5,20 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { MapPin, Clock, User, Package, Shield, CheckCircle, ArrowLeft, AlertCircle, Users, Map } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { useUser } from '@clerk/nextjs';
+import ItemPlaceholder from '@/components/ItemPlaceholder';
+
+// JWT User interface
+interface JWTUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  primaryEmailAddress?: {
+    emailAddress: string;
+  };
+}
 
 interface CaseItem {
   _id: string;
@@ -69,11 +83,18 @@ export default function PublicCaseDetailPage() {
   const params = useParams<{ caseId: string }>();
   const router = useRouter();
   const { pushToast, removeToast, toasts } = useToast();
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+  const [jwtUser, setJwtUser] = useState<JWTUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  // Determine which user to use (JWT or Clerk)
+  const user = jwtUser || clerkUser;
   
   const [caseItem, setCaseItem] = useState<CaseItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showClaimModal, setShowClaimModal] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedMunicipality, setSelectedMunicipality] = useState('');
   const [officers, setOfficers] = useState<Officer[]>([]);
@@ -81,13 +102,13 @@ export default function PublicCaseDetailPage() {
   const [loadingOfficers, setLoadingOfficers] = useState(false);
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [hasClaimed, setHasClaimed] = useState(false);
+  const [checkingClaim, setCheckingClaim] = useState(false);
   
   // Claim evidence states
   const [claimDescription, setClaimDescription] = useState('');
   const [claimImages, setClaimImages] = useState<File[]>([]);
   const [claimantInfo, setClaimantInfo] = useState({
-    name: '',
-    email: '',
     phone: '',
     address: {
       province: '',
@@ -97,6 +118,38 @@ export default function PublicCaseDetailPage() {
       fullAddress: ''
     }
   });
+
+  // Check for JWT user first, then fall back to Clerk
+  useEffect(() => {
+    if (clerkLoaded && !clerkUser) {
+      // No Clerk user, check for JWT user
+      fetch('/api/auth/me')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.user) {
+            // Transform JWT user to match Clerk user format
+            setJwtUser({
+              id: data.user.id,
+              email: data.user.email,
+              firstName: data.user.firstName,
+              lastName: data.user.lastName,
+              fullName: `${data.user.firstName} ${data.user.lastName}`,
+              primaryEmailAddress: {
+                emailAddress: data.user.email
+              }
+            });
+          }
+        })
+        .catch(() => {
+          setJwtUser(null);
+        })
+        .finally(() => {
+          setAuthLoading(false);
+        });
+    } else if (clerkLoaded) {
+      setAuthLoading(false);
+    }
+  }, [clerkLoaded, clerkUser]);
 
   // Fetch case details
   useEffect(() => {
@@ -124,9 +177,27 @@ export default function PublicCaseDetailPage() {
   useEffect(() => {
     const fetchLocationData = async () => {
       try {
-        const res = await fetch('/address/all-provinces.json');
-        const data = await res.json();
-        setLocationData(data);
+        // Fetch the mapping files to build the nested structure
+        const [provinceDistrictsRes, districtMunicipalitiesRes] = await Promise.all([
+          fetch('/address/map-province-districts.json'),
+          fetch('/address/map-districts-municipalities.json')
+        ]);
+        
+        const provinceDistrictsMap = await provinceDistrictsRes.json();
+        const districtMunicipalitiesMap = await districtMunicipalitiesRes.json();
+        
+        // Build the nested structure expected by the component
+        const provinces = Object.keys(provinceDistrictsMap).map(provinceName => ({
+          name: provinceName,
+          districts: provinceDistrictsMap[provinceName].map((districtName: string) => ({
+            name: districtName,
+            municipalities: (districtMunicipalitiesMap[districtName] || []).map((municipalityName: string) => ({
+              name: municipalityName
+            }))
+          }))
+        }));
+        
+        setLocationData({ provinces });
       } catch (e) {
         console.error('Failed to fetch location data:', e);
       }
@@ -139,10 +210,12 @@ export default function PublicCaseDetailPage() {
   useEffect(() => {
     if (selectedDistrict && selectedMunicipality) {
       fetchOfficers();
-    } else if (selectedDistrict || selectedMunicipality) {
-      // Only clear if user is interacting with the dropdowns (not pre-selected officer)
+    } else {
+      // Clear officers list when selections change
       setOfficers([]);
-      setSelectedOfficer('');
+      if (selectedOfficer) {
+        setSelectedOfficer('');
+      }
     }
   }, [selectedDistrict, selectedMunicipality]);
 
@@ -166,6 +239,14 @@ export default function PublicCaseDetailPage() {
 
   const handleClaimForVerification = async () => {
     if (!caseItem) return;
+
+    // Check if user is authenticated
+    if (!user) {
+      pushToast('error', 'Authentication Required', 'Please sign in to claim this item');
+      // Redirect to sign-in page
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(`/cases/${params.caseId}`)}`);
+      return;
+    }
 
     // Always show the modal to collect claim evidence and claimant information
     setShowClaimModal(true);
@@ -200,40 +281,66 @@ export default function PublicCaseDetailPage() {
         }
       }
       
+      // Get user info (from JWT or Clerk)
+      const userName = user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+      const userEmail = user?.primaryEmailAddress?.emailAddress || user?.email || '';
+      const userId = user?.id;
+      
+      console.log('[Claim Submission] User info:', {
+        userId: userId || 'MISSING',
+        userName,
+        userEmail: userEmail ? `${userEmail.substring(0, 3)}***` : 'MISSING',
+        isJWTUser: !!jwtUser,
+        isClerkUser: !!clerkUser
+      });
+      
+      if (!userId) {
+        pushToast('error', 'Authentication Error', 'User ID not found. Please sign in again.');
+        return;
+      }
+      
+      const requestBody: any = { 
+        clerkUserId: userId,
+        claimEvidence: {
+          description: claimDescription.trim(),
+          images: evidenceImageUrls,
+          claimantInfo: {
+            name: userName,
+            email: userEmail,
+            phone: claimantInfo.phone.trim(),
+            address: {
+              province: claimantInfo.address.province || undefined,
+              district: claimantInfo.address.district || undefined,
+              municipality: claimantInfo.address.municipality || undefined,
+              ward: claimantInfo.address.ward || undefined,
+              fullAddress: claimantInfo.address.fullAddress || undefined
+            }
+          }
+        }
+      };
+      
+      // Only include officerId if one was selected
+      if (officerId) {
+        requestBody.officerId = officerId;
+      }
+      
       const res = await fetch(`/api/cases/${params.caseId}/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          officerId,
-          claimEvidence: {
-            description: claimDescription.trim(),
-            images: evidenceImageUrls,
-            claimantInfo: {
-              name: claimantInfo.name.trim(),
-              email: claimantInfo.email.trim(),
-              phone: claimantInfo.phone.trim() || undefined,
-              address: {
-                province: claimantInfo.address.province || undefined,
-                district: claimantInfo.address.district || undefined,
-                municipality: claimantInfo.address.municipality || undefined,
-                ward: claimantInfo.address.ward || undefined,
-                fullAddress: claimantInfo.address.fullAddress || undefined
-              }
-            }
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
       
       const data = await res.json();
       if (res.ok && data.success) {
-        pushToast('success', 'Verification Request Submitted', 'Your claim has been submitted for verification. The assigned officer will review your case.');
+        const message = officerId 
+          ? 'Your claim has been submitted for verification. The assigned officer will review your case.'
+          : 'Your claim has been submitted for verification. It will be available for officers to review and take on.';
+        pushToast('success', 'Verification Request Submitted', message);
         setShowClaimModal(false);
         // Reset form
         setClaimDescription('');
         setClaimImages([]);
         setClaimantInfo({
-          name: '',
-          email: '',
           phone: '',
           address: { province: '', district: '', municipality: '', ward: '', fullAddress: '' }
         });
@@ -263,9 +370,40 @@ export default function PublicCaseDetailPage() {
     setClaimImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Check if user has already claimed when component mounts or user changes
+  useEffect(() => {
+    const checkExistingClaim = async () => {
+      if (user?.id && params.caseId) {
+        try {
+          setCheckingClaim(true);
+          const queryParams = new URLSearchParams();
+          queryParams.append('caseId', params.caseId);
+          queryParams.append('clerkUserId', user.id);
+          
+          const checkRes = await fetch(`/api/claims?${queryParams.toString()}`);
+          const checkData = await checkRes.json();
+          
+          if (checkData.success && checkData.hasClaimed) {
+            setHasClaimed(true);
+            pushToast('warning', 'Already Claimed', 'You have already submitted a claim for this item.');
+          } else {
+            setHasClaimed(false);
+          }
+        } catch (e) {
+          console.error('Failed to check existing claim:', e);
+        } finally {
+          setCheckingClaim(false);
+        }
+      }
+    };
+
+    checkExistingClaim();
+  }, [params.caseId, user?.id]);
+
   const handleSubmitClaim = async () => {
-    if (!selectedOfficer) {
-      pushToast('error', 'Selection Required', 'Please select an officer to handle your verification');
+    // Check if user is authenticated
+    if (!user) {
+      pushToast('error', 'Authentication Required', 'Please sign in to claim this item');
       return;
     }
     
@@ -274,12 +412,18 @@ export default function PublicCaseDetailPage() {
       return;
     }
     
-    if (!claimantInfo.name.trim() || !claimantInfo.email.trim()) {
-      pushToast('error', 'Information Required', 'Please provide your name and email');
+    if (!claimantInfo.phone.trim()) {
+      pushToast('error', 'Phone Required', 'Please provide your phone number');
+      return;
+    }
+
+    if (hasClaimed) {
+      pushToast('error', 'Already Claimed', 'You have already submitted a claim for this item.');
       return;
     }
     
-    await submitVerificationRequest(selectedOfficer);
+    // Officer selection is optional - if no officer selected, case remains unassigned
+    await submitVerificationRequest(selectedOfficer || '');
   };
 
   if (loading) {
@@ -316,11 +460,10 @@ export default function PublicCaseDetailPage() {
     : caseItem.type === 'found' ? <CheckCircle className="w-5 h-5" />
     : <Shield className="w-5 h-5" />;
 
-  const imageUrl = caseItem.images && caseItem.images.length > 0
-    ? `/uploads/${caseItem.images[0]}`
-    : '/icons/icon-512x512.png';
+  const hasImage = caseItem.images && caseItem.images.length > 0;
 
-  const canClaim = caseItem.type === 'lost' && caseItem.status !== 'resolved';
+  // Allow claiming for both 'lost' and 'verification' types (as long as not resolved)
+  const canClaim = (caseItem.type === 'lost' || caseItem.type === 'verification') && caseItem.status !== 'resolved' && !hasClaimed;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -355,12 +498,16 @@ export default function PublicCaseDetailPage() {
             {/* Case Header */}
             <div className="bg-white rounded-xl border p-6">
               <div className="flex items-start gap-6">
-                <img 
-                  src={imageUrl} 
-                  alt={caseItem.title} 
-                  className="w-32 h-32 rounded-lg object-cover flex-shrink-0"
-                  onError={(e) => { e.currentTarget.src = '/icons/icon-512x512.png'; }} 
-                />
+                {hasImage ? (
+                  <img 
+                    src={`/uploads/${caseItem.images[0]}`}
+                    alt={caseItem.title} 
+                    className="w-32 h-32 rounded-lg object-cover flex-shrink-0 border border-gray-200"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+                  />
+                ) : (
+                  <ItemPlaceholder className="w-32 h-32 rounded-lg flex-shrink-0 border border-gray-200" itemType={caseItem.type} />
+                )}
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-gray-900 mb-3">{caseItem.title}</h1>
                   <div className="flex items-center gap-3 mb-4">
@@ -631,35 +778,44 @@ export default function PublicCaseDetailPage() {
                 
                 {/* Personal Details */}
                 <div className="space-y-3">
+                  {/* Display user info from Clerk (read-only) */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                     <input
                       type="text"
-                      value={claimantInfo.name}
-                      onChange={(e) => setClaimantInfo(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
+                      value={user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                     />
+                    <p className="text-xs text-gray-500 mt-1">From your account</p>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
                       type="email"
-                      value={claimantInfo.email}
-                      onChange={(e) => setClaimantInfo(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
+                      value={user?.primaryEmailAddress?.emailAddress || ''}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                     />
+                    <p className="text-xs text-gray-500 mt-1">From your account</p>
+                    {checkingClaim && (
+                      <p className="text-xs text-blue-600 mt-1">Checking if you've already claimed...</p>
+                    )}
+                    {hasClaimed && (
+                      <p className="text-xs text-red-600 mt-1 font-medium">⚠️ You have already submitted a claim for this item</p>
+                    )}
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
                     <input
                       type="tel"
                       value={claimantInfo.phone}
                       onChange={(e) => setClaimantInfo(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="Your contact number"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
                     />
                   </div>
                   
@@ -701,7 +857,33 @@ export default function PublicCaseDetailPage() {
                   ) : (
                     // Need to select an officer
                     <div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-3">Select Officer</h4>
+                      <h4 className="text-lg font-medium text-gray-900 mb-3">Select Officer <span className="text-gray-500 text-sm font-normal">(Optional)</span></h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        You can select a specific officer, or leave it unassigned for any officer to take the case.
+                      </p>
+                      
+                      {/* Province Selection */}
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Province</label>
+                        <select
+                          value={selectedProvince}
+                          onChange={(e) => {
+                            setSelectedProvince(e.target.value);
+                            setSelectedDistrict('');
+                            setSelectedMunicipality('');
+                            setOfficers([]);
+                            setSelectedOfficer('');
+                          }}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select Province</option>
+                          {locationData?.provinces?.map(province => (
+                            <option key={province.name} value={province.name}>
+                              {province.name}
+                            </option>
+                          )) || []}
+                        </select>
+                      </div>
                       
                       {/* District Selection */}
                       <div className="mb-3">
@@ -714,16 +896,17 @@ export default function PublicCaseDetailPage() {
                             setOfficers([]);
                             setSelectedOfficer('');
                           }}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={!selectedProvince}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                         >
                           <option value="">Select District</option>
-                          {locationData?.provinces.flatMap(province => 
-                            province.districts.map(district => (
+                          {selectedProvince && locationData?.provinces
+                            ?.find(province => province.name === selectedProvince)
+                            ?.districts?.map(district => (
                               <option key={district.name} value={district.name}>
                                 {district.name}
                               </option>
-                            ))
-                          )}
+                            )) || []}
                         </select>
                       </div>
 
@@ -742,13 +925,13 @@ export default function PublicCaseDetailPage() {
                         >
                           <option value="">Select Municipality</option>
                           {selectedDistrict && locationData?.provinces
-                            .flatMap(province => province.districts)
-                            .find(district => district.name === selectedDistrict)
-                            ?.municipalities.map(municipality => (
+                            ?.flatMap(province => province.districts || [])
+                            ?.find(district => district.name === selectedDistrict)
+                            ?.municipalities?.map(municipality => (
                               <option key={municipality.name} value={municipality.name}>
                                 {municipality.name}
                               </option>
-                            ))
+                            )) || []
                           }
                         </select>
                       </div>
@@ -794,10 +977,10 @@ export default function PublicCaseDetailPage() {
               </button>
               <button
                 onClick={handleSubmitClaim}
-                disabled={!selectedOfficer || submitting || !claimDescription.trim() || !claimantInfo.name.trim() || !claimantInfo.email.trim()}
+                disabled={submitting || !claimDescription.trim() || !claimantInfo.phone.trim() || hasClaimed || checkingClaim || !user}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
               >
-                {submitting ? 'Submitting...' : 'Submit Claim'}
+                {submitting ? 'Submitting...' : hasClaimed ? 'Already Claimed' : checkingClaim ? 'Checking...' : !user ? 'Sign In Required' : 'Submit Claim'}
               </button>
             </div>
           </motion.div>

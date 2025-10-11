@@ -9,7 +9,8 @@ import {
   Shield, 
   Eye,
   AlertTriangle,
-  CheckSquare
+  CheckSquare,
+  Users
 } from 'lucide-react';
 import { CaseItem } from '../types';
 import { motion as Motion } from 'framer-motion';
@@ -192,6 +193,14 @@ export function CaseCard({
                  caseItem.type === 'verification' ? 'Verification' : caseItem.type}
               </span>
             </span>
+            
+            {/* Claims Count (for verification cases) */}
+            {caseItem.type === 'verification' && (caseItem as any).claimsCount !== undefined && (
+              <span className="flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                <Users className="w-3 h-3" />
+                <span>{(caseItem as any).claimsCount} {(caseItem as any).claimsCount === 1 ? 'claim' : 'claims'}</span>
+              </span>
+            )}
             
             {/* Reporter */}
             <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">

@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '../../../../../lib/mongodb';
 import Case from '../../../../../models/Case';
+import Claim from '../../../../../models/Claim';
 import User from '../../../../../models/User';
 import mongoose from 'mongoose';
 
 /**
  * POST /api/cases/[caseId]/verify
  * 
- * Handles verification requests for cases:
- * - Case 1: If case is already active and assigned to an officer, change type to 'verification'
- * - Case 2: If case is pending, assign to selected officer and set type to 'verification'
+ * Handles verification requests for cases (creates a claim in the Claims collection):
+ * - Creates a new Claim document with claimant info and evidence
+ * - If first claim for a 'lost' case, changes type to 'verification'
+ * - If case is pending, assigns to selected officer and makes it active
  * 
- * Body: { officerId: string }
+ * Body: { 
+ *   officerId: string,
+ *   claimEvidence: { description, images?, claimantInfo: { name, email, phone?, address? } }
+ * }
  */
 export async function POST(
   request: NextRequest,
@@ -22,7 +27,23 @@ export async function POST(
 
     const { caseId } = await params;
     const body = await request.json();
-    const { officerId, claimEvidence } = body || {};
+    const { officerId, claimEvidence, clerkUserId } = body || {};
+
+    console.log('[Verify Case] Request received:', {
+      caseId,
+      hasOfficerId: !!officerId,
+      hasClaimEvidence: !!claimEvidence,
+      clerkUserId: clerkUserId || 'MISSING',
+      claimantEmail: claimEvidence?.claimantInfo?.email
+    });
+
+    // Validate clerkUserId (REQUIRED)
+    if (!clerkUserId || typeof clerkUserId !== 'string') {
+      return NextResponse.json(
+        { success: false, error: 'User authentication required. Please sign in to claim this item.' },
+        { status: 401 }
+      );
+    }
 
     // Validate caseId format
     if (!mongoose.Types.ObjectId.isValid(caseId)) {
@@ -32,38 +53,53 @@ export async function POST(
       );
     }
 
-    // Validate officerId format
-    if (!mongoose.Types.ObjectId.isValid(officerId)) {
+    // Validate officerId format (if provided)
+    if (officerId && !mongoose.Types.ObjectId.isValid(officerId)) {
       return NextResponse.json(
         { success: false, error: 'Invalid officer ID' },
         { status: 400 }
       );
     }
 
-    // Validate claim evidence if provided
-    if (claimEvidence) {
-      if (!claimEvidence.description || typeof claimEvidence.description !== 'string' || claimEvidence.description.trim().length < 20) {
-        return NextResponse.json(
-          { success: false, error: 'Claim description is required and must be at least 20 characters' },
-          { status: 400 }
-        );
-      }
-      
-      if (!claimEvidence.claimantInfo || !claimEvidence.claimantInfo.name || !claimEvidence.claimantInfo.email) {
-        return NextResponse.json(
-          { success: false, error: 'Claimant name and email are required' },
-          { status: 400 }
-        );
-      }
+    // Validate claim evidence (required)
+    if (!claimEvidence) {
+      return NextResponse.json(
+        { success: false, error: 'Claim evidence is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!claimEvidence.description || typeof claimEvidence.description !== 'string' || claimEvidence.description.trim().length < 20) {
+      return NextResponse.json(
+        { success: false, error: 'Claim description is required and must be at least 20 characters' },
+        { status: 400 }
+      );
+    }
+    
+    if (!claimEvidence.claimantInfo || !claimEvidence.claimantInfo.name || !claimEvidence.claimantInfo.email) {
+      return NextResponse.json(
+        { success: false, error: 'Claimant name and email are required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!claimEvidence.claimantInfo.phone || !claimEvidence.claimantInfo.phone.trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Phone number is required' },
+        { status: 400 }
+      );
     }
 
-    // Verify officer exists and is active
-    const officer = await User.findById(officerId).select('-password');
-    if (!officer || !officer.isActive || officer.role !== 'officer') {
-      return NextResponse.json(
-        { success: false, error: 'Officer not found or inactive' },
-        { status: 404 }
-      );
+    // Verify officer exists and is active (if officer was selected)
+    let officer = null;
+    if (officerId) {
+      officer = await User.findById(officerId).select('-password');
+      if (!officer || !officer.isActive || officer.role !== 'officer') {
+        return NextResponse.json(
+          { success: false, error: 'Officer not found or inactive' },
+          { status: 404 }
+        );
+      }
     }
 
     // Find the case
@@ -83,32 +119,42 @@ export async function POST(
       );
     }
 
-    // Check if case is already verification type
-    if (currentCase.type === 'verification') {
-      return NextResponse.json(
-        { success: false, error: 'Case is already in verification status' },
-        { status: 400 }
-      );
-    }
+    // Allow multiple claims even if already verification type
+    // (removed the check that prevented multiple claims)
 
-    // Only allow verification for 'lost' type cases
-    if (currentCase.type !== 'lost') {
+    // Only allow verification for 'lost' or 'verification' type cases
+    if (currentCase.type !== 'lost' && currentCase.type !== 'verification') {
       return NextResponse.json(
         { success: false, error: 'Only lost items can be claimed for verification' },
         { status: 400 }
       );
     }
 
-    let updatedCase;
+    // Check if this user has already claimed this case (by clerkUserId - REQUIRED)
+    const existingClaim = await Claim.findOne({
+      caseId: new mongoose.Types.ObjectId(caseId),
+      clerkUserId: clerkUserId
+    });
 
-    // Prepare update object
-    const updateData: any = {
-      type: 'verification',
-      updatedAt: new Date()
-    };
+    if (existingClaim) {
+      console.log('[Verify Case] Duplicate claim attempt blocked:', {
+        clerkUserId,
+        existingClaimId: existingClaim._id,
+        existingClaimStatus: existingClaim.status
+      });
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'You have already submitted a claim for this item',
+          existingClaimId: existingClaim._id,
+          existingClaimStatus: existingClaim.status
+        },
+        { status: 409 }
+      );
+    }
 
-    // Add claim evidence if provided
-    if (claimEvidence) {
+    // Create a new Claim document
+    let newClaim = null;
       const claimantAddress: any = {};
       if (claimEvidence.claimantInfo.address) {
         if (claimEvidence.claimantInfo.address.province) claimantAddress.province = claimEvidence.claimantInfo.address.province;
@@ -121,72 +167,71 @@ export async function POST(
       const claimantInfo: any = {
         name: claimEvidence.claimantInfo.name.trim(),
         email: claimEvidence.claimantInfo.email.trim(),
+        phone: claimEvidence.claimantInfo.phone.trim(),
         address: claimantAddress
       };
-      if (claimEvidence.claimantInfo.phone?.trim()) {
-        claimantInfo.phone = claimEvidence.claimantInfo.phone.trim();
-      }
       
-      updateData.claimEvidence = {
-        description: claimEvidence.description.trim(),
-        images: claimEvidence.images || [],
+      newClaim = new Claim({
+        caseId: new mongoose.Types.ObjectId(caseId),
+        clerkUserId: clerkUserId, // REQUIRED - always set
         claimantInfo: claimantInfo,
-        submittedAt: new Date()
-      };
-      console.log('[Verify Case] Claim evidence added to update:', JSON.stringify(updateData.claimEvidence, null, 2));
+        evidence: {
+          description: claimEvidence.description.trim(),
+          images: claimEvidence.images || []
+        },
+        status: 'pending'
+      });
+      
+      await newClaim.save();
+      console.log('[Verify Case] New claim created:', {
+        claimId: newClaim._id,
+        caseId: caseId,
+        clerkUserId: clerkUserId,
+        claimantEmail: claimantInfo.email,
+        hasOfficer: !!officerId
+      });
+
+    let updatedCase;
+
+    // Update case type to 'verification' if it's currently 'lost'
+    // Assign officer if case is pending
+    const caseUpdateData: any = {
+      updatedAt: new Date()
+    };
+
+    if (currentCase.type === 'lost') {
+      caseUpdateData.type = 'verification';
     }
 
-    if (currentCase.status === 'active' && currentCase.assignedOfficer) {
-      // Case 1: Already assigned to an officer, just change type to verification
-      currentCase.type = 'verification';
-      if (updateData.claimEvidence) {
-        currentCase.claimEvidence = updateData.claimEvidence;
-      }
-      // Use update instead of save to bypass validation
-      await Case.updateOne(
-        { _id: caseId },
-        { 
-          $set: { 
-            type: 'verification',
-            claimEvidence: updateData.claimEvidence,
-            updatedAt: new Date()
-          } 
-        }
-      );
-      updatedCase = await Case.findById(caseId).populate('assignedOfficer', 'firstName lastName email');
-    } else if (currentCase.status === 'pending' && !currentCase.assignedOfficer) {
-      // Case 2: Pending case, assign to selected officer and set type to verification
-      await Case.updateOne(
-        { _id: caseId },
-        { 
-          $set: { 
-            type: 'verification',
-            status: 'active',
-            assignedOfficer: officerId,
-            claimEvidence: updateData.claimEvidence,
-            updatedAt: new Date()
-          } 
-        }
-      );
-      updatedCase = await Case.findById(caseId).populate('assignedOfficer', 'firstName lastName email');
-    } else {
-      return NextResponse.json(
-        { success: false, error: 'Case is not in a state that allows verification' },
-        { status: 400 }
-      );
+    // Only assign officer and change status if officer was selected
+    if (officerId && currentCase.status === 'pending' && !currentCase.assignedOfficer) {
+      caseUpdateData.status = 'active';
+      caseUpdateData.assignedOfficer = officerId;
     }
 
-    console.log(`[Verify Case] Case ${caseId} set to verification with officer ${officer.email}`);
-    console.log('[Verify Case] Updated case claimEvidence:', JSON.stringify(updatedCase?.claimEvidence, null, 2));
+    await Case.updateOne(
+      { _id: caseId },
+      { $set: caseUpdateData }
+    );
     
-    // Verify the update by fetching the case again
-    const verifyCase = await Case.findById(caseId).select('claimEvidence type status').lean();
-    console.log('[Verify Case] Re-fetched case from DB:', JSON.stringify(verifyCase, null, 2));
+    updatedCase = await Case.findById(caseId).populate('assignedOfficer', 'firstName lastName email');
+
+    if (officer) {
+      console.log(`[Verify Case] Case ${caseId} set to verification with officer ${officer.email}`);
+    } else {
+      console.log(`[Verify Case] Case ${caseId} set to verification - unassigned (available for officers to take)`);
+    }
+    console.log('[Verify Case] New claim ID:', newClaim._id);
 
     return NextResponse.json({
       success: true,
       message: 'Verification request submitted successfully',
       case: updatedCase,
+      claim: newClaim ? {
+        id: newClaim._id,
+        status: newClaim.status,
+        createdAt: newClaim.createdAt
+      } : null
     });
 
   } catch (error) {

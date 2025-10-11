@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '../../../../../../lib/mongodb';
 import Case from '../../../../../../models/Case';
+import Claim from '../../../../../../models/Claim';
 import User from '../../../../../../models/User';
 import { getJWTFromRequest, verifyJWT } from '../../../../../../lib/jwt';
 import {
@@ -73,11 +74,22 @@ export async function GET(request: NextRequest) {
       Case.countDocuments(query)
     ]);
 
+    // Fetch claims count for each case
+    const casesWithClaims = await Promise.all(
+      cases.map(async (caseItem: any) => {
+        const claimsCount = await Claim.countDocuments({ caseId: caseItem._id });
+        return {
+          ...caseItem,
+          claimsCount
+        };
+      })
+    );
+
     const pagination = buildPaginationMeta(page, limit, total);
 
     return NextResponse.json({
       success: true,
-      cases,
+      cases: casesWithClaims,
       pagination,
     });
   } catch (error) {
