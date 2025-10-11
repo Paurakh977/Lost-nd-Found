@@ -222,7 +222,8 @@ export default function OfficerDashboard() {
               color: 'from-purple-500 to-purple-600',
               bgColor: 'bg-purple-50',
               change: '-5%',
-              changeType: 'decrease'
+              changeType: 'decrease',
+              href: '/officer/cases/verification'
             }
           ].map((stat, index) => (
             <motion.div
@@ -396,7 +397,13 @@ export default function OfficerDashboard() {
               transition={{ delay: 0.9 + (index * 0.1), duration: 0.4 }}
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => handleNavigation(`/officer/${action.title.toLowerCase().replace(/\s+/g, '-')}`)}
+              onClick={() => {
+                if (action.title === 'Verify Ownership') {
+                  handleNavigation('/officer/cases/verification');
+                } else {
+                  handleNavigation(`/officer/${action.title.toLowerCase().replace(/\s+/g, '-')}`);
+                }
+              }}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>

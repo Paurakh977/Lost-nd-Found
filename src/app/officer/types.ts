@@ -56,6 +56,24 @@ export interface CaseItem {
     lastName: string;
     email: string;
   };
+  claimEvidence?: {
+    description: string;
+    images?: string[];
+    claimantInfo: {
+      name: string;
+      email: string;
+      phone?: string;
+      address: {
+        province?: string;
+        district?: string;
+        municipality?: string;
+        ward?: string;
+        fullAddress?: string;
+      };
+    };
+    submittedAt: string;
+  };
+  resolution?: any;
   createdAt: string;
   updatedAt: string;
 }

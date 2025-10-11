@@ -171,12 +171,9 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
     {
       name: 'Verification',
       icon: CheckCircle,
-      href: '/officer/verification',
+      href: '/officer/cases/verification',
       items: [
-        { name: 'Pending Verification', count: 8, color: 'text-orange-600', href: '/officer/verification/pending' },
-        { name: 'In Progress', count: 12, color: 'text-blue-600', href: '/officer/verification/progress' },
-        { name: 'Verified Claims', count: 156, color: 'text-green-600', href: '/officer/verification/verified' },
-        { name: 'Rejected Claims', count: 23, color: 'text-red-600', href: '/officer/verification/rejected' }
+        { name: 'Verification Cases', count: 8, color: 'text-purple-600', href: '/officer/cases/verification' }
       ]
     },
     {

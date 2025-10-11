@@ -20,7 +20,9 @@ interface CaseCardProps {
   onAssignSuccess?: (caseId: string) => void;
   showAssignButton?: boolean;
   showResolveButton?: boolean;
+  showVerifyButton?: boolean;
   onResolveClick?: (caseItem: CaseItem) => void;
+  onVerifyClick?: (caseItem: CaseItem) => void;
   isUrgent?: boolean;
   index?: number;
   onViewDetails?: (caseId: string) => void;
@@ -32,7 +34,9 @@ export function CaseCard({
   onAssignSuccess, 
   showAssignButton = true,
   showResolveButton = false,
+  showVerifyButton = false,
   onResolveClick,
+  onVerifyClick,
   isUrgent = false,
   index = 0,
   onViewDetails,
@@ -249,6 +253,22 @@ export function CaseCard({
               <span className="flex items-center gap-1">
                 <CheckSquare className="w-3 h-3" />
                 Resolve
+              </span>
+            </motion.button>
+          )}
+          
+          {showVerifyButton && (
+            <motion.button
+              type="button"
+              onClick={() => onVerifyClick?.(caseItem)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors bg-purple-600 hover:bg-purple-700 text-white"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Verify case"
+            >
+              <span className="flex items-center gap-1">
+                <Shield className="w-3 h-3" />
+                Verify
               </span>
             </motion.button>
           )}
