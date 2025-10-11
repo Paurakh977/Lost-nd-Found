@@ -38,6 +38,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/auth/signin',
   '/api/auth/signout',
   '/api/admin/init',
+  '/api/cases/:caseId', // Allow viewing case details (but claiming requires auth)
+  '/cases/:caseId', // Allow viewing case detail pages
 ])
 
 // Custom auth check function
