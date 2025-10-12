@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../../../../../lib/mongodb';
-import Case from '../../../../../../../models/Case';
-import Claim from '../../../../../../../models/Claim';
-import User from '../../../../../../../models/User';
-import { getJWTFromRequest, verifyJWT } from '../../../../../../../lib/jwt';
+import connectDB from '../../../../../../lib/mongodb';
+import Case from '../../../../../../models/Case';
+import Claim from '../../../../../../models/Claim';
+import User from '../../../../../../models/User';
+import { getJWTFromRequest, verifyJWT } from '../../../../../../lib/jwt';
 import mongoose from 'mongoose';
 import nodemailer from 'nodemailer';
 
