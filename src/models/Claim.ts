@@ -5,6 +5,7 @@ export type ClaimStatus = 'pending' | 'approved' | 'rejected';
 export interface IClaim extends Document {
   caseId: mongoose.Types.ObjectId; // Reference to Case
   clerkUserId?: string; // Clerk user ID if submitted by authenticated user
+  relatedFoundCaseId?: mongoose.Types.ObjectId; // Reference to the FOUND case if this claim originated from an email notification
   claimantInfo: {
     name: string;
     email: string;
@@ -40,6 +41,12 @@ const ClaimSchema = new Schema<IClaim>({
     type: String,
     required: false,
     index: true // Index for faster lookups by user
+  },
+  relatedFoundCaseId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Case',
+    required: false,
+    index: true // Index for linking found and lost cases
   },
   claimantInfo: {
     name: {

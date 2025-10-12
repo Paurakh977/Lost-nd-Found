@@ -105,6 +105,9 @@ export default function PublicCaseDetailPage() {
   const [hasClaimed, setHasClaimed] = useState(false);
   const [checkingClaim, setCheckingClaim] = useState(false);
   
+  // Related FOUND case ID (from email notification query param)
+  const [relatedFoundCaseId, setRelatedFoundCaseId] = useState<string | null>(null);
+  
   // Claim evidence states
   const [claimDescription, setClaimDescription] = useState('');
   const [claimImages, setClaimImages] = useState<File[]>([]);
@@ -151,6 +154,18 @@ export default function PublicCaseDetailPage() {
     }
   }, [clerkLoaded, clerkUser]);
 
+  // Extract foundCaseId from query params (if user clicked from email)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const foundId = searchParams.get('foundCaseId');
+      if (foundId) {
+        setRelatedFoundCaseId(foundId);
+        console.log('[Case Detail] Related found case ID from URL:', foundId);
+      }
+    }
+  }, []);
+  
   // Fetch case details
   useEffect(() => {
     const fetchCase = async () => {
@@ -294,6 +309,8 @@ export default function PublicCaseDetailPage() {
         isClerkUser: !!clerkUser
       });
       
+      console.log('[Claim Submission] 🔍 CRITICAL - relatedFoundCaseId:', relatedFoundCaseId || 'NONE CAPTURED FROM URL');
+      
       if (!userId) {
         pushToast('error', 'Authentication Error', 'User ID not found. Please sign in again.');
         return;
@@ -301,6 +318,7 @@ export default function PublicCaseDetailPage() {
       
       const requestBody: any = { 
         clerkUserId: userId,
+        relatedFoundCaseId: relatedFoundCaseId || undefined, // Link to the FOUND case if available
         claimEvidence: {
           description: claimDescription.trim(),
           images: evidenceImageUrls,
@@ -318,6 +336,8 @@ export default function PublicCaseDetailPage() {
           }
         }
       };
+      
+      console.log('[Claim Submission] Including relatedFoundCaseId:', relatedFoundCaseId || 'none');
       
       // Only include officerId if one was selected
       if (officerId) {

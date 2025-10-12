@@ -112,13 +112,27 @@ export async function POST(req: NextRequest) {
       author: json?.author 
     });
     const lostIds = json?.lost_items_ids || [];
+    const foundIds = json?.found_items_ids || [];
+    
+    console.log('[agent/send] 🔍 CRITICAL DEBUG:', {
+      foundIds,
+      lostIds,
+      foundIdsLength: foundIds.length,
+      lostIdsLength: lostIds.length,
+      willNotify: lostIds.length > 0
+    });
     
     // Fire-and-forget: trigger unresolved case notification emails when lost item IDs are present
     if (Array.isArray(lostIds) && lostIds.length > 0) {
       (async () => {
         try {
+          // Get the foundCaseId from the most recent FOUND case created in this session
+          // If multiple found items, we use the first one (most recent)
+          const foundCaseId = Array.isArray(foundIds) && foundIds.length > 0 ? foundIds[0] : undefined;
+          
           const payload = {
             ids: lostIds,
+            foundCaseId: foundCaseId, // Add the found case ID
             finder: {
               name: clerk_name,
               email: clerk_email,
@@ -127,6 +141,7 @@ export async function POST(req: NextRequest) {
           };
           console.log('[agent/send] notify-unresolved payload (redacted email):', {
             idsCount: lostIds.length,
+            foundCaseId,
             finder: { name: clerk_name, email: clerk_email ? `${clerk_email.substring(0,3)}***` : undefined, id: clerk_id }
           });
           const notifyRes = await fetch(`${APP_URL}/api/cases/notify-unresolved`, {

@@ -35,6 +35,7 @@ export interface ICase extends Document {
     email?: string; // Clerk user email
   };
   assignedOfficer?: mongoose.Types.ObjectId; // Reference to User model (officer)
+  linkedCaseId?: mongoose.Types.ObjectId; // Reference to linked Case (FOUND case linked to LOST case or vice versa)
   resolution?: {
     resolvedAt: Date;
     resolvedBy: mongoose.Types.ObjectId; // Reference to User model (officer)
@@ -176,6 +177,12 @@ const CaseSchema = new Schema<ICase>({
   assignedOfficer: {
     type: Schema.Types.ObjectId,
     ref: 'User'
+  },
+  linkedCaseId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Case',
+    required: false,
+    index: true // Index for linking found and lost cases
   },
   resolution: {
     resolvedAt: Date,

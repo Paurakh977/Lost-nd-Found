@@ -129,21 +129,41 @@ export async function POST(
 
     // If approved, resolve the case
     if (decision === 'approved') {
-      // Get the finder information from case.resolution.foundBy (for found items) or reportedBy (for verification cases)
+      // Get the finder information from the linked FOUND case if available
       let finderInfo: any = null;
+      let foundCaseToResolve: any = null;
       
-      // For cases that started as 'found', resolution.foundBy is already set
-      if (caseDoc.resolution?.foundBy) {
-        finderInfo = caseDoc.resolution.foundBy;
+      // First priority: Check if the claim has a relatedFoundCaseId
+      if (claim.relatedFoundCaseId) {
+        try {
+          foundCaseToResolve = await Case.findById(claim.relatedFoundCaseId).lean();
+          if (foundCaseToResolve) {
+            finderInfo = {
+              clerkId: foundCaseToResolve.reportedBy.clerkId,
+              name: foundCaseToResolve.reportedBy.name,
+              contactInfo: foundCaseToResolve.reportedBy.email
+            };
+            console.log('[Review Claim] Found case linked:', {
+              foundCaseId: claim.relatedFoundCaseId,
+              finderName: finderInfo.name
+            });
+          }
+        } catch (err) {
+          console.error('[Review Claim] Error fetching related found case:', err);
+        }
       }
-      // For cases that started as 'lost' and became 'verification', we need to find the original finder
-      // The finder info should be in the email notification data, but we'll use case.reportedBy as fallback
-      else if (caseDoc.type === 'found') {
-        finderInfo = {
-          clerkId: caseDoc.reportedBy.clerkId,
-          name: caseDoc.reportedBy.name,
-          contactInfo: caseDoc.reportedBy.email
-        };
+      
+      // Fallback: use existing resolution.foundBy or reportedBy
+      if (!finderInfo) {
+        if (caseDoc.resolution?.foundBy) {
+          finderInfo = caseDoc.resolution.foundBy;
+        } else if (caseDoc.type === 'found') {
+          finderInfo = {
+            clerkId: caseDoc.reportedBy.clerkId,
+            name: caseDoc.reportedBy.name,
+            contactInfo: caseDoc.reportedBy.email
+          };
+        }
       }
 
       // Mark case as resolved
@@ -160,8 +180,53 @@ export async function POST(
         },
         foundBy: finderInfo
       };
+      
+      // Link to the found case if we have one
+      if (foundCaseToResolve) {
+        caseDoc.linkedCaseId = foundCaseToResolve._id;
+      }
 
       await caseDoc.save();
+      
+      // Manually populate resolvedBy for response
+      const resolvedByOfficer = await User.findById(officer._id).select('firstName lastName email').lean();
+      if (resolvedByOfficer && caseDoc.resolution) {
+        (caseDoc.resolution as any).resolvedBy = resolvedByOfficer;
+      }
+      
+      // If we found a linked FOUND case, resolve it too
+      if (foundCaseToResolve && foundCaseToResolve.status !== 'resolved') {
+        const foundCaseResolution = {
+          resolvedAt: new Date(),
+          resolvedBy: officer._id,
+          outcome: 'Item successfully returned to owner',
+          notes: `Matched with lost item case ${caseId}`,
+          itemAssignedTo: {
+            clerkId: claim.clerkUserId,
+            name: claim.claimantInfo.name,
+            contactInfo: claim.claimantInfo.email
+          },
+          foundBy: finderInfo
+        };
+        
+        await Case.findByIdAndUpdate(
+          foundCaseToResolve._id,
+          {
+            $set: {
+              status: 'resolved',
+              resolution: foundCaseResolution,
+              linkedCaseId: caseId, // Link back to the LOST case
+              updatedAt: new Date()
+            }
+          }
+        );
+        
+        console.log('[Review Claim] Linked FOUND case also resolved:', {
+          foundCaseId: foundCaseToResolve._id,
+          lostCaseId: caseId
+        });
+      }
+      
       console.log('[Review Claim] Case resolved:', { caseId, claimId, resolution: caseDoc.resolution });
     } else {
       // If rejected, just update the case to note that a claim was rejected

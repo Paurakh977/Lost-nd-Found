@@ -98,16 +98,41 @@ export async function POST(
 
     // If claim is approved, resolve the case
     if (isVerified) {
-      // Get finder information from case resolution or reportedBy
+      // Get finder information from the linked FOUND case if available
       let finderInfo: any = null;
-      if (current.resolution?.foundBy) {
-        finderInfo = current.resolution.foundBy;
-      } else if (current.type === 'found' || (current.type === 'verification' && current.reportedBy)) {
-        finderInfo = {
-          clerkId: current.reportedBy.clerkId,
-          name: current.reportedBy.name,
-          contactInfo: current.reportedBy.email
-        };
+      let foundCaseToResolve: any = null;
+      
+      // First priority: Check if the claim has a relatedFoundCaseId
+      if (claim.relatedFoundCaseId) {
+        try {
+          foundCaseToResolve = await Case.findById(claim.relatedFoundCaseId).lean();
+          if (foundCaseToResolve) {
+            finderInfo = {
+              clerkId: foundCaseToResolve.reportedBy.clerkId,
+              name: foundCaseToResolve.reportedBy.name,
+              contactInfo: foundCaseToResolve.reportedBy.email
+            };
+            console.log('[Verify Case] Found case linked:', {
+              foundCaseId: claim.relatedFoundCaseId,
+              finderName: finderInfo.name
+            });
+          }
+        } catch (err) {
+          console.error('[Verify Case] Error fetching related found case:', err);
+        }
+      }
+      
+      // Fallback: use existing resolution.foundBy or reportedBy
+      if (!finderInfo) {
+        if (current.resolution?.foundBy) {
+          finderInfo = current.resolution.foundBy;
+        } else if (current.type === 'found' || (current.type === 'verification' && current.reportedBy)) {
+          finderInfo = {
+            clerkId: current.reportedBy.clerkId,
+            name: current.reportedBy.name,
+            contactInfo: current.reportedBy.email
+          };
+        }
       }
 
       // Build resolution object
@@ -147,21 +172,66 @@ export async function POST(
         foundBy: resolution.foundBy
       }, null, 2));
 
-      // Update case to resolved
+      // Update the LOST case to resolved and link to FOUND case
+      const lostCaseUpdate: any = {
+        status: 'resolved',
+        resolution,
+        updatedAt: new Date()
+      };
+      
+      // Link to the found case if we have one
+      if (foundCaseToResolve) {
+        lostCaseUpdate.linkedCaseId = foundCaseToResolve._id;
+      }
+      
       updatedCase = await Case.findByIdAndUpdate(
         caseId,
-        {
-          $set: {
-            status: 'resolved',
-            resolution,
-            updatedAt: new Date()
-          }
-        },
+        { $set: lostCaseUpdate },
         { new: true, runValidators: true }
       )
         .populate('assignedOfficer', 'firstName lastName email')
-        .populate('resolution.resolvedBy', 'firstName lastName email')
         .lean();
+      
+      // Manually populate resolvedBy since nested populate doesn't work with lean()
+      if (updatedCase && updatedCase.resolution && updatedCase.resolution.resolvedBy) {
+        const resolvedByOfficer = await User.findById(updatedCase.resolution.resolvedBy).select('firstName lastName email').lean();
+        if (resolvedByOfficer) {
+          updatedCase.resolution.resolvedBy = resolvedByOfficer as any;
+        }
+      }
+      
+      // If we found a linked FOUND case, resolve it too
+      if (foundCaseToResolve && foundCaseToResolve.status !== 'resolved') {
+        const foundCaseResolution = {
+          resolvedAt: new Date(),
+          resolvedBy: payload.userId,
+          outcome: 'Item successfully returned to owner',
+          notes: `Matched with lost item case ${caseId}`,
+          itemAssignedTo: {
+            clerkId: claim.clerkUserId || undefined,
+            name: claim.claimantInfo.name,
+            contactInfo: claim.claimantInfo.email
+          },
+          foundBy: finderInfo
+        };
+        
+        await Case.findByIdAndUpdate(
+          foundCaseToResolve._id,
+          {
+            $set: {
+              status: 'resolved',
+              resolution: foundCaseResolution,
+              linkedCaseId: caseId, // Link back to the LOST case
+              updatedAt: new Date()
+            }
+          }
+        );
+        
+        console.log('[Verify Case] Linked FOUND case also resolved:', {
+          foundCaseId: foundCaseToResolve._id,
+          lostCaseId: caseId
+        });
+      }
     } else {
       // Claim rejected - keep case open for other claims
       updatedCase = await Case.findByIdAndUpdate(

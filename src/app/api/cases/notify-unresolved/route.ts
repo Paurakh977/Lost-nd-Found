@@ -172,7 +172,16 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const ids: string[] = body?.ids || [];
+    const foundCaseId: string | undefined = body?.foundCaseId; // ID of the FOUND case that triggered these notifications
     const finder: { id?: string; name?: string; email?: string } | undefined = body?.finder;
+    
+    console.log('[notify-unresolved] 🔍 RECEIVED:', {
+      idsCount: ids.length,
+      ids,
+      foundCaseId,
+      finderName: finder?.name,
+      finderEmail: finder?.email ? `${finder.email.substring(0, 3)}***` : 'none'
+    });
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json(
@@ -314,6 +323,30 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // If no foundCaseId was provided but we have finder info, try to find their most recent FOUND case
+    let actualFoundCaseId = foundCaseId;
+    if (!actualFoundCaseId && finder?.id) {
+      try {
+        // Find the most recent FOUND case created by this finder
+        const recentFoundCase = await casesCollection
+          .findOne(
+            {
+              'reportedBy.clerkId': finder.id,
+              type: 'found',
+              status: { $ne: 'resolved' }
+            },
+            { sort: { createdAt: -1 } }
+          );
+        
+        if (recentFoundCase) {
+          actualFoundCaseId = String(recentFoundCase._id);
+          console.log(`[notify-unresolved] 🔍 Found recent FOUND case by finder ${finder.name}: ${actualFoundCaseId}`);
+        }
+      } catch (err) {
+        console.error('[notify-unresolved] Error finding recent FOUND case:', err);
+      }
+    }
+    
     // Send emails
     const emailResults = {
       sent: 0,
@@ -378,7 +411,12 @@ export async function POST(req: NextRequest) {
             itemImageUrl = `${appUrl}/uploads/${imagePath}`;
           }
         }
-        const caseDetailUrl = `${appUrl}/cases/${caseId}`;
+        // Include foundCaseId in URL if available, so claim submissions can link cases
+        const caseDetailUrl = actualFoundCaseId 
+          ? `${appUrl}/cases/${caseId}?foundCaseId=${actualFoundCaseId}`
+          : `${appUrl}/cases/${caseId}`;
+        
+        console.log(`[notify-unresolved] Email URL for case ${caseId}: ${caseDetailUrl}`);
         const envLogo = process.env.NEXT_PUBLIC_LOGO_URL || process.env.LOGO_URL;
         const logoUrl = envLogo || `${appUrl}/Logo.png`;
 

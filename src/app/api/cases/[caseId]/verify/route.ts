@@ -27,14 +27,21 @@ export async function POST(
 
     const { caseId } = await params;
     const body = await request.json();
-    const { officerId, claimEvidence, clerkUserId } = body || {};
+    const { officerId, claimEvidence, clerkUserId, relatedFoundCaseId } = body || {};
 
     console.log('[Verify Case] Request received:', {
       caseId,
       hasOfficerId: !!officerId,
       hasClaimEvidence: !!claimEvidence,
       clerkUserId: clerkUserId || 'MISSING',
+      relatedFoundCaseId: relatedFoundCaseId || 'none',
       claimantEmail: claimEvidence?.claimantInfo?.email
+    });
+    
+    console.log('[Verify Case] 🔍 CRITICAL - relatedFoundCaseId check:', {
+      received: relatedFoundCaseId,
+      isValid: relatedFoundCaseId && mongoose.Types.ObjectId.isValid(relatedFoundCaseId),
+      willBeLinked: !!(relatedFoundCaseId && mongoose.Types.ObjectId.isValid(relatedFoundCaseId))
     });
 
     // Validate clerkUserId (REQUIRED)
@@ -174,6 +181,9 @@ export async function POST(
       newClaim = new Claim({
         caseId: new mongoose.Types.ObjectId(caseId),
         clerkUserId: clerkUserId, // REQUIRED - always set
+        relatedFoundCaseId: relatedFoundCaseId && mongoose.Types.ObjectId.isValid(relatedFoundCaseId) 
+          ? new mongoose.Types.ObjectId(relatedFoundCaseId) 
+          : undefined,
         claimantInfo: claimantInfo,
         evidence: {
           description: claimEvidence.description.trim(),

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { caseId, claimantInfo, evidence, officerId, clerkUserId } = body || {};
+    const { caseId, claimantInfo, evidence, officerId, clerkUserId, relatedFoundCaseId } = body || {};
 
     // Validate caseId
     if (!caseId || !mongoose.Types.ObjectId.isValid(caseId)) {
@@ -103,6 +103,9 @@ export async function POST(request: NextRequest) {
     const claim = new Claim({
       caseId: new mongoose.Types.ObjectId(caseId),
       clerkUserId: clerkUserId || undefined,
+      relatedFoundCaseId: relatedFoundCaseId && mongoose.Types.ObjectId.isValid(relatedFoundCaseId) 
+        ? new mongoose.Types.ObjectId(relatedFoundCaseId) 
+        : undefined,
       claimantInfo: {
         name: claimantInfo.name.trim(),
         email: claimantInfo.email.trim().toLowerCase(),
