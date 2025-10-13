@@ -3,6 +3,8 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { getJWTFromRequest, verifyJWT } from '../../../../lib/jwt';
 import connectDB from '../../../../lib/mongodb';
 import User from '../../../../models/User';
+import mongoose from 'mongoose';
+import Case from '../../../../models/Case';
 
 const AGENT_URL = process.env.AGENT_SERVER_URL || process.env.NEXT_PUBLIC_AGENT_SERVER_URL || 'http://localhost:8000';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000';
@@ -111,8 +113,52 @@ export async function POST(req: NextRequest) {
       lost_items_ids: json?.lost_items_ids, 
       author: json?.author 
     });
-    const lostIds = json?.lost_items_ids || [];
-    const foundIds = json?.found_items_ids || [];
+    
+    let lostIds = json?.lost_items_ids || [];
+    let foundIds = json?.found_items_ids || [];
+    
+    // Filter out resolved cases from both found and lost IDs
+    const allIds = [...foundIds, ...lostIds];
+    if (allIds.length > 0) {
+      try {
+        await connectDB();
+        
+        // Convert string IDs to ObjectIds
+        const validObjectIds = allIds
+          .map((id: any) => String(id))
+          .filter((id) => mongoose.Types.ObjectId.isValid(id))
+          .map((id) => new mongoose.Types.ObjectId(id));
+        
+        if (validObjectIds.length > 0) {
+          // Query database to find which cases are resolved
+          const resolvedCases = await (Case as any)
+            .find({ 
+              _id: { $in: validObjectIds },
+              status: 'resolved'
+            })
+            .select('_id')
+            .lean();
+          
+          const resolvedIds = new Set(resolvedCases.map((c: any) => String(c._id)));
+          
+          // Filter out resolved IDs
+          const originalFoundCount = foundIds.length;
+          const originalLostCount = lostIds.length;
+          
+          foundIds = foundIds.filter((id: string) => !resolvedIds.has(id));
+          lostIds = lostIds.filter((id: string) => !resolvedIds.has(id));
+          
+          console.log('[agent/send] ✅ FILTERED RESOLVED CASES:', {
+            resolvedCasesFound: resolvedIds.size,
+            foundIds: { original: originalFoundCount, filtered: foundIds.length, removed: originalFoundCount - foundIds.length },
+            lostIds: { original: originalLostCount, filtered: lostIds.length, removed: originalLostCount - lostIds.length }
+          });
+        }
+      } catch (error) {
+        console.error('[agent/send] Error filtering resolved cases:', error);
+        // Continue with original IDs if filtering fails
+      }
+    }
     
     console.log('[agent/send] 🔍 CRITICAL DEBUG:', {
       foundIds,
@@ -163,8 +209,14 @@ export async function POST(req: NextRequest) {
       })();
     }
     
+    // Return the response with filtered IDs
+    const filteredResponse = {
+      ...json,
+      found_items_ids: foundIds,
+      lost_items_ids: lostIds
+    };
 
-    return NextResponse.json(json, { status: res.status });
+    return NextResponse.json(filteredResponse, { status: res.status });
   } catch (e) {
     console.error('Agent proxy error:', e);
     return NextResponse.json({ error: 'Agent proxy failed' }, { status: 500 });
