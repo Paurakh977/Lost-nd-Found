@@ -41,18 +41,17 @@ export default function UnassignedCasesPanel({ onToast }: UnassignedCasesPanelPr
               />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-100 dark:border-gray-600">
-                <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 ml-2" />
+              <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/70 rounded-md border border-gray-100 dark:border-gray-600 px-2">
+                <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                 <select
                   value={activityTypeFilter}
                   onChange={(e) => { setActivityTypeFilter(e.target.value as any); setFilters({ ...filters, type: e.target.value as any }); }}
-                  className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none appearance-none"
-                  style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
+                  className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none cursor-pointer"
                 >
-                  <option value="all">All Types</option>
-                  <option value="lost">Lost Items</option>
-                  <option value="found">Found Items</option>
-                  <option value="verification">Verification</option>
+                  <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">All Types</option>
+                  <option value="lost" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Lost Items</option>
+                  <option value="found" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Found Items</option>
+                  <option value="verification" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Verification</option>
                 </select>
               </div>
             </div>

@@ -376,20 +376,19 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
             />
 
             <motion.div
-              className="relative inline-block w-full max-w-lg p-6 my-8 overflow-visible text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl z-[10000]"
+              className="relative inline-block w-full max-w-lg p-6 my-8 overflow-visible text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-2xl z-[10000]"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="[&_*]:!text-gray-900 [&_input]:!text-gray-900 [&_select]:!text-gray-900 [&_option]:!text-gray-900 [&_label]:!text-gray-700 [&_span]:!text-gray-600 [&_p]:!text-gray-600 [&_h3]:!text-gray-900 [&_h4]:!text-gray-900 [&_button]:!text-gray-700">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {editingUser ? 'Edit User' : 'Create New User'}
                 </h3>
                 <button
                   onClick={onClose}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -405,17 +404,17 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                 {/* Name Fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       First Name
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                       <input
                         type="text"
                         value={formData.firstName}
                         onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                          errors.firstName ? 'border-red-300' : 'border-gray-300'
+                        className={`w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.firstName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                         }`}
                         placeholder="John"
                       />
@@ -426,17 +425,17 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Last Name
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                       <input
                         type="text"
                         value={formData.lastName}
                         onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                          errors.lastName ? 'border-red-300' : 'border-gray-300'
+                        className={`w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.lastName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                         }`}
                         placeholder="Doe"
                       />
@@ -449,17 +448,17 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        errors.email ? 'border-red-300' : 'border-gray-300'
+                      className={`w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        errors.email ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                       }`}
                       placeholder="john.doe@example.com"
                     />
@@ -471,24 +470,24 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
 
                 {/* Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password {editingUser && <span className="text-xs text-gray-500">(leave blank to keep current)</span>}
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Password {editingUser && <span className="text-xs text-gray-500 dark:text-gray-400">(leave blank to keep current)</span>}
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
-                      className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        errors.password ? 'border-red-300' : 'border-gray-300'
+                      className={`w-full pl-10 pr-10 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        errors.password ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                       }`}
                       placeholder="Enter password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -500,34 +499,34 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
 
                 {/* Role */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Role
                   </label>
                   <select
                     value={formData.role}
                     onChange={(e) => handleInputChange('role', e.target.value as FormData['role'])}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
-                    <option value="officer">Officer</option>
-                    <option value="institutional">Institutional</option>
-                    <option value="admin">Admin</option>
+                    <option value="officer" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Officer</option>
+                    <option value="institutional" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Institutional</option>
+                    <option value="admin" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Admin</option>
                   </select>
                 </div>
 
                 {/* Conditional Fields */}
                 {formData.role === 'officer' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Department
                     </label>
                     <div className="relative">
-                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                       <input
                         type="text"
                         value={formData.department}
                         onChange={(e) => handleInputChange('department', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                          errors.department ? 'border-red-300' : 'border-gray-300'
+                        className={`w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.department ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                         }`}
                         placeholder="e.g., Investigation, Patrol, Forensics"
                       />
@@ -540,17 +539,17 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
 
                 {formData.role === 'institutional' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Institution Name
                     </label>
                     <div className="relative">
-                      <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                       <input
                         type="text"
                         value={formData.institutionName}
                         onChange={(e) => handleInputChange('institutionName', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                          errors.institutionName ? 'border-red-300' : 'border-gray-300'
+                        className={`w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.institutionName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                         }`}
                         placeholder="e.g., City University, Medical Center"
                       />
@@ -564,26 +563,26 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                 {/* Address Information - For officer and institutional users */}
                 {(formData.role === 'officer' || formData.role === 'institutional') && (
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                       <MapPin className="w-5 h-5" />
                       Address Information
                     </h3>
                     
                     {/* Province */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Province *
                       </label>
                       <select
                         value={formData.address.province}
                         onChange={(e) => handleAddressChange('province', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                          errors.address?.province ? 'border-red-300' : 'border-gray-300'
+                        className={`w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.address?.province ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                         }`}
                       >
-                        <option value="">Select Province</option>
+                        <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select Province</option>
                         {provinces.map((province) => (
-                          <option key={province} value={province}>
+                          <option key={province} value={province} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                             {province}
                           </option>
                         ))}
@@ -595,20 +594,20 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
 
                     {/* District */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         District *
                       </label>
                       <select
                         value={formData.address.district}
                         onChange={(e) => handleAddressChange('district', e.target.value)}
                         disabled={!formData.address.province}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                          errors.address?.district ? 'border-red-300' : 'border-gray-300'
-                        } ${!formData.address.province ? 'bg-gray-100' : ''}`}
+                        className={`w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.address?.district ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
+                        } ${!formData.address.province ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
                       >
-                        <option value="">Select District</option>
+                        <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select District</option>
                         {districts.map((district) => (
-                          <option key={district} value={district}>
+                          <option key={district} value={district} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                             {district}
                           </option>
                         ))}
@@ -620,20 +619,20 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
 
                     {/* Municipality */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Municipality *
                       </label>
                       <select
                         value={formData.address.municipality}
                         onChange={(e) => handleAddressChange('municipality', e.target.value)}
                         disabled={!formData.address.district}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                          errors.address?.municipality ? 'border-red-300' : 'border-gray-300'
-                        } ${!formData.address.district ? 'bg-gray-100' : ''}`}
+                        className={`w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.address?.municipality ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
+                        } ${!formData.address.district ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
                       >
-                        <option value="">Select Municipality</option>
+                        <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select Municipality</option>
                         {municipalities.map((municipality) => (
-                          <option key={municipality} value={municipality}>
+                          <option key={municipality} value={municipality} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                             {municipality}
                           </option>
                         ))}
@@ -645,20 +644,20 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
 
                     {/* Ward */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Ward *
                       </label>
                       <select
                         value={formData.address.ward}
                         onChange={(e) => handleAddressChange('ward', e.target.value)}
                         disabled={!formData.address.municipality}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                          errors.address?.ward ? 'border-red-300' : 'border-gray-300'
-                        } ${!formData.address.municipality ? 'bg-gray-100' : ''}`}
+                        className={`w-full px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                          errors.address?.ward ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
+                        } ${!formData.address.municipality ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
                       >
-                        <option value="">Select Ward</option>
+                        <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select Ward</option>
                         {wards.map((ward) => (
-                          <option key={ward} value={ward}>
+                          <option key={ward} value={ward} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                             Ward {ward}
                           </option>
                         ))}
@@ -673,13 +672,13 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                 {/* Location Information - Only for institutional users */}
                 {formData.role === 'institutional' && (
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                       <MapPin className="w-5 h-5" />
                       Institution Location
                     </h3>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Select Location on Map *
                       </label>
                       <div className="border rounded-lg overflow-hidden">
@@ -698,7 +697,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                       
                       {/* Display selected coordinates */}
                       {formData.location.latitude && formData.location.longitude && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-600">
+                        <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm text-gray-600 dark:text-gray-300">
                           <p>Latitude: {formData.location.latitude.toFixed(6)}</p>
                           <p>Longitude: {formData.location.longitude.toFixed(6)}</p>
                           {formData.location.address && (
@@ -715,7 +714,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
@@ -731,7 +730,6 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated, editin
                   </button>
                 </div>
               </form>
-              </div>
             </motion.div>
           </div>
         </div>

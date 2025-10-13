@@ -192,6 +192,7 @@ export default function OfficerDashboard() {
               icon: FileText, 
               color: 'from-blue-500 to-blue-600',
               bgColor: 'bg-blue-50',
+              darkBgColor: 'dark:bg-gray-800/80',
               change: '+12%',
               changeType: 'increase'
             },
@@ -201,6 +202,7 @@ export default function OfficerDashboard() {
               icon: Activity, 
               color: 'from-orange-500 to-orange-600',
               bgColor: 'bg-orange-50',
+              darkBgColor: 'dark:bg-gray-800/80',
               change: '+8%',
               changeType: 'increase',
               href: '/officer/cases/active'
@@ -211,6 +213,7 @@ export default function OfficerDashboard() {
               icon: CheckCircle, 
               color: 'from-green-500 to-green-600',
               bgColor: 'bg-green-50',
+              darkBgColor: 'dark:bg-gray-800/80',
               change: '+15%',
               changeType: 'increase',
               href: '/officer/cases/resolved'
@@ -221,6 +224,7 @@ export default function OfficerDashboard() {
               icon: Shield, 
               color: 'from-purple-500 to-purple-600',
               bgColor: 'bg-purple-50',
+              darkBgColor: 'dark:bg-gray-800/80',
               change: '-5%',
               changeType: 'decrease',
               href: '/officer/cases/verification'
@@ -228,7 +232,7 @@ export default function OfficerDashboard() {
           ].map((stat, index) => (
             <motion.div
               key={stat.title}
-              className={`${stat.bgColor} dark:bg-gray-800 p-6 rounded-2xl border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300`}
+              className={`${stat.bgColor} ${stat.darkBgColor} p-6 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-lg dark:hover:shadow-gray-900/50 transition-all duration-300`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index, duration: 0.6 }}
@@ -282,18 +286,17 @@ export default function OfficerDashboard() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Urgent Cases</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Requires immediate attention</p>
                 </div>
-                <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-100 dark:border-gray-600">
-                  <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 ml-2" />
+                <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/70 rounded-md border border-gray-100 dark:border-gray-600 px-2">
+                  <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                   <select
                     value={urgentCaseTypeFilter}
                     onChange={(e) => setUrgentCaseTypeFilter(e.target.value as any)}
-                    className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none appearance-none"
-                    style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
+                    className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none cursor-pointer"
                   >
-                    <option value="all">All Types</option>
-                    <option value="lost">Lost Items</option>
-                    <option value="found">Found Items</option>
-                    <option value="verification">Verification</option>
+                    <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">All Types</option>
+                    <option value="lost" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Lost Items</option>
+                    <option value="found" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Found Items</option>
+                    <option value="verification" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Verification</option>
                   </select>
                 </div>
               </div>
@@ -346,7 +349,9 @@ export default function OfficerDashboard() {
               icon: Search,
               color: 'from-blue-500 to-blue-600',
               bgColor: 'bg-blue-50',
-              hoverColor: 'hover:bg-blue-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-blue-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Create Report',
@@ -354,7 +359,9 @@ export default function OfficerDashboard() {
               icon: FileText,
               color: 'from-green-500 to-green-600',
               bgColor: 'bg-green-50',
-              hoverColor: 'hover:bg-green-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-green-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Verify Ownership',
@@ -362,7 +369,9 @@ export default function OfficerDashboard() {
               icon: Shield,
               color: 'from-purple-500 to-purple-600',
               bgColor: 'bg-purple-50',
-              hoverColor: 'hover:bg-purple-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-purple-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Team Collaboration',
@@ -370,7 +379,9 @@ export default function OfficerDashboard() {
               icon: Users,
               color: 'from-orange-500 to-orange-600',
               bgColor: 'bg-orange-50',
-              hoverColor: 'hover:bg-orange-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-orange-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Emergency Cases',
@@ -378,7 +389,9 @@ export default function OfficerDashboard() {
               icon: AlertCircle,
               color: 'from-red-500 to-red-600',
               bgColor: 'bg-red-50',
-              hoverColor: 'hover:bg-red-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-red-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Analytics & Reports',
@@ -386,12 +399,14 @@ export default function OfficerDashboard() {
               icon: TrendingUp,
               color: 'from-indigo-500 to-indigo-600',
               bgColor: 'bg-indigo-50',
-              hoverColor: 'hover:bg-indigo-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-indigo-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             }
           ].map((action, index) => (
             <motion.button
               key={action.title}
-              className={`${action.bgColor} dark:bg-gray-800 ${action.hoverColor} dark:hover:bg-gray-700 p-6 rounded-2xl border border-white/50 dark:border-gray-700 text-left transition-all duration-300 hover:shadow-lg group`}
+              className={`${action.bgColor} ${action.darkBgColor} ${action.hoverColor} ${action.darkHoverColor} p-6 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 text-left transition-all duration-300 hover:shadow-lg dark:hover:shadow-gray-900/50 group`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9 + (index * 0.1), duration: 0.4 }}

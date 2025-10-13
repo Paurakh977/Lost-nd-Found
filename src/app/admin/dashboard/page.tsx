@@ -247,13 +247,13 @@ export default function AdminDashboard() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800';
       case 'officer':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800';
       case 'institutional':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600';
     }
   };
 
@@ -435,12 +435,12 @@ export default function AdminDashboard() {
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer"
                 >
-                  <option value="all">All Roles</option>
-                  <option value="admin">Admin</option>
-                  <option value="officer">Officer</option>
-                  <option value="institutional">Institutional</option>
+                  <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">All Roles</option>
+                  <option value="admin" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Admin</option>
+                  <option value="officer" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Officer</option>
+                  <option value="institutional" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Institutional</option>
                 </select>
               </div>
             </div>
@@ -490,8 +490,8 @@ export default function AdminDashboard() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       user.isActive 
-                        ? 'bg-green-100 text-green-800 border border-green-200' 
-                        : 'bg-red-100 text-red-800 border border-red-200'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800' 
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
                     }`}>
                       {user.isActive ? 'Active' : 'Inactive'}
                     </span>

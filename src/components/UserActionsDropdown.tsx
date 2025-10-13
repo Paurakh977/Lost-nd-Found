@@ -107,7 +107,7 @@ export default function UserActionsDropdown({
         onEdit(user);
         setIsOpen(false);
       },
-      className: 'text-gray-700 hover:bg-gray-50',
+      className: 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
     },
     {
       label: user.isActive ? 'Deactivate' : 'Activate',
@@ -117,8 +117,8 @@ export default function UserActionsDropdown({
         setIsOpen(false);
       },
       className: user.isActive 
-        ? 'text-orange-700 hover:bg-orange-50' 
-        : 'text-green-700 hover:bg-green-50',
+        ? 'text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30' 
+        : 'text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30',
     },
     {
       label: 'Delete User',
@@ -127,7 +127,7 @@ export default function UserActionsDropdown({
         onDelete(user);
         setIsOpen(false);
       },
-      className: 'text-red-700 hover:bg-red-50',
+      className: 'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30',
       disabled: user.role === 'admin', // Don't allow deleting admin users
     },
   ];
@@ -140,7 +140,7 @@ export default function UserActionsDropdown({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+        className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
         aria-label="User actions"
       >
         <MoreVertical className="w-4 h-4" />
@@ -158,11 +158,11 @@ export default function UserActionsDropdown({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.1 }}
-                className="fixed w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50"
+                className="fixed w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-50"
                 style={{
                   top: dropdownPosition.top,
                   left: dropdownPosition.left,
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)'
                 }}
               >
                 {actions.map((action, index) => {
@@ -177,7 +177,7 @@ export default function UserActionsDropdown({
                       disabled={action.disabled}
                       className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-3 transition-colors ${
                         action.disabled 
-                          ? 'text-gray-400 cursor-not-allowed' 
+                          ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' 
                           : action.className
                       }`}
                     >

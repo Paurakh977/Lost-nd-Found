@@ -71,18 +71,17 @@ export default function MyResolvedCasesPage() {
               className="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-100 dark:border-gray-600">
-            <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 ml-2" />
+          <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-100 dark:border-gray-600 px-2">
+            <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
             <select
               value={filters.type}
               onChange={(e) => setFilters({ ...filters, type: e.target.value as 'all' | 'lost' | 'found' | 'verification' })}
-              className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none appearance-none"
-              style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
+              className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none cursor-pointer"
             >
-              <option value="all">All Types</option>
-              <option value="lost">Lost</option>
-              <option value="found">Found</option>
-              <option value="verification">Verification</option>
+              <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">All Types</option>
+              <option value="lost" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Lost</option>
+              <option value="found" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Found</option>
+              <option value="verification" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Verification</option>
             </select>
           </div>
         </div>

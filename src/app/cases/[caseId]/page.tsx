@@ -469,10 +469,10 @@ export default function PublicCaseDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading case details...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading case details...</p>
         </div>
       </div>
     );
@@ -480,11 +480,11 @@ export default function PublicCaseDetailPage() {
 
   if (error || !caseItem) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Case Not Found</h1>
-          <p className="text-gray-600 mb-6">{error || 'The case you are looking for does not exist or has been removed.'}</p>
+          <AlertCircle className="w-16 h-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Case Not Found</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{error || 'The case you are looking for does not exist or has been removed.'}</p>
           <button 
             onClick={() => router.push('/')}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -509,18 +509,18 @@ export default function PublicCaseDetailPage() {
   const canClaim = (caseItem.type === 'lost' || caseItem.type === 'verification' || caseItem.type === 'found') && caseItem.status !== 'resolved' && !hasClaimed;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <img src="/Logo.png" alt="GOTUS" className="h-8 w-auto" />
-              <span className="ml-3 text-xl font-bold text-gray-900">GOTUS</span>
+              <span className="ml-3 text-xl font-bold text-gray-900 dark:text-white">GOTUS</span>
             </div>
             <button 
               onClick={() => router.push('/')}
-              className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="inline-flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
@@ -539,7 +539,7 @@ export default function PublicCaseDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Case Header */}
-            <div className="bg-white rounded-xl border p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
               <div className="flex items-start gap-6">
                 {hasImage ? (
                   <img 
@@ -552,9 +552,9 @@ export default function PublicCaseDetailPage() {
                   <ItemPlaceholder className="w-32 h-32 rounded-lg flex-shrink-0 border border-gray-200" itemType={caseItem.type} />
                 )}
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-3">{caseItem.title}</h1>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">{caseItem.title}</h1>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                       {typeIcon}
                       <span className="ml-2 capitalize">{caseItem.type}</span>
                     </span>
@@ -573,31 +573,31 @@ export default function PublicCaseDetailPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-700 text-lg leading-relaxed">{caseItem.description}</p>
+                  <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">{caseItem.description}</p>
                 </div>
               </div>
             </div>
 
             {/* Item Details */}
-            <div className="bg-white rounded-xl border p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Item Details</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Item Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {caseItem.itemDetails.brand && (
                   <div>
-                    <span className="text-sm font-medium text-gray-500">Brand</span>
-                    <p className="text-gray-900">{caseItem.itemDetails.brand}</p>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</span>
+                    <p className="text-gray-900 dark:text-white">{caseItem.itemDetails.brand}</p>
                   </div>
                 )}
                 {caseItem.itemDetails.model && (
                   <div>
-                    <span className="text-sm font-medium text-gray-500">Model</span>
-                    <p className="text-gray-900">{caseItem.itemDetails.model}</p>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Model</span>
+                    <p className="text-gray-900 dark:text-white">{caseItem.itemDetails.model}</p>
                   </div>
                 )}
                 {caseItem.itemDetails.color && (
                   <div>
-                    <span className="text-sm font-medium text-gray-500">Color</span>
-                    <p className="text-gray-900">{caseItem.itemDetails.color}</p>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Color</span>
+                    <p className="text-gray-900 dark:text-white">{caseItem.itemDetails.color}</p>
                   </div>
                 )}
                 {caseItem.itemDetails.category && (
