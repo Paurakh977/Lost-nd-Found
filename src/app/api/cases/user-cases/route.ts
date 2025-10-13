@@ -4,6 +4,7 @@ import { getJWTFromRequest, verifyJWT } from '../../../../lib/jwt';
 import connectDB from '../../../../lib/mongodb';
 import Case from '../../../../models/Case';
 import User from '../../../../models/User';
+import Claim from '../../../../models/Claim';
 
 export async function GET(req: NextRequest) {
   try {
@@ -79,14 +80,64 @@ export async function GET(req: NextRequest) {
 
     // Check if requesting another user's profile (optional userId query param)
     const targetUserId = req.nextUrl.searchParams.get('userId') || userId;
+    
+    // Get pagination parameters
+    const page = parseInt(req.nextUrl.searchParams.get('page') || '1');
+    const limit = parseInt(req.nextUrl.searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
 
-    // Fetch cases for the user
+    // Get total count for pagination
+    const totalCases = await Case.countDocuments({ 'reportedBy.clerkId': targetUserId });
+    const totalPages = Math.ceil(totalCases / limit);
+    
+    // Fetch cases for the user and populate assigned officer
     const cases = await Case.find({ 'reportedBy.clerkId': targetUserId })
+      .populate({
+        path: 'assignedOfficer',
+        select: 'firstName lastName email department institutionName role'
+      })
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
+    // Fetch user's claims
+    const claimsQuery: any = {
+      $or: []
+    };
+    
+    if (targetUserId) {
+      claimsQuery.$or.push({ clerkUserId: targetUserId });
+    }
+    
+    if (userEmail) {
+      claimsQuery.$or.push({ 'claimantInfo.email': userEmail.toLowerCase() });
+    }
+    
+    let claims: any[] = [];
+    if (claimsQuery.$or.length > 0) {
+      claims = await Claim.find(claimsQuery)
+        .select('caseId status createdAt evidence reviewNotes reviewedAt')
+        .lean();
+    }
+    
+    // Create a map of caseId -> claim for quick lookup
+    const claimsMap = new Map();
+    claims.forEach((claim: any) => {
+      claimsMap.set(claim.caseId.toString(), claim);
+    });
+    
+    // Add claim information to cases
+    const casesWithClaims = cases.map((caseItem: any) => {
+      const claim = claimsMap.get(caseItem._id.toString());
+      return {
+        ...caseItem,
+        userClaim: claim || null
+      };
+    });
+
     // Calculate statistics
-    const stats = cases.reduce(
+    const stats = casesWithClaims.reduce(
       (acc, caseItem: any) => {
         acc.total++;
         if (caseItem.status === 'pending') acc.pending++;
@@ -103,8 +154,15 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      cases,
+      cases: casesWithClaims,
       stats,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: totalCases,
+        itemsPerPage: limit,
+        hasMore: page < totalPages
+      },
       user: {
         id: userId,
         name: userName,

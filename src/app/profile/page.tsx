@@ -15,15 +15,46 @@ import {
   Filter,
   SortDesc,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   X,
   Search,
   FileText,
   Image as ImageIcon,
-  Loader2
+  Loader2,
+  Camera,
+  Upload,
+  Trash2,
+  Building2,
+  UserCircle,
+  Shield,
+  MapPinned
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 
 // Types
+interface AssignedOfficer {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  department?: string;
+  institutionName?: string;
+  role: string;
+}
+
+interface UserClaim {
+  _id: string;
+  caseId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  evidence: {
+    description: string;
+  };
+}
+
 interface CaseItem {
   _id: string;
   title: string;
@@ -45,6 +76,8 @@ interface CaseItem {
   images: string[];
   createdAt: string;
   updatedAt: string;
+  assignedOfficer?: AssignedOfficer | null;
+  userClaim?: UserClaim | null;
 }
 
 interface Stats {
@@ -64,6 +97,20 @@ interface UserData {
   type: 'clerk' | 'jwt';
   imageUrl?: string;
   createdAt?: string;
+  profileImage?: string;
+  department?: string;
+  institutionName?: string;
+  address?: {
+    province?: string;
+    district?: string;
+    municipality?: string;
+    ward?: string;
+  };
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+  };
 }
 
 // Utility functions
@@ -128,6 +175,19 @@ const getStatusIcon = (status: string) => {
   }
 };
 
+const getClaimStatusColor = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+    case 'approved':
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+    case 'rejected':
+      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+  }
+};
+
 export default function ProfilePage() {
   const { user: clerkUser, isLoaded } = useUser();
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -141,12 +201,22 @@ export default function ProfilePage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
-  const [itemsPerPage] = useState(20);
+  const [itemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   
   // Modal state
   const [selectedCase, setSelectedCase] = useState<CaseItem | null>(null);
   const [showModal, setShowModal] = useState(false);
+  
+  // Profile picture upload state
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  
+  // Map location dropdown state
+  const [showMapLocation, setShowMapLocation] = useState(false);
 
   // Fetch user data and cases
   useEffect(() => {
@@ -161,6 +231,7 @@ export default function ProfilePage() {
         let userRole: string | undefined;
         let userType: 'clerk' | 'jwt' = 'clerk';
         let userCreatedAt: string | undefined;
+        let jwtUserData: any = null;
 
         // First, try to check JWT user (our own server, no rate limits)
         let jwtChecked = false;
@@ -180,6 +251,7 @@ export default function ProfilePage() {
               userRole = meData.user.role;
               userType = 'jwt';
               userCreatedAt = meData.user.createdAt;
+              jwtUserData = meData.user; // Store full JWT user data
               console.log('[Profile] ✅ Using JWT user:', { userId, userName, userEmail, userRole });
             } else {
               console.log('[Profile] ⚠️ JWT response invalid, falling back to Clerk');
@@ -207,7 +279,7 @@ export default function ProfilePage() {
           return;
         }
 
-        // Set user data
+        // Set user data with additional JWT fields
         setUserData({
           id: userId,
           name: userName || 'User',
@@ -216,10 +288,15 @@ export default function ProfilePage() {
           type: userType,
           imageUrl: userType === 'clerk' ? clerkUser?.imageUrl : undefined,
           createdAt: userCreatedAt,
+          profileImage: jwtUserData?.profileImage,
+          department: jwtUserData?.department,
+          institutionName: jwtUserData?.institutionName,
+          address: jwtUserData?.address,
+          location: jwtUserData?.location,
         });
 
-        // Fetch cases
-        const casesResponse = await fetch('/api/cases/user-cases', {
+        // Fetch cases with pagination
+        const casesResponse = await fetch(`/api/cases/user-cases?page=${currentPage}&limit=${itemsPerPage}`, {
           credentials: 'include',
         });
 
@@ -232,6 +309,10 @@ export default function ProfilePage() {
         if (casesData.success) {
           setCases(casesData.cases || []);
           setStats(casesData.stats || { total: 0, pending: 0, active: 0, resolved: 0, lost: 0, found: 0 });
+          if (casesData.pagination) {
+            setTotalPages(casesData.pagination.totalPages || 1);
+            setTotalItems(casesData.pagination.totalItems || 0);
+          }
         } else {
           throw new Error(casesData.error || 'Failed to fetch cases');
         }
@@ -246,51 +327,99 @@ export default function ProfilePage() {
     if (isLoaded) {
       fetchData();
     }
-  }, [isLoaded, clerkUser]);
+  }, [isLoaded, clerkUser, currentPage, itemsPerPage]);
 
-  // Filtered and sorted cases
-  const filteredCases = useMemo(() => {
-    let filtered = [...cases];
+  // Profile picture upload handler
+  const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(c => c.status === statusFilter);
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please select an image file');
+      return;
     }
 
-    // Apply type filter
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(c => c.type === typeFilter);
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('Image size must be less than 2MB');
+      return;
     }
 
-    // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(c => 
-        c.title.toLowerCase().includes(query) ||
-        c.description.toLowerCase().includes(query) ||
-        c.location.address.toLowerCase().includes(query) ||
-        c.itemDetails.category?.toLowerCase().includes(query) ||
-        c.itemDetails.brand?.toLowerCase().includes(query)
-      );
+    try {
+      setUploadingImage(true);
+      setUploadError(null);
+      setUploadSuccess(false);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/profile/upload-picture', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update user data with new profile image
+        setUserData(prev => prev ? {
+          ...prev,
+          profileImage: data.profileImage
+        } : null);
+        setUploadSuccess(true);
+        setTimeout(() => setUploadSuccess(false), 3000);
+      } else {
+        setUploadError(data.error || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+      // Clear the input
+      event.target.value = '';
     }
+  };
 
-    // Apply sorting
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
-      return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
-    });
+  // Delete profile picture handler
+  const handleDeleteProfilePicture = async () => {
+    if (!confirm('Are you sure you want to remove your profile picture?')) return;
 
-    return filtered;
-  }, [cases, statusFilter, typeFilter, sortBy, searchQuery]);
+    try {
+      setUploadingImage(true);
+      setUploadError(null);
 
-  // Paginated cases
-  const paginatedCases = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredCases.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredCases, currentPage, itemsPerPage]);
+      const response = await fetch('/api/profile/upload-picture', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
 
-  const hasMorePages = currentPage * itemsPerPage < filteredCases.length;
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update user data to remove profile image
+        setUserData(prev => prev ? {
+          ...prev,
+          profileImage: undefined
+        } : null);
+        setUploadSuccess(true);
+        setTimeout(() => setUploadSuccess(false), 3000);
+      } else {
+        setUploadError(data.error || 'Failed to delete image');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      setUploadError('Failed to delete image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Cases are already paginated from the API
+  // Just use the cases directly
+  const displayCases = cases;
 
   // Loading skeleton
   if (loading) {
@@ -365,21 +494,64 @@ export default function ProfilePage() {
         >
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
             {/* Avatar */}
-            <div className="relative">
+            <div className="relative group">
               {userData?.type === 'clerk' && userData.imageUrl ? (
+                // Clerk user - show their profile image from Clerk
                 <img
                   src={userData.imageUrl}
                   alt={userData.name}
                   className="w-20 h-20 rounded-full ring-4 ring-blue-500/20 object-cover"
                 />
+              ) : userData?.type === 'jwt' && userData.profileImage ? (
+                // JWT user with uploaded profile image
+                <div className="relative">
+                  <img
+                    src={`/api/profile/image/${userData.profileImage}?t=${Date.now()}`}
+                    alt={userData.name}
+                    className="w-20 h-20 rounded-full ring-4 ring-blue-500/20 object-cover"
+                  />
+                  {/* Upload button overlay for JWT users */}
+                  <label
+                    htmlFor="profile-upload"
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    <Camera className="w-6 h-6 text-white" />
+                  </label>
+                </div>
               ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/20">
-                  <span className="text-3xl font-bold text-white">
-                    {userData?.name.charAt(0).toUpperCase()}
-                  </span>
+                // Default avatar with initials
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/20">
+                    <span className="text-3xl font-bold text-white">
+                      {userData?.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  {/* Upload button overlay for JWT users */}
+                  {userData?.type === 'jwt' && (
+                    <label
+                      htmlFor="profile-upload"
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <Camera className="w-6 h-6 text-white" />
+                    </label>
+                  )}
                 </div>
               )}
+              
+              {/* Online status indicator */}
               <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800" />
+              
+              {/* Hidden file input for JWT users */}
+              {userData?.type === 'jwt' && (
+                <input
+                  id="profile-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleProfilePictureUpload}
+                  disabled={uploadingImage}
+                />
+              )}
             </div>
 
             {/* User Info */}
@@ -408,7 +580,159 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+          
+          {/* Upload status notifications */}
+          <AnimatePresence>
+            {uploadSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-lg text-sm flex items-center space-x-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>Profile picture updated successfully!</span>
+              </motion.div>
+            )}
+            {uploadError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-lg text-sm flex items-center space-x-2"
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span>{uploadError}</span>
+                <button
+                  onClick={() => setUploadError(null)}
+                  className="ml-auto"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+            {uploadingImage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-lg text-sm flex items-center space-x-2"
+              >
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Uploading image...</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
+
+        {/* JWT User Additional Information */}
+        {userData?.type === 'jwt' && (userData?.department || userData?.institutionName || userData?.address || userData?.location) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/20"
+          >
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+              <UserCircle className="w-5 h-5" />
+              <span>Additional Information</span>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {userData.department && (
+                <div className="flex items-start space-x-3">
+                  <Shield className="w-5 h-5 text-blue-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Department</p>
+                    <p className="text-base font-medium text-gray-900 dark:text-white">{userData.department}</p>
+                  </div>
+                </div>
+              )}
+              {userData.institutionName && (
+                <div className="flex items-start space-x-3">
+                  <Building2 className="w-5 h-5 text-purple-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Institution</p>
+                    <p className="text-base font-medium text-gray-900 dark:text-white">{userData.institutionName}</p>
+                  </div>
+                </div>
+              )}
+              {userData.address && (
+                <div className="flex items-start space-x-3">
+                  <MapPin className="w-5 h-5 text-green-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Address</p>
+                    <p className="text-base font-medium text-gray-900 dark:text-white">
+                      {[userData.address.ward, userData.address.municipality, userData.address.district, userData.address.province]
+                        .filter(Boolean)
+                        .join(', ') || 'Not specified'}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {userData.location?.latitude && userData.location?.longitude && (
+                <div className="col-span-full">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-start space-x-3">
+                      <MapPinned className="w-5 h-5 text-red-500 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">GPS Location</p>
+                        <p className="text-base font-medium text-gray-900 dark:text-white">
+                          {userData.location.address || `${userData.location.latitude.toFixed(6)}, ${userData.location.longitude.toFixed(6)}`}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowMapLocation(!showMapLocation)}
+                      className="px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors flex items-center space-x-2"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      <span>{showMapLocation ? 'Hide Map' : 'View on Map'}</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showMapLocation ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                  
+                  {/* Map Dropdown */}
+                  <AnimatePresence>
+                    {showMapLocation && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="mt-4 overflow-hidden"
+                      >
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-2 border border-gray-200 dark:border-gray-700">
+                          <iframe
+                            title="Location Map"
+                            width="100%"
+                            height="300"
+                            frameBorder="0"
+                            style={{ border: 0, borderRadius: '8px' }}
+                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${userData.location.longitude - 0.01},${userData.location.latitude - 0.01},${userData.location.longitude + 0.01},${userData.location.latitude + 0.01}&layer=mapnik&marker=${userData.location.latitude},${userData.location.longitude}`}
+                            allowFullScreen
+                          />
+                          <div className="mt-2 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                            <span>Lat: {userData.location.latitude.toFixed(6)}, Lng: {userData.location.longitude.toFixed(6)}</span>
+                            <a
+                              href={`https://www.openstreetmap.org/?mlat=${userData.location.latitude}&mlon=${userData.location.longitude}#map=15/${userData.location.latitude}/${userData.location.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline flex items-center space-x-1"
+                            >
+                              <span>Open in OpenStreetMap</span>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -542,12 +866,13 @@ export default function ProfilePage() {
         {/* Results count */}
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <span>
-            Showing {paginatedCases.length} of {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
+            Showing {displayCases.length} of {totalItems} case{totalItems !== 1 ? 's' : ''}
+            {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
           </span>
         </div>
 
         {/* Cases List */}
-        {filteredCases.length === 0 ? (
+        {displayCases.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -578,7 +903,7 @@ export default function ProfilePage() {
         ) : (
           <div className="space-y-4">
             <AnimatePresence mode="popLayout">
-              {paginatedCases.map((caseItem, index) => (
+              {displayCases.map((caseItem, index) => (
                 <motion.div
                   key={caseItem._id}
                   initial={{ opacity: 0, y: 20 }}
@@ -649,25 +974,80 @@ export default function ProfilePage() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Assigned Officer & Claim Status */}
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        {caseItem.assignedOfficer && (
+                          <div className="flex items-center space-x-2 text-xs bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full">
+                            <Shield className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            <span className="text-blue-700 dark:text-blue-300">
+                              Officer: {caseItem.assignedOfficer.firstName} {caseItem.assignedOfficer.lastName}
+                            </span>
+                          </div>
+                        )}
+                        {caseItem.userClaim && (
+                          <span className={`px-3 py-1.5 text-xs font-medium rounded-full ${getClaimStatusColor(caseItem.userClaim.status)}`}>
+                            Claim: {caseItem.userClaim.status}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               ))}
             </AnimatePresence>
 
-            {/* Load More */}
-            {hasMorePages && (
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex justify-center py-4"
+                className="flex justify-center items-center space-x-2 py-6"
               >
                 <button
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-lg shadow-lg border border-white/20 dark:border-gray-700/20 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-gray-800 transition-colors"
                 >
-                  <span>Load More</span>
-                  <ChevronDown className="w-5 h-5" />
+                  <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                </button>
+                
+                {/* Page Numbers */}
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white shadow-lg scale-110'
+                            : 'bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800'
+                        } backdrop-blur-xl border border-white/20 dark:border-gray-700/20`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-lg shadow-lg border border-white/20 dark:border-gray-700/20 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 </button>
               </motion.div>
             )}
@@ -795,6 +1175,86 @@ export default function ProfilePage() {
                       </p>
                     )}
                   </div>
+
+                  {/* Assigned Officer */}
+                  {selectedCase.assignedOfficer && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 space-y-2">
+                      <h4 className="font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
+                        <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        <span>Assigned Officer</span>
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Name:</span>
+                          <span className="ml-2 text-gray-900 dark:text-white font-medium">
+                            {selectedCase.assignedOfficer.firstName} {selectedCase.assignedOfficer.lastName}
+                          </span>
+                        </div>
+                        {selectedCase.assignedOfficer.email && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Email:</span>
+                            <span className="ml-2 text-gray-900 dark:text-white font-medium">
+                              {selectedCase.assignedOfficer.email}
+                            </span>
+                          </div>
+                        )}
+                        {selectedCase.assignedOfficer.department && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Department:</span>
+                            <span className="ml-2 text-gray-900 dark:text-white font-medium">
+                              {selectedCase.assignedOfficer.department}
+                            </span>
+                          </div>
+                        )}
+                        {selectedCase.assignedOfficer.role && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Role:</span>
+                            <span className="ml-2 text-gray-900 dark:text-white font-medium capitalize">
+                              {selectedCase.assignedOfficer.role}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* User Claim */}
+                  {selectedCase.userClaim && (
+                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
+                          <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                          <span>Your Claim</span>
+                        </h4>
+                        <span className={`px-3 py-1 text-xs font-medium rounded-full ${getClaimStatusColor(selectedCase.userClaim.status)}`}>
+                          {selectedCase.userClaim.status}
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <p className="text-gray-700 dark:text-gray-300">
+                          {selectedCase.userClaim.evidence.description}
+                        </p>
+                        {selectedCase.userClaim.reviewNotes && (
+                          <div className="mt-3 p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                            <p className="text-gray-600 dark:text-gray-400 font-semibold mb-1">Review Notes:</p>
+                            <p className="text-gray-700 dark:text-gray-300">{selectedCase.userClaim.reviewNotes}</p>
+                          </div>
+                        )}
+                        <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                          <div>
+                            <span>Submitted: </span>
+                            <span className="font-medium">{safeFormatDistanceToNow(selectedCase.userClaim.createdAt)}</span>
+                          </div>
+                          {selectedCase.userClaim.reviewedAt && (
+                            <div>
+                              <span>Reviewed: </span>
+                              <span className="font-medium">{safeFormatDistanceToNow(selectedCase.userClaim.reviewedAt)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Timestamps */}
                   <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
