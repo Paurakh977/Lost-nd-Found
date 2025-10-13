@@ -116,6 +116,12 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
             alt={user?.fullName || user?.emailAddresses[0]?.emailAddress || 'User'}
             className="w-full h-full object-cover"
           />
+        ) : jwtUser?.profileImage ? (
+          <img
+            src={`/api/profile/image/${jwtUser.profileImage}?t=${Date.now()}`}
+            alt={`${jwtUser.firstName} ${jwtUser.lastName}`.trim() || jwtUser.email}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
             {jwtUser?.firstName?.charAt(0) || jwtUser?.email?.charAt(0) || 'U'}
@@ -159,6 +165,12 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
                       <img
                         src={user?.imageUrl}
                         alt={user?.fullName || 'User'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : jwtUser?.profileImage ? (
+                      <img
+                        src={`/api/profile/image/${jwtUser.profileImage}?t=${Date.now()}`}
+                        alt={`${jwtUser.firstName} ${jwtUser.lastName}`.trim()}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -213,7 +225,10 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
 
                 {userType === 'jwt' && jwtUser?.role === 'institutional' && (
                   <motion.button
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      router.push('/institutional-info');
+                      setIsOpen(false);
+                    }}
                     className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
                     whileHover={{ x: 4 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
