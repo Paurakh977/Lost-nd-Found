@@ -105,8 +105,9 @@ export default function PublicCaseDetailPage() {
   const [hasClaimed, setHasClaimed] = useState(false);
   const [checkingClaim, setCheckingClaim] = useState(false);
   
-  // Related FOUND case ID (from email notification query param)
-  const [relatedFoundCaseId, setRelatedFoundCaseId] = useState<string | null>(null);
+  // Related case IDs for linking (from email or search)
+  const [relatedFoundCaseId, setRelatedFoundCaseId] = useState<string | null>(null); // When viewing LOST case
+  const [relatedLostCaseId, setRelatedLostCaseId] = useState<string | null>(null); // When viewing FOUND case
   
   // Claim evidence states
   const [claimDescription, setClaimDescription] = useState('');
@@ -154,14 +155,23 @@ export default function PublicCaseDetailPage() {
     }
   }, [clerkLoaded, clerkUser]);
 
-  // Extract foundCaseId from query params (if user clicked from email)
+  // Extract foundCaseId or lostCaseId from query params
+  // foundCaseId: when viewing LOST case (from email)
+  // lostCaseId: when viewing FOUND case (from search page)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const foundId = searchParams.get('foundCaseId');
+      const lostId = searchParams.get('lostCaseId');
+      
       if (foundId) {
         setRelatedFoundCaseId(foundId);
-        console.log('[Case Detail] Related found case ID from URL:', foundId);
+        console.log('[Case Detail] Related FOUND case ID from URL (viewing LOST case):', foundId);
+      }
+      
+      if (lostId) {
+        setRelatedLostCaseId(lostId);
+        console.log('[Case Detail] Related LOST case ID from URL (viewing FOUND case):', lostId);
       }
     }
   }, []);
@@ -309,7 +319,18 @@ export default function PublicCaseDetailPage() {
         isClerkUser: !!clerkUser
       });
       
-      console.log('[Claim Submission] 🔍 CRITICAL - relatedFoundCaseId:', relatedFoundCaseId || 'NONE CAPTURED FROM URL');
+      // Determine which related case ID to use based on the current case type
+      // If viewing a LOST case (with foundCaseId query param), link to FOUND case
+      // If viewing a FOUND case (with lostCaseId query param), link to LOST case
+      const relatedCaseId = relatedFoundCaseId || relatedLostCaseId;
+      
+      console.log('[Claim Submission] 🔍 CRITICAL - Related case linking:', {
+        currentCaseId: params.caseId,
+        currentCaseType: caseItem?.type,
+        relatedFoundCaseId: relatedFoundCaseId || 'NONE',
+        relatedLostCaseId: relatedLostCaseId || 'NONE',
+        finalRelatedCaseId: relatedCaseId || 'NONE'
+      });
       
       if (!userId) {
         pushToast('error', 'Authentication Error', 'User ID not found. Please sign in again.');
@@ -318,7 +339,7 @@ export default function PublicCaseDetailPage() {
       
       const requestBody: any = { 
         clerkUserId: userId,
-        relatedFoundCaseId: relatedFoundCaseId || undefined, // Link to the FOUND case if available
+        relatedFoundCaseId: relatedCaseId || undefined, // Link to related case (FOUND if viewing LOST, or LOST if viewing FOUND)
         claimEvidence: {
           description: claimDescription.trim(),
           images: evidenceImageUrls,
@@ -482,8 +503,10 @@ export default function PublicCaseDetailPage() {
 
   const hasImage = caseItem.images && caseItem.images.length > 0;
 
-  // Allow claiming for both 'lost' and 'verification' types (as long as not resolved)
-  const canClaim = (caseItem.type === 'lost' || caseItem.type === 'verification') && caseItem.status !== 'resolved' && !hasClaimed;
+  // Allow claiming for 'lost', 'verification', and 'found' types (as long as not resolved)
+  // LOST/VERIFICATION: user claims they lost the item
+  // FOUND: user claims this is the item they lost (reverse scenario from search)
+  const canClaim = (caseItem.type === 'lost' || caseItem.type === 'verification' || caseItem.type === 'found') && caseItem.status !== 'resolved' && !hasClaimed;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -676,16 +699,20 @@ export default function PublicCaseDetailPage() {
             {/* Claim Button */}
             {canClaim && (
               <div className="bg-white rounded-xl border p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Think this is yours?</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {caseItem.type === 'found' ? 'Is this your lost item?' : 'Think this is yours?'}
+                </h3>
                 <p className="text-gray-600 mb-4">
-                  If you believe this item belongs to you, you can submit a verification request. 
-                  An officer will review your claim and help verify ownership.
+                  {caseItem.type === 'found' 
+                    ? 'If this found item belongs to you, submit a claim to prove ownership. An officer will review your evidence and help verify.'
+                    : 'If you believe this item belongs to you, you can submit a verification request. An officer will review your claim and help verify ownership.'
+                  }
                 </p>
                 <button
                   onClick={handleClaimForVerification}
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
-                  Claim This Item
+                  {caseItem.type === 'found' ? 'Claim This Found Item' : 'Claim This Item'}
                 </button>
               </div>
             )}

@@ -129,10 +129,12 @@ export async function POST(
     // Allow multiple claims even if already verification type
     // (removed the check that prevented multiple claims)
 
-    // Only allow verification for 'lost' or 'verification' type cases
-    if (currentCase.type !== 'lost' && currentCase.type !== 'verification') {
+    // Allow claiming for 'lost', 'verification', or 'found' type cases
+    // LOST/VERIFICATION: someone claiming they lost the item
+    // FOUND: someone claiming they found the item (reverse scenario from search page)
+    if (currentCase.type !== 'lost' && currentCase.type !== 'verification' && currentCase.type !== 'found') {
       return NextResponse.json(
-        { success: false, error: 'Only lost items can be claimed for verification' },
+        { success: false, error: 'This case type cannot be claimed' },
         { status: 400 }
       );
     }
@@ -203,14 +205,16 @@ export async function POST(
 
     let updatedCase;
 
-    // Update case type to 'verification' if it's currently 'lost'
+    // Update case type to 'verification' if it's currently 'lost' or 'found'
+    // This marks that the case now has claims and needs officer verification
     // Assign officer if case is pending
     const caseUpdateData: any = {
       updatedAt: new Date()
     };
 
-    if (currentCase.type === 'lost') {
+    if (currentCase.type === 'lost' || currentCase.type === 'found') {
       caseUpdateData.type = 'verification';
+      console.log(`[Verify Case] Updating case type from '${currentCase.type}' to 'verification'`);
     }
 
     // Only assign officer and change status if officer was selected
@@ -227,11 +231,19 @@ export async function POST(
     updatedCase = await Case.findById(caseId).populate('assignedOfficer', 'firstName lastName email');
 
     if (officer) {
-      console.log(`[Verify Case] Case ${caseId} set to verification with officer ${officer.email}`);
+      console.log(`[Verify Case] Case ${caseId} (originally ${currentCase.type}) set to verification with officer ${officer.email}`);
     } else {
-      console.log(`[Verify Case] Case ${caseId} set to verification - unassigned (available for officers to take)`);
+      console.log(`[Verify Case] Case ${caseId} (originally ${currentCase.type}) set to verification - unassigned (available for officers to take)`);
     }
     console.log('[Verify Case] New claim ID:', newClaim._id);
+    console.log('[Verify Case] Final case state:', {
+      caseId,
+      originalType: currentCase.type,
+      newType: updatedCase?.type,
+      status: updatedCase?.status,
+      hasOfficer: !!updatedCase?.assignedOfficer,
+      hasRelatedCase: !!relatedFoundCaseId
+    });
 
     return NextResponse.json({
       success: true,

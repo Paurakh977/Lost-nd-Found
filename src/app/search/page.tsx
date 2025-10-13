@@ -359,6 +359,7 @@ export default function AgenticSearchPage() {
     const [feedResults, setFeedResults] = useState<FeedResult[]>([]);
     const [selectedCase, setSelectedCase] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [userLostCaseId, setUserLostCaseId] = useState<string | null>(null);
 
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 48, maxHeight: 200 });
     const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -543,6 +544,11 @@ export default function AgenticSearchPage() {
                 foundItemsIds: json?.found_items_ids
             };
             setChat((prev) => [...prev, botMsg]);
+            
+            // If found items were returned, fetch the user's most recent LOST case for linking
+            if (json?.found_items_ids && json.found_items_ids.length > 0 && userInfo?.id) {
+                fetchUserMostRecentLostCase(userInfo.id);
+            }
 
             // If backend returned matched ids, fetch their details and add to feed results
             const ids: string[] | undefined = json?.found_items_ids;
@@ -638,6 +644,34 @@ export default function AgenticSearchPage() {
     const closeCaseDetail = () => {
         setIsModalOpen(false);
         setSelectedCase(null);
+    };
+    
+    const fetchUserMostRecentLostCase = async (userId: string) => {
+        try {
+            console.log('[search] Fetching most recent lost case for user:', userId);
+            const res = await fetch(`/api/cases/user-recent-lost?userId=${encodeURIComponent(userId)}`);
+            const data = await res.json();
+            
+            if (data.success && data.caseId) {
+                setUserLostCaseId(data.caseId);
+                console.log('[search] User\'s most recent lost case ID:', data.caseId);
+            } else {
+                console.warn('[search] No recent lost case found for user');
+                setUserLostCaseId(null);
+            }
+        } catch (error) {
+            console.error('[search] Error fetching user\'s recent lost case:', error);
+            setUserLostCaseId(null);
+        }
+    };
+    
+    const handleClaimFoundItem = (foundCaseId: string) => {
+        if (!userLostCaseId) {
+            console.warn('[search] No lost case ID available for claiming');
+            return;
+        }
+        // Navigate to the FOUND case page with the LOST case ID as query param
+        window.location.href = `/cases/${foundCaseId}?lostCaseId=${userLostCaseId}`;
     };
 
     if (!mounted) {
@@ -986,8 +1020,8 @@ export default function AgenticSearchPage() {
                                                                         </div>
                                                                     )}
                                                                     
-                                                                    {/* View Details Button */}
-                                                                    <div className="mt-3 flex justify-end">
+                                                                    {/* Action Buttons */}
+                                                                    <div className="mt-3 flex gap-2 justify-end">
                                                                         <button
                                                                             onClick={() => openCaseDetail(c)}
                                                                             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
@@ -998,6 +1032,19 @@ export default function AgenticSearchPage() {
                                                                         >
                                                                             View Details
                                                                         </button>
+                                                                        {/* Show Claim button only if we have a lost case ID and case is not resolved */}
+                                                                        {userLostCaseId && c.status !== 'resolved' && (
+                                                                            <button
+                                                                                onClick={() => handleClaimFoundItem(c._id)}
+                                                                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                                                                                    isDark 
+                                                                                        ? 'bg-green-600/20 text-green-300 hover:bg-green-600/30 border border-green-500/30' 
+                                                                                        : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                                                                                }`}
+                                                                            >
+                                                                                Claim This
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>

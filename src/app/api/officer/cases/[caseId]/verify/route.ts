@@ -98,41 +98,85 @@ export async function POST(
 
     // If claim is approved, resolve the case
     if (isVerified) {
-      // Get finder information from the linked FOUND case if available
+      // Determine the correct mapping based on the current case type
       let finderInfo: any = null;
-      let foundCaseToResolve: any = null;
+      let loserInfo: any = null;
+      let relatedCase: any = null;
       
-      // First priority: Check if the claim has a relatedFoundCaseId
+      // Fetch the related case if available
       if (claim.relatedFoundCaseId) {
         try {
-          foundCaseToResolve = await Case.findById(claim.relatedFoundCaseId).lean();
-          if (foundCaseToResolve) {
-            finderInfo = {
-              clerkId: foundCaseToResolve.reportedBy.clerkId,
-              name: foundCaseToResolve.reportedBy.name,
-              contactInfo: foundCaseToResolve.reportedBy.email
-            };
-            console.log('[Verify Case] Found case linked:', {
-              foundCaseId: claim.relatedFoundCaseId,
-              finderName: finderInfo.name
-            });
-          }
+          relatedCase = await Case.findById(claim.relatedFoundCaseId).lean();
+          console.log('[Verify Case] Related case found:', {
+            relatedCaseId: claim.relatedFoundCaseId,
+            relatedCaseType: relatedCase?.type,
+            currentCaseType: current.type
+          });
         } catch (err) {
-          console.error('[Verify Case] Error fetching related found case:', err);
+          console.error('[Verify Case] Error fetching related case:', err);
         }
       }
       
-      // Fallback: use existing resolution.foundBy or reportedBy
-      if (!finderInfo) {
-        if (current.resolution?.foundBy) {
-          finderInfo = current.resolution.foundBy;
-        } else if (current.type === 'found' || (current.type === 'verification' && current.reportedBy)) {
-          finderInfo = {
-            clerkId: current.reportedBy.clerkId,
-            name: current.reportedBy.name,
-            contactInfo: current.reportedBy.email
+      // Map finder and loser based on case types
+      if (current.type === 'verification') {
+        // Current case is VERIFICATION (originally LOST or FOUND)
+        if (relatedCase) {
+          if (relatedCase.type === 'found') {
+            // Related case is FOUND -> Current was originally LOST
+            // Claimant = loser, Related case reporter = finder
+            loserInfo = {
+              clerkId: claim.clerkUserId,
+              name: claim.claimantInfo.name,
+              contactInfo: claim.claimantInfo.email
+            };
+            finderInfo = {
+              clerkId: relatedCase.reportedBy.clerkId,
+              name: relatedCase.reportedBy.name,
+              contactInfo: relatedCase.reportedBy.email
+            };
+          } else if (relatedCase.type === 'lost' || relatedCase.type === 'verification') {
+            // Related case is LOST -> Current was originally FOUND
+            // Claimant = loser, Current case reporter = finder
+            loserInfo = {
+              clerkId: claim.clerkUserId,
+              name: claim.claimantInfo.name,
+              contactInfo: claim.claimantInfo.email
+            };
+            finderInfo = {
+              clerkId: current.reportedBy.clerkId,
+              name: current.reportedBy.name,
+              contactInfo: current.reportedBy.email
+            };
+          }
+        } else {
+          // No related case - use fallback logic
+          loserInfo = {
+            clerkId: claim.clerkUserId,
+            name: claim.claimantInfo.name,
+            contactInfo: claim.claimantInfo.email
           };
+          if (current.resolution?.foundBy) {
+            finderInfo = current.resolution.foundBy;
+          } else {
+            finderInfo = {
+              clerkId: current.reportedBy.clerkId,
+              name: current.reportedBy.name,
+              contactInfo: current.reportedBy.email
+            };
+          }
         }
+      } else {
+        // Fallback for other case types
+        loserInfo = {
+          clerkId: claim.clerkUserId,
+          name: claim.claimantInfo.name,
+          contactInfo: claim.claimantInfo.email
+        };
+        finderInfo = {
+          clerkId: current.reportedBy.clerkId,
+          name: current.reportedBy.name,
+          contactInfo: current.reportedBy.email
+        };
       }
 
       // Build resolution object
@@ -151,12 +195,8 @@ export async function POST(
           contactInfo: assignee.contactInfo?.trim() || undefined
         };
       } else if (isVerified) {
-        // Default: assign to the claimant
-        resolution.itemAssignedTo = {
-          clerkId: claim.clerkUserId || undefined,
-          name: claim.claimantInfo.name,
-          contactInfo: claim.claimantInfo.email
-        };
+        // Default: assign to the loser (claimant)
+        resolution.itemAssignedTo = loserInfo;
       }
       
       // Set foundBy if we have finder info
@@ -179,9 +219,9 @@ export async function POST(
         updatedAt: new Date()
       };
       
-      // Link to the found case if we have one
-      if (foundCaseToResolve) {
-        lostCaseUpdate.linkedCaseId = foundCaseToResolve._id;
+      // Link to the related case if we have one
+      if (relatedCase) {
+        lostCaseUpdate.linkedCaseId = relatedCase._id;
       }
       
       updatedCase = await Case.findByIdAndUpdate(
@@ -200,37 +240,47 @@ export async function POST(
         }
       }
       
-      // If we found a linked FOUND case, resolve it too
-      if (foundCaseToResolve && foundCaseToResolve.status !== 'resolved') {
-        const foundCaseResolution = {
+      // If we found a related case, resolve it too
+      if (relatedCase && relatedCase.status !== 'resolved') {
+        console.log('[Verify Case] 🔍 CRITICAL - Resolving related case with:', {
+          relatedCaseId: relatedCase._id,
+          relatedCaseType: relatedCase.type,
+          relatedCaseReporter: relatedCase.reportedBy,
+          currentCaseType: current.type,
+          currentCaseReporter: current.reportedBy,
+          loserInfo,
+          finderInfo
+        });
+        
+        const relatedCaseResolution = {
           resolvedAt: new Date(),
           resolvedBy: payload.userId,
           outcome: 'Item successfully returned to owner',
-          notes: `Matched with lost item case ${caseId}`,
-          itemAssignedTo: {
-            clerkId: claim.clerkUserId || undefined,
-            name: claim.claimantInfo.name,
-            contactInfo: claim.claimantInfo.email
-          },
+          notes: `Matched with ${current.type} case ${caseId}`,
+          itemAssignedTo: loserInfo,
           foundBy: finderInfo
         };
         
+        console.log('[Verify Case] 🔍 Related case resolution object:', JSON.stringify(relatedCaseResolution, null, 2));
+        
         await Case.findByIdAndUpdate(
-          foundCaseToResolve._id,
+          relatedCase._id,
           {
             $set: {
               status: 'resolved',
-              assignedOfficer: payload.userId, // Assign the same officer who resolved the LOST case
-              resolution: foundCaseResolution,
-              linkedCaseId: caseId, // Link back to the LOST case
+              assignedOfficer: payload.userId,
+              resolution: relatedCaseResolution,
+              linkedCaseId: caseId,
               updatedAt: new Date()
             }
           }
         );
         
-        console.log('[Verify Case] Linked FOUND case also resolved:', {
-          foundCaseId: foundCaseToResolve._id,
-          lostCaseId: caseId
+        console.log('[Verify Case] Related case also resolved:', {
+          relatedCaseId: relatedCase._id,
+          relatedCaseType: relatedCase.type,
+          currentCaseId: caseId,
+          currentCaseType: current.type
         });
       }
     } else {
