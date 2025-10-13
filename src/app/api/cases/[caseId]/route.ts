@@ -28,6 +28,21 @@ export async function GET(
     if (!caseDoc) {
       return NextResponse.json({ success: false, error: 'Case not found' }, { status: 404 });
     }
+    
+    // Manually populate resolvedBy since nested populate doesn't work with lean()
+    if (caseDoc.resolution && caseDoc.resolution.resolvedBy) {
+      try {
+        const User = (await import('../../../../models/User')).default;
+        const resolvedByOfficer = await User.findById(caseDoc.resolution.resolvedBy)
+          .select('firstName lastName email')
+          .lean();
+        if (resolvedByOfficer) {
+          caseDoc.resolution.resolvedBy = resolvedByOfficer as any;
+        }
+      } catch (err) {
+        console.error('[Public Case Detail] Error populating resolvedBy:', err);
+      }
+    }
 
     return NextResponse.json({ success: true, case: caseDoc });
   } catch (error) {

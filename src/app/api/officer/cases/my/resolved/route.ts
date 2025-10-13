@@ -32,6 +32,23 @@ export async function GET(request: NextRequest) {
       Case.find(query).sort(sort).skip(skip).limit(limit).populate('assignedOfficer', 'firstName lastName email').lean(),
       Case.countDocuments(query)
     ]);
+    
+    // Manually populate resolvedBy for each case since nested populate doesn't work with lean()
+    for (const caseDoc of cases) {
+      if (caseDoc.resolution && caseDoc.resolution.resolvedBy) {
+        try {
+          const resolvedByOfficer = await User.findById(caseDoc.resolution.resolvedBy)
+            .select('firstName lastName email')
+            .lean();
+          if (resolvedByOfficer) {
+            caseDoc.resolution.resolvedBy = resolvedByOfficer as any;
+          }
+        } catch (err) {
+          console.error('[My Resolved Cases] Error populating resolvedBy:', err);
+        }
+      }
+    }
+    
     const pagination = buildPaginationMeta(page, limit, total);
     return NextResponse.json({ success: true, cases, pagination });
   } catch (error) {

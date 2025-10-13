@@ -220,6 +220,7 @@ export async function POST(
           {
             $set: {
               status: 'resolved',
+              assignedOfficer: payload.userId, // Assign the same officer who resolved the LOST case
               resolution: foundCaseResolution,
               linkedCaseId: caseId, // Link back to the LOST case
               updatedAt: new Date()
