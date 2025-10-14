@@ -136,20 +136,37 @@ const Navbar: React.FC = () => {
             damping: 20,
           }}
         >
-          {/* Logo */}
+          {/* Logo - Minimalistic Silver GOTUS */}
           <button
             onClick={handleLogoClick}
-            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-white/5"
+            className="px-3 sm:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-white/5 group"
             disabled={isNavigating}
           >
             <motion.div
-              className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
-              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              className="relative"
             >
-              <span className="text-white font-bold text-[10px] sm:text-xs">G</span>
+              <span className="font-[family-name:var(--font-orbitron)] text-xl sm:text-2xl font-bold tracking-wider text-gray-700 dark:text-gray-300 relative inline-block overflow-hidden">
+                GOTUS
+                {/* Silvery shine effect overlay - contained within text */}
+                <motion.span
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/70 dark:via-white/50 to-transparent pointer-events-none"
+                  style={{
+                    width: '30%',
+                  }}
+                  animate={{
+                    left: ['-30%', '100%'],
+                  }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    repeatDelay: 1.5,
+                  }}
+                />
+              </span>
             </motion.div>
-            <span className="text-xs sm:text-sm font-bold text-gray-800 dark:text-white hidden sm:block">GOTUS</span>
           </button>
 
           <div className="w-px h-4 sm:h-6 bg-gray-300 dark:bg-gray-600 mx-1 sm:mx-2" />
