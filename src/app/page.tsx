@@ -7,6 +7,7 @@ import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useSearchRedirect } from '../hooks/useAuthRedirect';
+import { useNavigation } from '../components/SplashLayout';
 
 // GSAP plugin registration will be done in useEffect to ensure proper timing
 
@@ -218,10 +219,15 @@ const useCounter = (end: number, duration: number = 2000, start: number = 0): Co
 // Hero section with Aurora Background
 const HeroSection = () => {
   const { handleProtectedAction, isSignedIn } = useSearchRedirect();
+  const { navigateTo } = useNavigation();
 
   const handleStartSearch = useCallback(() => {
     handleProtectedAction('/search');
   }, [handleProtectedAction]);
+  
+  const handleLearnMore = useCallback(() => {
+    navigateTo('/contact');
+  }, [navigateTo]);
 
   return (
     <AuroraBackground>
@@ -244,7 +250,7 @@ const HeroSection = () => {
           Global Asset Recovery Platform
         </motion.span>
 
-        <div className="text-4xl md:text-7xl font-light tracking-tight dark:text-white text-zinc-900 leading-[1.1] gsap-reveal">
+        <div className="text-4xl md:text-7xl font-extralight tracking-tight dark:text-white text-zinc-900 leading-[1.1] gsap-reveal">
           Discover Hidden{' '}
           <motion.span
             className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
@@ -258,12 +264,13 @@ const HeroSection = () => {
         </div>
 
         <motion.p
-          className="text-lg md:text-xl font-light dark:text-zinc-200 text-zinc-700 max-w-2xl leading-relaxed tracking-wide gsap-reveal"
+          className="text-lg md:text-xl font-light dark:text-zinc-200 text-zinc-600 max-w-2xl leading-relaxed tracking-wide gsap-reveal"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.8 }}
         >
-          AI-powered global tracking system for unclaimed assets. 
+          AI-powered global tracking for unclaimed assets.
+          <br className="hidden sm:block" />
           Secure, fast, and comprehensive recovery solutions.
         </motion.p>
 
@@ -284,11 +291,12 @@ const HeroSection = () => {
           </motion.button>
           
           <motion.button
+            onClick={handleLearnMore}
             className="px-8 py-3 border border-zinc-300/30 dark:border-zinc-700/50 text-zinc-700 dark:text-zinc-300 rounded-full font-medium hover:bg-zinc-200/20 dark:hover:bg-zinc-800/30 transition-all backdrop-blur-sm"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            Watch Demo
+            Learn More
           </motion.button>
         </motion.div>
 
@@ -300,7 +308,7 @@ const HeroSection = () => {
         >
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            Free 30-day trial
+            Free trial
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -312,23 +320,23 @@ const HeroSection = () => {
   );
 };
 
-// Ultra Minimal Stats Section with enhanced cosmic particles
-const StatsSection = () => {
-  const stats = [
-    { value: 25000, label: 'Items Reunited', suffix: '+' },
-    { value: 8500, label: 'Active Users', suffix: '+' },
-    { value: 92, label: 'Success Rate', suffix: '%' },
-    { value: 45, label: 'Cities Covered', suffix: '+' }
+// Trust Indicators Section - Generic, no fake stats
+const TrustSection = () => {
+  const indicators = [
+    { icon: Shield, label: 'Secure Platform', description: 'Enterprise-grade security' },
+    { icon: Zap, label: 'Instant Matching', description: 'AI-powered results' },
+    { icon: Globe, label: 'Global Coverage', description: 'Worldwide network' },
+    { icon: CheckCircle, label: 'Verified System', description: 'Trusted process' }
   ];
 
   return (
-    <section className="relative py-32 bg-gradient-to-b from-zinc-50/95 via-zinc-50/90 via-blue-50/15 to-zinc-50/85 dark:from-zinc-900/95 dark:via-zinc-900/90 dark:via-blue-950/8 dark:to-zinc-900/85 overflow-hidden">
+    <section className="relative py-24 bg-gradient-to-b from-zinc-50/95 via-zinc-50/90 via-blue-50/15 to-zinc-50/85 dark:from-zinc-900/95 dark:via-zinc-900/90 dark:via-blue-950/8 dark:to-zinc-900/85 overflow-hidden">
       {/* Enhanced aurora continuation */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.03),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.02),transparent)] dark:bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.04),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.03),transparent)]"></div>
       
       {/* Cosmic Particles */}
       <div className="cosmic-parallax">
-        <CosmicParticles density="high" />
+        <CosmicParticles density="medium" />
       </div>
       
       {/* Additional floating cosmic elements */}
@@ -351,19 +359,33 @@ const StatsSection = () => {
         transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 5 }}
       />
       
-      <div className="relative max-w-4xl mx-auto px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 gsap-stagger-parent">
-          {stats.map((stat, i) => {
-            const { count, ref } = useCounter(stat.value, 2500);
-            
+      <div className="relative max-w-5xl mx-auto px-6">
+        <motion.div
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          <motion.h2 
+            className="text-2xl lg:text-3xl font-extralight text-zinc-800 dark:text-zinc-50 tracking-wide"
+            whileInView={{ opacity: [0, 1] }}
+            transition={{ duration: 1.2 }}
+          >
+            Built for <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Trust</span>
+          </motion.h2>
+        </motion.div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          {indicators.map((indicator, i) => {
+            const Icon = indicator.icon;
             return (
               <motion.div
                 key={i}
-                ref={ref}
                 className="text-center group"
-                initial={{ opacity: 0, y: 60 }}
+                initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 1, ease: "easeOut" }}
+                transition={{ delay: i * 0.1, duration: 0.8, ease: "easeOut" }}
                 viewport={{ once: true }}
               >
                 <motion.div 
@@ -371,20 +393,18 @@ const StatsSection = () => {
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  {/* Minimal glow effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                  
-                  <div className="relative bg-white/60 dark:bg-zinc-800/40 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-zinc-700/20 group-hover:border-blue-200/40 dark:group-hover:border-blue-700/40 transition-all duration-500">
+                  <div className="relative bg-white/50 dark:bg-zinc-800/30 backdrop-blur-sm rounded-2xl p-6 border border-white/30 dark:border-zinc-700/30 group-hover:border-blue-200/50 dark:group-hover:border-blue-700/50 transition-all duration-500">
                     <motion.div 
-                      className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-2 gsap-counter"
-                      data-value={stat.value}
-                      animate={{ scale: count > 0 ? [1, 1.05, 1] : 1 }}
-                      transition={{ duration: 0.3 }}
+                      className="w-10 h-10 mx-auto mb-4 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center"
+                      whileHover={{ rotate: 5 }}
                     >
-                      {count.toLocaleString()}<span className="text-blue-500 dark:text-blue-300 font-light">{stat.suffix}</span>
+                      <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </motion.div>
-                    <div className="text-zinc-600 dark:text-zinc-300 text-sm font-normal tracking-wider uppercase letter-spacing-wide">
-                      {stat.label}
+                    <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-1">
+                      {indicator.label}
+                    </div>
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400 font-light">
+                      {indicator.description}
                     </div>
                   </div>
                 </motion.div>
@@ -952,11 +972,16 @@ const HowItWorksSection = () => {
 // Enhanced CTA with cosmic convergence
 const CTASection = () => {
   const { handleProtectedAction, isSignedIn } = useSearchRedirect();
+  const { navigateTo } = useNavigation();
 
   const handleStartSearch = useCallback(() => {
     handleProtectedAction('/search');
   }, [handleProtectedAction]);
-
+  
+  const handleLearnMore = useCallback(() => {
+    navigateTo('/contact');
+  }, [navigateTo]);
+  
   return (
     <section className="relative py-32 bg-gradient-to-b from-zinc-50/45 via-zinc-50/40 via-indigo-50/30 to-zinc-200/95 dark:from-zinc-900/45 dark:via-zinc-900/40 dark:via-indigo-950/18 dark:to-zinc-800/95 overflow-hidden">
       {/* Enhanced flowing aurora conclusion */}
@@ -1037,6 +1062,7 @@ const CTASection = () => {
             </motion.button>
             
             <motion.button
+              onClick={handleLearnMore}
               className="px-10 py-4 border border-zinc-300/40 dark:border-zinc-600/40 text-zinc-700 dark:text-zinc-300 rounded-2xl font-light tracking-wide hover:bg-white/20 dark:hover:bg-zinc-800/20 hover:scale-105 transition-all duration-500 backdrop-blur-sm"
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.98 }}
@@ -1053,9 +1079,9 @@ const CTASection = () => {
             transition={{ delay: 0.7, duration: 0.8 }}
           >
             {[
-              { value: '< 24h', label: 'Avg Match' },
+              { value: '< 72h', label: 'Avg Match' },
               { value: 'Free', label: 'Always' },
-              { value: '92%', label: 'Success' }
+              { value: 'High', label: 'Success Rate' }
             ].map((stat, i) => (
               <motion.div 
                 key={i}
@@ -1401,7 +1427,7 @@ export default function App() {
             transition={{ duration: 0.8 }}
           >
             <HeroSection />
-            <StatsSection />
+            <TrustSection />
             <FeaturesSection />
             <TestimonialsSection />
             <PricingSection />
