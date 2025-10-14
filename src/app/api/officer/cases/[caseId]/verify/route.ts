@@ -5,6 +5,7 @@ import Claim from '../../../../../../models/Claim';
 import User from '../../../../../../models/User';
 import { getJWTFromRequest, verifyJWT } from '../../../../../../lib/jwt';
 import { isOfficer } from '../../../../../../lib/query-utils';
+import { createNotificationWithAutoMessage } from '../../../../../../lib/notification-utils';
 const nodemailer = require('nodemailer');
 
 /**
@@ -302,6 +303,18 @@ export async function POST(
     if (isVerified) {
       console.log(`[Verify Case] Case ${caseId} resolved with status:`, updatedCase?.status);
       console.log('[Verify Case] Final resolution in DB:', JSON.stringify(updatedCase?.resolution, null, 2));
+      
+      // Create notification for case resolution
+      await createNotificationWithAutoMessage({
+        officerId: payload.userId,
+        type: 'case_resolved',
+        caseId: caseId,
+        claimId: claimId,
+        metadata: {
+          caseTitle: current.title,
+          caseType: current.type
+        }
+      });
     }
 
     // Send email notification to claimant

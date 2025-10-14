@@ -4,6 +4,7 @@ import Case from '../../../../../../models/Case';
 import User from '../../../../../../models/User';
 import { getJWTFromRequest, verifyJWT } from '../../../../../../lib/jwt';
 import { isOfficer } from '../../../../../../lib/query-utils';
+import { createNotificationWithAutoMessage } from '../../../../../../lib/notification-utils';
 import mongoose from 'mongoose';
 
 /**
@@ -114,6 +115,17 @@ export async function POST(
     }
     
     console.log(`[Assign Case] Case ${caseId} assigned to officer ${officerUser.email}`);
+    
+    // Create notification for the officer
+    await createNotificationWithAutoMessage({
+      officerId: payload.userId,
+      type: 'case_assigned',
+      caseId: caseId,
+      metadata: {
+        caseTitle: updatedCase.title,
+        caseType: updatedCase.type
+      }
+    });
     
     return NextResponse.json({
       success: true,

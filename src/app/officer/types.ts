@@ -131,3 +131,56 @@ export interface CaseFilters {
   sortBy?: 'createdAt' | 'urgencyLevel' | 'reportedTime';
   sortOrder?: 'asc' | 'desc';
 }
+
+// Notification types
+export type NotificationType = 
+  | 'case_assigned' 
+  | 'verification_required' 
+  | 'new_claim' 
+  | 'case_resolved';
+
+export interface NotificationItem {
+  _id: string;
+  officerId: string;
+  type: NotificationType;
+  message: string;
+  caseId?: string;
+  claimId?: string;
+  read: boolean;
+  metadata?: {
+    caseTitle?: string;
+    caseType?: string;
+    claimantName?: string;
+    claimantEmail?: string;
+    [key: string]: any;
+  };
+  case?: {
+    _id: string;
+    title: string;
+    type: 'lost' | 'found' | 'verification';
+    status: 'pending' | 'active' | 'resolved';
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationsAPIResponse {
+  success: boolean;
+  notifications: NotificationItem[];
+  unreadCount: number;
+  pagination: PaginationMeta;
+}
+
+export interface MarkNotificationReadResponse {
+  success: boolean;
+  message: string;
+  notification?: NotificationItem;
+  unreadCount: number;
+}
+
+export interface MarkAllReadResponse {
+  success: boolean;
+  message: string;
+  count: number;
+  unreadCount: number;
+}

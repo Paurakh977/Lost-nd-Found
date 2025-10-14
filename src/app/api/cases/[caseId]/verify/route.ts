@@ -3,6 +3,7 @@ import connectDB from '../../../../../lib/mongodb';
 import Case from '../../../../../models/Case';
 import Claim from '../../../../../models/Claim';
 import User from '../../../../../models/User';
+import { createNotificationWithAutoMessage } from '../../../../../lib/notification-utils';
 import mongoose from 'mongoose';
 
 /**
@@ -244,6 +245,44 @@ export async function POST(
       hasOfficer: !!updatedCase?.assignedOfficer,
       hasRelatedCase: !!relatedFoundCaseId
     });
+    
+    // Create notifications for assigned officer
+    if (updatedCase?.assignedOfficer) {
+      const officerIdStr = typeof updatedCase.assignedOfficer === 'object' 
+        ? (updatedCase.assignedOfficer as any)._id.toString()
+        : updatedCase.assignedOfficer.toString();
+      
+      // If officer was just assigned (from user selecting officer)
+      if (officerId && currentCase.status === 'pending' && !currentCase.assignedOfficer) {
+        await createNotificationWithAutoMessage({
+          officerId: officerIdStr,
+          type: 'case_assigned',
+          caseId: caseId,
+          metadata: {
+            caseTitle: updatedCase.title,
+            caseType: updatedCase.type
+          }
+        });
+      }
+      
+      // Determine notification type based on whether it's first claim or additional claim
+      const notificationType = currentCase.type === 'lost' || currentCase.type === 'found' 
+        ? 'verification_required' 
+        : 'new_claim';
+      
+      await createNotificationWithAutoMessage({
+        officerId: officerIdStr,
+        type: notificationType,
+        caseId: caseId,
+        claimId: newClaim._id.toString(),
+        metadata: {
+          caseTitle: updatedCase.title,
+          caseType: updatedCase.type,
+          claimantName: claimantInfo.name,
+          claimantEmail: claimantInfo.email
+        }
+      });
+    }
 
     return NextResponse.json({
       success: true,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '../../../lib/mongodb';
 import Claim from '../../../models/Claim';
 import Case from '../../../models/Case';
+import { createNotificationWithAutoMessage } from '../../../lib/notification-utils';
 import mongoose from 'mongoose';
 
 /**
@@ -150,6 +151,37 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[Claims API] New claim created: ${claim._id} for case ${caseId} by ${claimantInfo.email}`);
+    
+    // Create notifications for the assigned officer
+    if (caseItem.assignedOfficer) {
+      // Determine notification type based on case transition
+      const notificationType = caseItem.type === 'lost' ? 'verification_required' : 'new_claim';
+      
+      await createNotificationWithAutoMessage({
+        officerId: caseItem.assignedOfficer,
+        type: notificationType,
+        caseId: caseId,
+        claimId: claim._id.toString(),
+        metadata: {
+          caseTitle: caseItem.title,
+          caseType: caseItem.type,
+          claimantName: claimantInfo.name,
+          claimantEmail: claimantInfo.email
+        }
+      });
+    }
+    // If case was just assigned to an officer (in updateData), create assignment notification
+    if (updateData.assignedOfficer) {
+      await createNotificationWithAutoMessage({
+        officerId: updateData.assignedOfficer.toString(),
+        type: 'case_assigned',
+        caseId: caseId,
+        metadata: {
+          caseTitle: caseItem.title,
+          caseType: caseItem.type
+        }
+      });
+    }
 
     return NextResponse.json({
       success: true,

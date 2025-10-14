@@ -4,6 +4,7 @@ import Case from '../../../../../../models/Case';
 import Claim from '../../../../../../models/Claim';
 import User from '../../../../../../models/User';
 import { getJWTFromRequest, verifyJWT } from '../../../../../../lib/jwt';
+import { createNotificationWithAutoMessage } from '../../../../../../lib/notification-utils';
 import mongoose from 'mongoose';
 import nodemailer from 'nodemailer';
 
@@ -273,6 +274,18 @@ export async function POST(
       }
       
       console.log('[Review Claim] Case resolved:', { caseId, claimId, resolution: caseDoc.resolution });
+      
+      // Create notification for case resolution
+      await createNotificationWithAutoMessage({
+        officerId: officer._id.toString(),
+        type: 'case_resolved',
+        caseId: caseId,
+        claimId: claimId,
+        metadata: {
+          caseTitle: caseDoc.title,
+          caseType: caseDoc.type
+        }
+      });
     } else {
       // If rejected, just update the case to note that a claim was rejected
       console.log('[Review Claim] Claim rejected:', { caseId, claimId });

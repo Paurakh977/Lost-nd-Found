@@ -23,6 +23,8 @@ import {
   Activity
 } from 'lucide-react';
 import { useNavigation } from '@/components/SplashLayout';
+import { useOfficerNotifications } from '../hooks/useOfficerNotifications';
+import type { NotificationType } from '../types';
 
 interface OfficerNavbarProps {
   currentUser: any;
@@ -33,10 +35,17 @@ interface OfficerNavbarProps {
 export default function OfficerNavbar({ currentUser, onSignOut, stats }: OfficerNavbarProps) {
   const { navigateTo } = useNavigation();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [notifications] = useState(12); // Mock notification count
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Use real notifications hook
+  const { 
+    notifications: notificationItems, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead 
+  } = useOfficerNotifications();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -176,40 +185,40 @@ export default function OfficerNavbar({ currentUser, onSignOut, stats }: Officer
     },
   ];
 
-  const notificationItems = [
-    {
-      id: '1',
-      title: 'New Lost Report',
-      description: 'iPhone 15 Pro reported lost at Central Mall',
-      time: '5 min ago',
-      type: 'urgent',
-      read: false
-    },
-    {
-      id: '2',
-      title: 'Match Found',
-      description: 'Potential match for wallet case #2024-001',
-      time: '1 hour ago',
-      type: 'success',
-      read: false
-    },
-    {
-      id: '3',
-      title: 'Verification Required',
-      description: 'Document verification needed for case #2024-045',
-      time: '2 hours ago',
-      type: 'warning',
-      read: true
-    },
-    {
-      id: '4',
-      title: 'Case Resolved',
-      description: 'Laptop successfully returned to owner',
-      time: '1 day ago',
-      type: 'info',
-      read: true
+  // Helper function to get relative time
+  const getRelativeTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour${Math.floor(diffInSeconds / 3600) > 1 ? 's' : ''} ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  };
+  
+  // Map notification type to UI type
+  const getNotificationUIType = (type: NotificationType): string => {
+    switch (type) {
+      case 'case_assigned': return 'info';
+      case 'verification_required': return 'warning';
+      case 'new_claim': return 'success';
+      case 'case_resolved': return 'success';
+      default: return 'info';
     }
-  ];
+  };
+  
+  // Get notification title based on type
+  const getNotificationTitle = (type: NotificationType): string => {
+    switch (type) {
+      case 'case_assigned': return 'Case Assigned';
+      case 'verification_required': return 'Verification Required';
+      case 'new_claim': return 'New Claim Submitted';
+      case 'case_resolved': return 'Case Resolved';
+      default: return 'Notification';
+    }
+  };
 
   const handleNavigation = (href: string) => {
     navigateTo(href);
@@ -217,13 +226,31 @@ export default function OfficerNavbar({ currentUser, onSignOut, stats }: Officer
     setIsMobileMenuOpen(false);
   };
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
-      case 'urgent': return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      case 'success': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'warning': return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'case_assigned': return <Package className="w-4 h-4 text-blue-500" />;
+      case 'verification_required': return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+      case 'new_claim': return <FileText className="w-4 h-4 text-green-500" />;
+      case 'case_resolved': return <CheckCircle className="w-4 h-4 text-green-500" />;
       default: return <Activity className="w-4 h-4 text-blue-500" />;
     }
+  };
+  
+  // Handle notification click
+  const handleNotificationClick = async (notificationId: string, caseId?: string) => {
+    // Mark as read
+    await markAsRead(notificationId);
+    
+    // Navigate to case if caseId exists
+    if (caseId) {
+      setActiveDropdown(null);
+      navigateTo(`/officer/cases/${caseId}`);
+    }
+  };
+  
+  // Handle mark all as read
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
   };
 
   return (
@@ -342,14 +369,14 @@ export default function OfficerNavbar({ currentUser, onSignOut, stats }: Officer
                   whileTap={{ scale: 0.95 }}
                 >
                   <Bell className="w-5 h-5" />
-                  {notifications > 0 && (
+                  {unreadCount > 0 && (
                     <motion.span
                       className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     >
-                      {notifications > 9 ? '9+' : notifications}
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </motion.span>
                   )}
                 </motion.button>
@@ -366,45 +393,55 @@ export default function OfficerNavbar({ currentUser, onSignOut, stats }: Officer
                       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
-                          <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+                          <button 
+                            onClick={handleMarkAllAsRead}
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                          >
                             Mark all as read
                           </button>
                         </div>
                       </div>
                       
-                      {notificationItems.map((notification, index) => (
-                        <motion.div
-                          key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer border-l-2 ${
-                            notification.read ? 'border-transparent' : 'border-blue-500 dark:border-blue-400 bg-blue-50/30 dark:bg-blue-900/20'
-                          }`}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0 mt-1">
-                              {getNotificationIcon(notification.type)}
+                      {notificationItems.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notificationItems.slice(0, 10).map((notification, index) => (
+                          <motion.div
+                            key={notification._id}
+                            className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer border-l-2 ${
+                              notification.read ? 'border-transparent' : 'border-blue-500 dark:border-blue-400 bg-blue-50/30 dark:bg-blue-900/20'
+                            }`}
+                            onClick={() => handleNotificationClick(notification._id, notification.caseId)}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 mt-1">
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium ${
+                                  notification.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-white'
+                                }`}>
+                                  {getNotificationTitle(notification.type)}
+                                </p>
+                                <p className={`text-xs mt-1 ${
+                                  notification.read ? 'text-gray-500 dark:text-gray-400' : 'text-gray-600 dark:text-gray-300'
+                                }`}>
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{getRelativeTime(notification.createdAt)}</p>
+                              </div>
+                              {!notification.read && (
+                                <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2"></div>
+                              )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-sm font-medium ${
-                                notification.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-white'
-                              }`}>
-                                {notification.title}
-                              </p>
-                              <p className={`text-xs mt-1 ${
-                                notification.read ? 'text-gray-500 dark:text-gray-400' : 'text-gray-600 dark:text-gray-300'
-                              }`}>
-                                {notification.description}
-                              </p>
-                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{notification.time}</p>
-                            </div>
-                            {!notification.read && (
-                              <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2"></div>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))}
+                          </motion.div>
+                        ))
+                      )}
                       
                       <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
                         <button className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
