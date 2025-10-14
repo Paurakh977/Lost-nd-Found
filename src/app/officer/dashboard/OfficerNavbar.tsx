@@ -27,9 +27,10 @@ import { useNavigation } from '@/components/SplashLayout';
 interface OfficerNavbarProps {
   currentUser: any;
   onSignOut: () => void;
+  stats?: any; // Dashboard stats for dynamic counts
 }
 
-export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarProps) {
+export default function OfficerNavbar({ currentUser, onSignOut, stats }: OfficerNavbarProps) {
   const { navigateTo } = useNavigation();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [notifications] = useState(12); // Mock notification count
@@ -160,10 +161,9 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
       icon: Shield,
       href: '/officer/cases',
       items: [
-        { name: 'Active Cases', count: 23, color: 'text-orange-600', href: '/officer/cases/active' },
-        { name: 'Under Investigation', count: 15, color: 'text-yellow-600', href: '/officer/cases/investigation' },
-        { name: 'Resolved Cases', count: 133, color: 'text-green-600', href: '/officer/cases/resolved' },
-        { name: 'Closed Cases', count: 89, color: 'text-gray-600', href: '/officer/cases/closed' }
+        { name: 'Active Cases', count: stats?.activeCases || 0, color: 'text-orange-600', href: '/officer/cases/active' },
+        { name: 'Pending Cases', count: stats?.pendingCases || 0, color: 'text-yellow-600', href: '/officer/cases/my' },
+        { name: 'Resolved Cases', count: stats?.resolvedCases || 0, color: 'text-green-600', href: '/officer/cases/resolved' },
       ]
     },
     {
@@ -171,19 +171,9 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
       icon: CheckCircle,
       href: '/officer/cases/verification',
       items: [
-        { name: 'Verification Cases', count: 8, color: 'text-purple-600', href: '/officer/cases/verification' }
+        { name: 'Verification Cases', count: stats?.pendingVerifications || 0, color: 'text-purple-600', href: '/officer/cases/verification' }
       ]
     },
-    {
-      name: 'Tracking',
-      icon: Search,
-      href: '/officer/tracking',
-      items: [
-        { name: 'Item Tracking', count: 0, color: 'text-blue-600', href: '/officer/tracking/items' },
-        { name: 'Case Timeline', count: 0, color: 'text-purple-600', href: '/officer/tracking/timeline' },
-        { name: 'Status Updates', count: 0, color: 'text-indigo-600', href: '/officer/tracking/updates' }
-      ]
-    }
   ];
 
   const notificationItems = [
@@ -249,8 +239,8 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
               transition={{ duration: 0.5 }}
             >
               <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-lg">G</span>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                  <img src="/Logo.png" alt="GOTUS Logo" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
@@ -469,26 +459,6 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
                         <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.department}</p>
                       </div>
-                      
-                      <motion.button
-                        type="button"
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
-                        onClick={() => handleNavigation('/officer/profile')}
-                        whileHover={{ x: 4 }}
-                      >
-                        <UserCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile</span>
-                      </motion.button>
-                      
-                      <motion.button
-                        type="button"
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
-                        onClick={() => handleNavigation('/officer/settings')}
-                        whileHover={{ x: 4 }}
-                      >
-                        <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Settings</span>
-                      </motion.button>
                       
                       <div className="border-t border-gray-100 dark:border-gray-700 my-2"></div>
                       

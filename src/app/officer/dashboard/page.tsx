@@ -413,8 +413,19 @@ export default function OfficerDashboard() {
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
-                if (action.title === 'Verify Ownership') {
+                // Handle specific actions
+                if (action.title === 'Search & Match') {
+                  handleNavigation('/search');
+                } else if (action.title === 'Verify Ownership') {
                   handleNavigation('/officer/cases/verification');
+                } else if (action.title === 'Create Report') {
+                  handleNavigation('/officer/reports');
+                } else if (action.title === 'Team Collaboration') {
+                  pushToast('info', 'Coming Soon', 'Team collaboration features are currently under development. Stay tuned!');
+                } else if (action.title === 'Emergency Cases') {
+                  pushToast('info', 'Coming Soon', 'Emergency case management features will be available soon!');
+                } else if (action.title === 'Analytics & Reports') {
+                  pushToast('info', 'Coming Soon', 'Advanced analytics dashboard is on the way!');
                 } else {
                   handleNavigation(`/officer/${action.title.toLowerCase().replace(/\s+/g, '-')}`);
                 }
