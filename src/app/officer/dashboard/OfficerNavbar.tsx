@@ -152,9 +152,7 @@ export default function OfficerNavbar({ currentUser, onSignOut }: OfficerNavbarP
       icon: FileText,
       href: '/officer/reports',
       items: [
-        { name: 'Lost Item Reports', count: 45, color: 'text-red-600', href: '/officer/reports/lost' },
-        { name: 'Found Item Reports', count: 32, color: 'text-green-600', href: '/officer/reports/found' },
-        { name: 'All Reports', count: 77, color: 'text-blue-600', href: '/officer/reports/all' }
+        { name: 'Generate Case Reports', count: 0, color: 'text-indigo-600', href: '/officer/reports' },
       ]
     },
     {

@@ -281,3 +281,185 @@ export function formatFiltersForExcel(filters: Record<string, any>): string {
   
   return parts.length > 0 ? `Filters Applied: ${parts.join(' | ')}` : 'No filters applied';
 }
+
+/**
+ * Column definitions for Officer Case Reports
+ */
+export const OFFICER_CASE_COLUMNS = [
+  { key: 'serialNumber', label: 'S.N.', alwaysIncluded: true },
+  { key: 'caseId', label: 'Case ID', alwaysIncluded: true },
+  { key: 'title', label: 'Title' },
+  { key: 'description', label: 'Description' },
+  { key: 'type', label: 'Type' },
+  { key: 'status', label: 'Status' },
+  { key: 'urgencyLevel', label: 'Urgency Level' },
+  { key: 'reportedTime', label: 'Reported Time' },
+  { key: 'createdAt', label: 'Case Created At' },
+  { key: 'reportedByName', label: 'Reported By (Name)' },
+  { key: 'reportedByEmail', label: 'Reported By (Email)' },
+  { key: 'locationAddress', label: 'Location Address' },
+  { key: 'locationDetails', label: 'Location Details' },
+  { key: 'itemDescription', label: 'Item Description' },
+  { key: 'itemCategory', label: 'Category' },
+  { key: 'itemBrand', label: 'Brand' },
+  { key: 'itemModel', label: 'Model' },
+  { key: 'itemColor', label: 'Color' },
+  { key: 'itemSerialNumber', label: 'Serial Number' },
+  { key: 'itemIdentifyingFeatures', label: 'Identifying Features' },
+  { key: 'itemEstimatedValue', label: 'Estimated Value' },
+  { key: 'assignedOfficer', label: 'Assigned Officer' },
+  { key: 'linkedCaseId', label: 'Linked Case ID' },
+  { key: 'claimsCount', label: 'Related Claims' },
+  { key: 'resolutionStatus', label: 'Resolution Status' },
+  { key: 'resolvedAt', label: 'Resolved At' },
+  { key: 'resolvedBy', label: 'Resolved By' },
+  { key: 'resolutionOutcome', label: 'Resolution Outcome' },
+  { key: 'resolutionNotes', label: 'Resolution Notes' },
+];
+
+export const OFFICER_CLAIM_COLUMNS = [
+  { key: 'serialNumber', label: 'S.N.', alwaysIncluded: true },
+  { key: 'claimId', label: 'Claim ID', alwaysIncluded: true },
+  { key: 'caseId', label: 'Case ID' },
+  { key: 'caseTitle', label: 'Case Title' },
+  { key: 'caseType', label: 'Case Type' },
+  { key: 'claimantName', label: 'Claimant Name' },
+  { key: 'claimantEmail', label: 'Claimant Email' },
+  { key: 'claimantPhone', label: 'Claimant Phone' },
+  { key: 'claimantAddress', label: 'Claimant Address' },
+  { key: 'evidenceDescription', label: 'Evidence Description' },
+  { key: 'status', label: 'Claim Status' },
+  { key: 'reviewedBy', label: 'Reviewed By' },
+  { key: 'reviewedAt', label: 'Reviewed At' },
+  { key: 'reviewNotes', label: 'Review Notes' },
+  { key: 'createdAt', label: 'Claim Submitted At' },
+];
+
+/**
+ * Generate Excel workbook for Officer Case Reports
+ */
+export function generateOfficerCaseReport(
+  cases: any[],
+  claims: any[],
+  selectedCaseColumns: Set<string>,
+  selectedClaimColumns: Set<string>,
+  options: ExcelExportOptions & { officer?: any; filtersSummary?: string }
+): XLSX.WorkBook {
+  const workbook = XLSX.utils.book_new();
+  
+  // ===== CASES SHEET =====
+  const caseRows = cases.map((caseItem, index) => {
+    const row: any = {};
+    
+    if (selectedCaseColumns.has('serialNumber')) row['S.N.'] = index + 1;
+    if (selectedCaseColumns.has('caseId')) row['Case ID'] = caseItem._id?.toString() || 'N/A';
+    if (selectedCaseColumns.has('title')) row['Title'] = caseItem.title || 'N/A';
+    if (selectedCaseColumns.has('description')) row['Description'] = caseItem.description || 'N/A';
+    if (selectedCaseColumns.has('type')) row['Type'] = caseItem.type || 'N/A';
+    if (selectedCaseColumns.has('status')) row['Status'] = caseItem.status || 'N/A';
+    if (selectedCaseColumns.has('urgencyLevel')) row['Urgency Level'] = caseItem.urgencyLevel || 'N/A';
+    if (selectedCaseColumns.has('reportedTime')) {
+      row['Reported Time'] = caseItem.reportedTime ? format(new Date(caseItem.reportedTime), 'yyyy-MM-dd HH:mm') : 'N/A';
+    }
+    if (selectedCaseColumns.has('createdAt')) {
+      row['Case Created At'] = caseItem.createdAt ? format(new Date(caseItem.createdAt), 'yyyy-MM-dd HH:mm') : 'N/A';
+    }
+    if (selectedCaseColumns.has('reportedByName')) row['Reported By (Name)'] = caseItem.reportedBy?.name || 'N/A';
+    if (selectedCaseColumns.has('reportedByEmail')) row['Reported By (Email)'] = caseItem.reportedBy?.email || 'N/A';
+    if (selectedCaseColumns.has('locationAddress')) row['Location Address'] = caseItem.location?.address || 'N/A';
+    if (selectedCaseColumns.has('locationDetails')) row['Location Details'] = caseItem.location?.details || 'N/A';
+    if (selectedCaseColumns.has('itemDescription')) row['Item Description'] = caseItem.itemDetails?.detailedDescription || 'N/A';
+    if (selectedCaseColumns.has('itemCategory')) row['Category'] = caseItem.itemDetails?.category || 'N/A';
+    if (selectedCaseColumns.has('itemBrand')) row['Brand'] = caseItem.itemDetails?.brand || 'N/A';
+    if (selectedCaseColumns.has('itemModel')) row['Model'] = caseItem.itemDetails?.model || 'N/A';
+    if (selectedCaseColumns.has('itemColor')) row['Color'] = caseItem.itemDetails?.color || 'N/A';
+    if (selectedCaseColumns.has('itemSerialNumber')) row['Serial Number'] = caseItem.itemDetails?.serialNumber || 'N/A';
+    if (selectedCaseColumns.has('itemIdentifyingFeatures')) row['Identifying Features'] = caseItem.itemDetails?.identifyingFeatures || 'N/A';
+    if (selectedCaseColumns.has('itemEstimatedValue')) row['Estimated Value'] = caseItem.itemDetails?.estimatedValue || 'N/A';
+    if (selectedCaseColumns.has('assignedOfficer')) {
+      row['Assigned Officer'] = caseItem.assignedOfficer 
+        ? `${caseItem.assignedOfficer.firstName} ${caseItem.assignedOfficer.lastName}`
+        : 'N/A';
+    }
+    if (selectedCaseColumns.has('linkedCaseId')) row['Linked Case ID'] = caseItem.linkedCaseId?.toString() || 'N/A';
+    if (selectedCaseColumns.has('claimsCount')) row['Related Claims'] = caseItem.claimsCount || 0;
+    if (selectedCaseColumns.has('resolutionStatus')) row['Resolution Status'] = caseItem.resolution ? 'Resolved' : 'Unresolved';
+    if (selectedCaseColumns.has('resolvedAt')) {
+      row['Resolved At'] = caseItem.resolution?.resolvedAt 
+        ? format(new Date(caseItem.resolution.resolvedAt), 'yyyy-MM-dd HH:mm')
+        : 'N/A';
+    }
+    if (selectedCaseColumns.has('resolvedBy')) {
+      row['Resolved By'] = caseItem.resolution?.resolvedBy 
+        ? `${caseItem.resolution.resolvedBy.firstName} ${caseItem.resolution.resolvedBy.lastName}`
+        : 'N/A';
+    }
+    if (selectedCaseColumns.has('resolutionOutcome')) row['Resolution Outcome'] = caseItem.resolution?.outcome || 'N/A';
+    if (selectedCaseColumns.has('resolutionNotes')) row['Resolution Notes'] = caseItem.resolution?.notes || 'N/A';
+    
+    return row;
+  });
+  
+  const casesWorksheet = XLSX.utils.json_to_sheet(caseRows);
+  XLSX.utils.book_append_sheet(workbook, casesWorksheet, 'Cases');
+  
+  // ===== CLAIMS SHEET =====
+  const claimRows = claims.map((claim, index) => {
+    const row: any = {};
+    
+    if (selectedClaimColumns.has('serialNumber')) row['S.N.'] = index + 1;
+    if (selectedClaimColumns.has('claimId')) row['Claim ID'] = claim._id?.toString() || 'N/A';
+    if (selectedClaimColumns.has('caseId')) row['Case ID'] = claim.caseId?.toString() || 'N/A';
+    if (selectedClaimColumns.has('caseTitle')) row['Case Title'] = claim.caseTitle || 'N/A';
+    if (selectedClaimColumns.has('caseType')) row['Case Type'] = claim.caseType || 'N/A';
+    if (selectedClaimColumns.has('claimantName')) row['Claimant Name'] = claim.claimantInfo?.name || 'N/A';
+    if (selectedClaimColumns.has('claimantEmail')) row['Claimant Email'] = claim.claimantInfo?.email || 'N/A';
+    if (selectedClaimColumns.has('claimantPhone')) row['Claimant Phone'] = claim.claimantInfo?.phone || 'N/A';
+    if (selectedClaimColumns.has('claimantAddress')) {
+      const addr = claim.claimantInfo?.address;
+      row['Claimant Address'] = addr?.fullAddress || 
+        [addr?.province, addr?.district, addr?.municipality, addr?.ward].filter(Boolean).join(', ') || 'N/A';
+    }
+    if (selectedClaimColumns.has('evidenceDescription')) row['Evidence Description'] = claim.evidence?.description || 'N/A';
+    if (selectedClaimColumns.has('status')) row['Claim Status'] = claim.status || 'N/A';
+    if (selectedClaimColumns.has('reviewedBy')) {
+      row['Reviewed By'] = claim.reviewedBy 
+        ? `${claim.reviewedBy.firstName} ${claim.reviewedBy.lastName}`
+        : 'N/A';
+    }
+    if (selectedClaimColumns.has('reviewedAt')) {
+      row['Reviewed At'] = claim.reviewedAt 
+        ? format(new Date(claim.reviewedAt), 'yyyy-MM-dd HH:mm')
+        : 'N/A';
+    }
+    if (selectedClaimColumns.has('reviewNotes')) row['Review Notes'] = claim.reviewNotes || 'N/A';
+    if (selectedClaimColumns.has('createdAt')) {
+      row['Claim Submitted At'] = claim.createdAt 
+        ? format(new Date(claim.createdAt), 'yyyy-MM-dd HH:mm')
+        : 'N/A';
+    }
+    
+    return row;
+  });
+  
+  const claimsWorksheet = XLSX.utils.json_to_sheet(claimRows);
+  XLSX.utils.book_append_sheet(workbook, claimsWorksheet, 'Claims');
+  
+  // ===== SUMMARY SHEET =====
+  const summaryData = [
+    {
+      'Report Type': 'Officer Case Report',
+      'Officer': options.officer ? `${options.officer.firstName} ${options.officer.lastName}` : 'N/A',
+      'Department': options.officer?.department || 'N/A',
+      'Generated At': format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+      'Total Cases': cases.length,
+      'Total Claims': claims.length,
+      'Filters': options.filtersSummary || 'None',
+    }
+  ];
+  
+  const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+  XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
+  
+  return workbook;
+}
