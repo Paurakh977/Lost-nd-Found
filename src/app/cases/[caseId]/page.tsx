@@ -602,33 +602,33 @@ export default function PublicCaseDetailPage() {
                 )}
                 {caseItem.itemDetails.category && (
                   <div>
-                    <span className="text-sm font-medium text-gray-500">Category</span>
-                    <p className="text-gray-900">{caseItem.itemDetails.category}</p>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Category</span>
+                    <p className="text-gray-900 dark:text-white">{caseItem.itemDetails.category}</p>
                   </div>
                 )}
                 {caseItem.itemDetails.estimatedValue && (
                   <div>
-                    <span className="text-sm font-medium text-gray-500">Estimated Value</span>
-                    <p className="text-gray-900">${caseItem.itemDetails.estimatedValue}</p>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Estimated Value</span>
+                    <p className="text-gray-900 dark:text-white">${caseItem.itemDetails.estimatedValue}</p>
                   </div>
                 )}
               </div>
               {caseItem.itemDetails.identifyingFeatures && (
                 <div className="mt-4">
-                  <span className="text-sm font-medium text-gray-500">Identifying Features</span>
-                  <p className="text-gray-900 mt-1">{caseItem.itemDetails.identifyingFeatures}</p>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Identifying Features</span>
+                  <p className="text-gray-900 dark:text-white mt-1">{caseItem.itemDetails.identifyingFeatures}</p>
                 </div>
               )}
               <div className="mt-4">
-                <span className="text-sm font-medium text-gray-500">Detailed Description</span>
-                <p className="text-gray-900 mt-1 whitespace-pre-line">{caseItem.itemDetails.detailedDescription}</p>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Detailed Description</span>
+                <p className="text-gray-900 dark:text-white mt-1 whitespace-pre-line">{caseItem.itemDetails.detailedDescription}</p>
               </div>
             </div>
 
             {/* Additional Images */}
             {caseItem.images && caseItem.images.length > 1 && (
-              <div className="bg-white rounded-xl border p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Additional Images</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Additional Images</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {caseItem.images.slice(1).map((image, index) => (
                     <img
@@ -647,24 +647,24 @@ export default function PublicCaseDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Case Info */}
-            <div className="bg-white rounded-xl border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Case Information</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Case Information</h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-gray-400" />
+                  <MapPin className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                   <div>
-                    <p className="text-sm text-gray-500">Location</p>
-                    <p className="text-gray-900 font-medium">{caseItem.location.address}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{caseItem.location.address}</p>
                     {caseItem.location.details && (
-                      <p className="text-sm text-gray-600">{caseItem.location.details}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{caseItem.location.details}</p>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-gray-400" />
+                  <Clock className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                   <div>
-                    <p className="text-sm text-gray-500">Reported</p>
-                    <p className="text-gray-900 font-medium">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Reported</p>
+                    <p className="text-gray-900 dark:text-white font-medium">
                       {new Date(caseItem.reportedTime).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -676,18 +676,18 @@ export default function PublicCaseDetailPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-gray-400" />
+                  <User className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                   <div>
-                    <p className="text-sm text-gray-500">Reported By</p>
-                    <p className="text-gray-900 font-medium">{caseItem.reportedBy.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Reported By</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{caseItem.reportedBy.name}</p>
                   </div>
                 </div>
                 {caseItem.assignedOfficer && (
                   <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-gray-400" />
+                    <Users className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     <div>
-                      <p className="text-sm text-gray-500">Assigned Officer</p>
-                      <p className="text-gray-900 font-medium">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Assigned Officer</p>
+                      <p className="text-gray-900 dark:text-white font-medium">
                         {caseItem.assignedOfficer.firstName} {caseItem.assignedOfficer.lastName}
                       </p>
                     </div>
@@ -698,11 +698,11 @@ export default function PublicCaseDetailPage() {
 
             {/* Claim Button */}
             {canClaim && (
-              <div className="bg-white rounded-xl border p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   {caseItem.type === 'found' ? 'Is this your lost item?' : 'Think this is yours?'}
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   {caseItem.type === 'found' 
                     ? 'If this found item belongs to you, submit a claim to prove ownership. An officer will review your evidence and help verify.'
                     : 'If you believe this item belongs to you, you can submit a verification request. An officer will review your claim and help verify ownership.'
@@ -718,10 +718,10 @@ export default function PublicCaseDetailPage() {
             )}
 
             {/* Contact Info */}
-            <div className="bg-white rounded-xl border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h3>
               <div className="space-y-2">
-                <p className="text-sm text-gray-500">Reporter Email</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Reporter Email</p>
                 <a 
                   href={`mailto:${caseItem.reportedBy.email}`}
                   className="text-blue-600 hover:text-blue-800 font-medium"
