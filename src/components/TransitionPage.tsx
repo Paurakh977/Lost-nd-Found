@@ -83,39 +83,36 @@ const TransitionPage: React.FC<TransitionPageProps> = ({ onComplete, onPhaseChan
         // Notify when panels are fully closed (this is when navigation should happen)
         onPhaseChange?.('closed');
         
+        // Notify that panels are starting to open
+        onPhaseChange?.('opening');
+        
         // Small delay to ensure navigation completes before panels start opening
         setTimeout(() => {
-          panels.forEach((panel, index) => {
-            // Force browser to acknowledge current state before changing it
-            window.getComputedStyle(panel).transform;
-            
-            const timeout = window.setTimeout(() => {
-              // Force a reflow to ensure the browser has processed the current state
-              panel.offsetHeight;
-              panel.offsetWidth;
-              
-              // Use double requestAnimationFrame to ensure the class change happens
-              // after the browser has had time to process the current state
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  // Force another reflow before class changes
-                  panel.offsetHeight;
-                  
-                  // Apply slide-up class before removing slide-down to ensure smooth transition
-                  panel.classList.add('slide-up');
-                  
-                  // Small delay before removing slide-down to ensure transition starts properly
-                  setTimeout(() => {
-                    panel.classList.remove('slide-down');
-                  }, 5);
-                });
-              });
-            }, (panels.length - 1 - index) * REVEAL_STAGGER);
-            timeoutsRef.current.push(timeout);
+          // Pre-initialize ALL panels' GPU state in one go
+          // This ensures the compositor has all layers ready
+          panels.forEach(panel => {
+            // Trigger GPU composite layer for each panel
+            const style = window.getComputedStyle(panel);
+            style.transform;
+            panel.getBoundingClientRect();
           });
-
-          // Notify that panels are starting to open
-          onPhaseChange?.('opening');
+          
+          // Wait ONE frame for GPU to process all layers
+          requestAnimationFrame(() => {
+            // Now trigger each panel's animation with proper stagger
+            panels.forEach((panel, index) => {
+              const staggerDelay = (panels.length - 1 - index) * REVEAL_STAGGER;
+              
+              const timeout = window.setTimeout(() => {
+                // Remove slide-down and add slide-up in ONE frame
+                // This prevents any intermediate state that could cause stuttering
+                panel.classList.remove('slide-down');
+                panel.classList.add('slide-up');
+              }, staggerDelay);
+              
+              timeoutsRef.current.push(timeout);
+            });
+          });
         }, 50); // Small delay to ensure navigation is complete
 
         // Phase 3: Complete transition and cleanup - FIXED TIMING
