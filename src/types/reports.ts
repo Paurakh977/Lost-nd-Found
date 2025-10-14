@@ -178,6 +178,7 @@ export interface OfficerCaseReportData {
   
   // Linked Case
   linkedCaseId?: string;
+  linkedCaseTitle?: string;
   
   // Resolution
   resolution?: {

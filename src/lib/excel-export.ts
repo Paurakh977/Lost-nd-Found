@@ -287,8 +287,7 @@ export function formatFiltersForExcel(filters: Record<string, any>): string {
  */
 export const OFFICER_CASE_COLUMNS = [
   { key: 'serialNumber', label: 'S.N.', alwaysIncluded: true },
-  { key: 'caseId', label: 'Case ID', alwaysIncluded: true },
-  { key: 'title', label: 'Title' },
+  { key: 'title', label: 'Title', alwaysIncluded: true },
   { key: 'description', label: 'Description' },
   { key: 'type', label: 'Type' },
   { key: 'status', label: 'Status' },
@@ -308,20 +307,22 @@ export const OFFICER_CASE_COLUMNS = [
   { key: 'itemIdentifyingFeatures', label: 'Identifying Features' },
   { key: 'itemEstimatedValue', label: 'Estimated Value' },
   { key: 'assignedOfficer', label: 'Assigned Officer' },
-  { key: 'linkedCaseId', label: 'Linked Case ID' },
+  { key: 'linkedCaseTitle', label: 'Linked Case Title' },
   { key: 'claimsCount', label: 'Related Claims' },
   { key: 'resolutionStatus', label: 'Resolution Status' },
   { key: 'resolvedAt', label: 'Resolved At' },
   { key: 'resolvedBy', label: 'Resolved By' },
   { key: 'resolutionOutcome', label: 'Resolution Outcome' },
   { key: 'resolutionNotes', label: 'Resolution Notes' },
+  { key: 'itemAssignedToName', label: 'Item Assigned To (Name)' },
+  { key: 'itemAssignedToContact', label: 'Item Assigned To (Contact)' },
+  { key: 'foundByName', label: 'Found By (Name)' },
+  { key: 'foundByContact', label: 'Found By (Contact)' },
 ];
 
 export const OFFICER_CLAIM_COLUMNS = [
   { key: 'serialNumber', label: 'S.N.', alwaysIncluded: true },
-  { key: 'claimId', label: 'Claim ID', alwaysIncluded: true },
-  { key: 'caseId', label: 'Case ID' },
-  { key: 'caseTitle', label: 'Case Title' },
+  { key: 'caseTitle', label: 'Case Title', alwaysIncluded: true },
   { key: 'caseType', label: 'Case Type' },
   { key: 'claimantName', label: 'Claimant Name' },
   { key: 'claimantEmail', label: 'Claimant Email' },
@@ -352,7 +353,6 @@ export function generateOfficerCaseReport(
     const row: any = {};
     
     if (selectedCaseColumns.has('serialNumber')) row['S.N.'] = index + 1;
-    if (selectedCaseColumns.has('caseId')) row['Case ID'] = caseItem._id?.toString() || 'N/A';
     if (selectedCaseColumns.has('title')) row['Title'] = caseItem.title || 'N/A';
     if (selectedCaseColumns.has('description')) row['Description'] = caseItem.description || 'N/A';
     if (selectedCaseColumns.has('type')) row['Type'] = caseItem.type || 'N/A';
@@ -381,7 +381,7 @@ export function generateOfficerCaseReport(
         ? `${caseItem.assignedOfficer.firstName} ${caseItem.assignedOfficer.lastName}`
         : 'N/A';
     }
-    if (selectedCaseColumns.has('linkedCaseId')) row['Linked Case ID'] = caseItem.linkedCaseId?.toString() || 'N/A';
+    if (selectedCaseColumns.has('linkedCaseTitle')) row['Linked Case Title'] = caseItem.linkedCaseTitle || 'N/A';
     if (selectedCaseColumns.has('claimsCount')) row['Related Claims'] = caseItem.claimsCount || 0;
     if (selectedCaseColumns.has('resolutionStatus')) row['Resolution Status'] = caseItem.resolution ? 'Resolved' : 'Unresolved';
     if (selectedCaseColumns.has('resolvedAt')) {
@@ -397,6 +397,22 @@ export function generateOfficerCaseReport(
     if (selectedCaseColumns.has('resolutionOutcome')) row['Resolution Outcome'] = caseItem.resolution?.outcome || 'N/A';
     if (selectedCaseColumns.has('resolutionNotes')) row['Resolution Notes'] = caseItem.resolution?.notes || 'N/A';
     
+    // Item Assigned To
+    if (selectedCaseColumns.has('itemAssignedToName')) {
+      row['Item Assigned To (Name)'] = caseItem.resolution?.itemAssignedTo?.name || 'N/A';
+    }
+    if (selectedCaseColumns.has('itemAssignedToContact')) {
+      row['Item Assigned To (Contact)'] = caseItem.resolution?.itemAssignedTo?.contactInfo || 'N/A';
+    }
+    
+    // Found By
+    if (selectedCaseColumns.has('foundByName')) {
+      row['Found By (Name)'] = caseItem.resolution?.foundBy?.name || 'N/A';
+    }
+    if (selectedCaseColumns.has('foundByContact')) {
+      row['Found By (Contact)'] = caseItem.resolution?.foundBy?.contactInfo || 'N/A';
+    }
+    
     return row;
   });
   
@@ -408,8 +424,6 @@ export function generateOfficerCaseReport(
     const row: any = {};
     
     if (selectedClaimColumns.has('serialNumber')) row['S.N.'] = index + 1;
-    if (selectedClaimColumns.has('claimId')) row['Claim ID'] = claim._id?.toString() || 'N/A';
-    if (selectedClaimColumns.has('caseId')) row['Case ID'] = claim.caseId?.toString() || 'N/A';
     if (selectedClaimColumns.has('caseTitle')) row['Case Title'] = claim.caseTitle || 'N/A';
     if (selectedClaimColumns.has('caseType')) row['Case Type'] = claim.caseType || 'N/A';
     if (selectedClaimColumns.has('claimantName')) row['Claimant Name'] = claim.claimantInfo?.name || 'N/A';

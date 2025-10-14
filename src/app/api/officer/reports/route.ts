@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
       claimsWithReviewers.push(claimData as OfficerClaimReportData);
     }
     
-    // Populate resolvedBy for cases
+    // Populate resolvedBy for cases and fetch linked case titles
     const casesWithResolvers: OfficerCaseReportData[] = [];
     for (const caseDoc of cases) {
       const caseData: any = { ...caseDoc };
@@ -169,6 +169,20 @@ export async function GET(request: NextRequest) {
           }
         } catch (err) {
           console.error('[Officer Reports] Error populating resolvedBy:', err);
+        }
+      }
+      
+      // Fetch linked case title
+      if (caseData.linkedCaseId) {
+        try {
+          const linkedCase = await Case.findById(caseData.linkedCaseId)
+            .select('title')
+            .lean();
+          if (linkedCase) {
+            caseData.linkedCaseTitle = linkedCase.title;
+          }
+        } catch (err) {
+          console.error('[Officer Reports] Error fetching linked case:', err);
         }
       }
       

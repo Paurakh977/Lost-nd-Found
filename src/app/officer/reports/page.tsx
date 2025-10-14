@@ -693,7 +693,9 @@ export default function OfficerReportsPage() {
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">{caseItem.title}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{caseItem._id}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {caseItem.type === 'lost' ? 'Lost Item' : caseItem.type === 'found' ? 'Found Item' : 'Verification'}
+                            </div>
                           </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
