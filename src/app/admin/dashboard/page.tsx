@@ -13,7 +13,8 @@ import {
   Settings,
   BarChart3,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import CreateUserModal from '../../../components/CreateUserModal';
@@ -311,6 +312,31 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <motion.button
+            onClick={() => router.push('/admin/reports')}
+            className="group relative inline-flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center justify-center w-10 h-10 bg-white/20 rounded-lg">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <div className="font-semibold text-lg">Generate Reports</div>
+              <div className="text-sm text-purple-100">Export officer and institutional user analytics</div>
+            </div>
+            <div className="ml-auto">
+              <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </motion.button>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <motion.div
