@@ -32,8 +32,10 @@ export interface ICase extends Document {
   reportedBy: {
     clerkId: string; // Clerk user ID
     name: string;
+    email?: string; // Clerk user email
   };
   assignedOfficer?: mongoose.Types.ObjectId; // Reference to User model (officer)
+  linkedCaseId?: mongoose.Types.ObjectId; // Reference to linked Case (FOUND case linked to LOST case or vice versa)
   resolution?: {
     resolvedAt: Date;
     resolvedBy: mongoose.Types.ObjectId; // Reference to User model (officer)
@@ -49,6 +51,24 @@ export interface ICase extends Document {
       name: string;
       contactInfo?: string;
     };
+  };
+  // Claim evidence for verification cases
+  claimEvidence?: {
+    description: string; // Required description proving ownership
+    images?: string[]; // Optional evidence images
+    claimantInfo: {
+      name: string;
+      email: string;
+      phone?: string;
+      address: {
+        province?: string;
+        district?: string;
+        municipality?: string;
+        ward?: string;
+        fullAddress?: string;
+      };
+    };
+    submittedAt: Date;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -148,11 +168,21 @@ const CaseSchema = new Schema<ICase>({
     name: {
       type: String,
       required: true
+    },
+    email: {
+      type: String,
+      required: false
     }
   },
   assignedOfficer: {
     type: Schema.Types.ObjectId,
     ref: 'User'
+  },
+  linkedCaseId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Case',
+    required: false,
+    index: true // Index for linking found and lost cases
   },
   resolution: {
     resolvedAt: Date,
@@ -164,19 +194,49 @@ const CaseSchema = new Schema<ICase>({
     notes: String,
     itemAssignedTo: {
       clerkId: String,
-      name: {
-        type: String,
-        required: function() { return !!this.resolution?.itemAssignedTo; }
-      },
+      name: String,
       contactInfo: String
     },
     foundBy: {
       clerkId: String,
+      name: String,
+      contactInfo: String
+    }
+  },
+  // Claim evidence for verification cases
+  claimEvidence: {
+    description: {
+      type: String,
+      trim: true,
+      minlength: 20,
+      maxlength: 2000
+    },
+    images: [String], // Optional evidence images
+    claimantInfo: {
       name: {
         type: String,
-        required: function() { return !!this.resolution?.foundBy; }
+        trim: true
       },
-      contactInfo: String
+      email: {
+        type: String,
+        trim: true,
+        lowercase: true
+      },
+      phone: {
+        type: String,
+        trim: true
+      },
+      address: {
+        province: String,
+        district: String,
+        municipality: String,
+        ward: String,
+        fullAddress: String
+      }
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now
     }
   }
 }, {
@@ -189,5 +249,13 @@ CaseSchema.index({ 'location.coordinates': '2dsphere' });
 CaseSchema.index({ type: 1, status: 1, createdAt: -1 });
 CaseSchema.index({ 'reportedBy.clerkId': 1 });
 CaseSchema.index({ assignedOfficer: 1 });
+
+// Officer-specific indexes for optimized queries
+// Index for unassigned cases feed (null assignedOfficer, sorted by creation date)
+CaseSchema.index({ assignedOfficer: 1, status: 1, createdAt: -1 });
+// Index for urgent cases feed (high urgency, unassigned)
+CaseSchema.index({ assignedOfficer: 1, urgencyLevel: 1, createdAt: -1 });
+// Index for officer's assigned cases with status filtering
+CaseSchema.index({ assignedOfficer: 1, type: 1, status: 1, createdAt: -1 });
 
 export default mongoose.models.Case || mongoose.model<ICase>('Case', CaseSchema);

@@ -1,235 +1,100 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  FileText, 
-  Users, 
-  Clock, 
+import {
+  Search,
+  FileText,
+  Users,
+  Clock,
   Shield,
   AlertCircle,
+  Filter,
   TrendingUp,
   Activity,
   Calendar,
   MapPin,
   Eye,
   CheckCircle,
-  XCircle,
-  Filter,
-  MoreVertical,
   ArrowUpRight,
   ArrowDownRight,
   User,
   Package
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import OfficerNavbar from './OfficerNavbar';
-import Lenis from 'lenis';
-
-interface OfficerStats {
-  totalCases: number;
-  activeCases: number;
-  resolvedCases: number;
-  pendingVerifications: number;
-  lostReports: number;
-  foundReports: number;
-  todayReports: number;
-  weeklyGrowth: number;
-}
-
-interface RecentActivity {
-  id: string;
-  type: 'lost' | 'found' | 'verification' | 'resolved';
-  title: string;
-  description: string;
-  time: string;
-  status: 'pending' | 'active' | 'closed';
-  location?: string;
-  priority: 'low' | 'medium' | 'high';
-  imageUrl: string;
-}
-
-interface PendingCase {
-  id: string;
-  title: string;
-  type: 'lost' | 'found' | 'verification';
-  reporter: string;
-  location: string;
-  timeAgo: string;
-  priority: 'low' | 'medium' | 'high';
-  status: string;
-  imageUrl: string;
-}
+import { useOfficerDashboard } from '../hooks/useOfficerDashboard';
+import { useUnassignedCases } from '../hooks/useUnassignedCases';
+import { useUrgentCases } from '../hooks/useUrgentCases';
+import { CaseCard } from '../components/CaseCard';
+import { EmptyState } from '../components/EmptyState';
+import { Pagination } from '../components/Pagination';
+import { DashboardLoadingSkeleton } from '../components/LoadingSkeleton';
+import UnassignedCasesPanel from '../components/UnassignedCasesPanel';
+import { ToastContainer } from '../../../components/Toast';
+import type { ToastType } from '../../../components/Toast';
+import { useNavigation } from '../../../components/SplashLayout';
 
 export default function OfficerDashboard() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [stats, setStats] = useState<OfficerStats>({
-    totalCases: 0,
-    activeCases: 0,
-    resolvedCases: 0,
-    pendingVerifications: 0,
-    lostReports: 0,
-    foundReports: 0,
-    todayReports: 0,
-    weeklyGrowth: 0
-  });
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [pendingCases, setPendingCases] = useState<PendingCase[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+  const { navigateTo } = useNavigation();
+  const { officer, stats, loading: statsLoading } = useOfficerDashboard();
+  const {
+    cases: unassignedCases,
+    pagination: unassignedPagination,
+    loading: unassignedLoading,
+    filters: unassignedFilters,
+    setFilters: setUnassignedFilters,
+    goToPage: unassignedGoToPage,
+    removeCase: removeFromUnassigned,
+  } = useUnassignedCases(1, 10);
 
-  // Search + Filter state
+  const {
+    cases: urgentCases,
+    pagination: urgentPagination,
+    loading: urgentLoading,
+    filters: urgentFilters,
+    setFilters: setUrgentFilters,
+    goToPage: urgentGoToPage,
+    removeCase: removeFromUrgent,
+  } = useUrgentCases(1, 5);
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'active' | 'closed'>('all');
-  
-  // Separate filter states for Recent Activity and Urgent Cases
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'active' | 'resolved'>('all');
   const [activityTypeFilter, setActivityTypeFilter] = useState<'all' | 'lost' | 'found' | 'verification'>('all');
   const [urgentCaseTypeFilter, setUrgentCaseTypeFilter] = useState<'all' | 'lost' | 'found' | 'verification'>('all');
+  const [toasts, setToasts] = useState<Array<{ id: string; type: ToastType; title: string; message?: string }>>([]);
 
-  const filteredRecentActivity = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return recentActivity.filter((a) => {
-      const matchesQuery = q
-        ? [a.title, a.description, a.location ?? '', a.type].join(' ').toLowerCase().includes(q)
-        : true;
-      const matchesStatus = statusFilter === 'all' ? true : a.status === statusFilter;
-      const matchesType = activityTypeFilter === 'all' ? true : a.type === activityTypeFilter;
-      return matchesQuery && matchesStatus && matchesType;
-    });
-  }, [recentActivity, searchQuery, statusFilter, activityTypeFilter]);
-
-  const filteredPendingCases = useMemo(() => {
-    return pendingCases.filter((c) => {
-      return urgentCaseTypeFilter === 'all' ? true : c.type === urgentCaseTypeFilter;
-    });
-  }, [pendingCases, urgentCaseTypeFilter]);
-
-  // Smooth scroll with Lenis
-  const lenisRef = useRef<Lenis | null>(null);
-  useEffect(() => {
-    // Get current user from localStorage or mock data
-    const mockUser = {
-      firstName: 'John',
-      lastName: 'Smith',
-      email: 'john.smith@globaltrack.com',
-      department: 'Lost & Found Division',
-      role: 'officer'
-    };
-    setCurrentUser(mockUser);
-
-    // Simulate loading stats and data
-    setTimeout(() => {
-      setStats({
-        totalCases: 234,
-        activeCases: 45,
-        resolvedCases: 189,
-        pendingVerifications: 12,
-        lostReports: 127,
-        foundReports: 107,
-        todayReports: 8,
-        weeklyGrowth: 12.5
-      });
-
-      // Update the recent activity image URLs
-      setRecentActivity([
-        {
-          id: '1',
-          type: 'lost',
-          title: 'iPhone 15 Pro Lost',
-          description: 'Lost at Central Mall, Food Court area',
-          time: '2 hours ago',
-          status: 'pending',
-          location: 'Central Mall',
-          priority: 'high',
-          imageUrl: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=80&h=80&fit=crop&crop=center'
-        },
-        {
-          id: '2',
-          type: 'found',
-          title: 'Wallet Found',
-          description: 'Brown leather wallet found at Metro Station',
-          time: '4 hours ago',
-          status: 'active',
-          location: 'Metro Station',
-          priority: 'medium',
-          imageUrl: 'https://plus.unsplash.com/premium_photo-1681589453747-53fd893fa420?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-        },
-        {
-          id: '3',
-          type: 'verification',
-          title: 'Verification Request',
-          description: 'Owner claiming Apple Watch Series 9',
-          time: '6 hours ago',
-          status: 'pending',
-          location: 'Metro Station',
-          priority: 'high',
-          imageUrl: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=80&h=80&fit=crop&crop=center'
-        },
-        {
-          id: '4',
-          type: 'resolved',
-          title: 'Case Closed',
-          description: 'Laptop returned to original owner',
-          time: '1 day ago',
-          status: 'closed',
-          location: 'High School',
-          priority: 'low',
-          imageUrl: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=80&h=80&fit=crop&crop=center'
-        }
-      ]);
-
-      // Update the pending cases image URLs
-      setPendingCases([
-        {
-          id: 'CASE-2024-001',
-          title: 'Lost MacBook Pro',
-          type: 'lost',
-          reporter: 'Sarah Johnson',
-          location: 'University Campus',
-          timeAgo: '3 hours ago',
-          priority: 'high',
-          status: 'Under Investigation',
-          imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=80&h=80&fit=crop&crop=center'
-        },
-        {
-          id: 'CASE-2024-002',
-          title: 'Found Car Keys',
-          type: 'found',
-          reporter: 'Mike Chen',
-          location: 'Shopping Center',
-          timeAgo: '5 hours ago',
-          priority: 'medium',
-          status: 'Pending Match',
-          imageUrl: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?w=80&h=80&fit=crop&crop=center'
-        },
-        {
-          id: 'CASE-2024-003',
-          title: 'Ownership Verification',
-          type: 'verification',
-          reporter: 'Emma Davis',
-          location: 'City Park',
-          timeAgo: '1 day ago',
-          priority: 'high',
-          status: 'Verification Required',
-          imageUrl: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=80&h=80&fit=crop&crop=center'
-        }
-      ]);
-
-      setIsLoading(false);
-    }, 1500);
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      // Mock sign out process
-      console.log('Signing out...');
-      window.location.href = '/sign-in';
-    } catch (error) {
-      console.error('Sign out error:', error);
-      window.location.href = '/sign-in';
-    }
+  const pushToast = (type: ToastType, title: string, message?: string) => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((prev) => [...prev, { id, type, title, message }]);
   };
+  const removeToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id));
+
+  const handleNavigation = (path: string) => {
+    navigateTo(path);
+  };
+
+  // Wire search and filters to server-side unassigned cases endpoint (status is always pending for unassigned)
+  useEffect(() => {
+    setUnassignedFilters({
+      ...unassignedFilters,
+      status: 'pending',
+      type: activityTypeFilter,
+      search: searchQuery,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, statusFilter, activityTypeFilter]);
+
+  // Wire urgent filter to server-side urgent cases endpoint
+  useEffect(() => {
+    setUrgentFilters({
+      ...urgentFilters,
+      status: statusFilter,
+      type: urgentCaseTypeFilter,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, urgentCaseTypeFilter]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -245,39 +110,20 @@ export default function OfficerDashboard() {
       case 'lost': return <Package className="w-4 h-4" />;
       case 'found': return <CheckCircle className="w-4 h-4" />;
       case 'verification': return <Shield className="w-4 h-4" />;
-      case 'resolved': return <CheckCircle className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-        <div className="flex items-center justify-center min-h-screen">
-          <motion.div 
-            className="text-center"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Dashboard</h2>
-            <p className="text-gray-600">Fetching your latest data...</p>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
+  const isLoading = statsLoading || unassignedLoading || urgentLoading;
+  if (isLoading) return <DashboardLoadingSkeleton />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-      <OfficerNavbar currentUser={currentUser} onSignOut={handleSignOut} />
-      
+    <>
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <motion.div
-          className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-8 text-white mb-8 overflow-hidden"
+          className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 dark:from-indigo-700 dark:via-indigo-800 dark:to-purple-900 rounded-2xl p-8 text-white mb-8 overflow-hidden"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -298,10 +144,10 @@ export default function OfficerDashboard() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
               >
-                Welcome back, {currentUser?.firstName}! 👋
+                Welcome back, {officer?.firstName}! 👋
               </motion.h1>
               <motion.p 
-                className="text-blue-100 text-lg mb-4"
+                className="text-blue-100 dark:text-blue-200 text-lg mb-4"
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
@@ -316,11 +162,11 @@ export default function OfficerDashboard() {
               >
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4" />
-                  <span>Today: {stats.todayReports} new reports</span>
+                  <span>Today: {stats?.todayReports ?? 0} new reports</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-4 h-4" />
-                  <span>+{stats.weeklyGrowth}% this week</span>
+                  <span>+{stats?.weeklyGrowth ?? 0}% this week</span>
                 </div>
               </motion.div>
             </div>
@@ -330,8 +176,8 @@ export default function OfficerDashboard() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5, duration: 0.6 }}
             >
-              <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <Activity className="w-16 h-16 text-blue-200" />
+              <div className="w-32 h-32 bg-white/10 dark:bg-white/5 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <Activity className="w-16 h-16 text-blue-200 dark:text-blue-300" />
               </div>
             </motion.div>
           </div>
@@ -342,55 +188,70 @@ export default function OfficerDashboard() {
           {[
             { 
               title: 'Total Cases', 
-              value: stats.totalCases, 
+              value: stats?.totalCases ?? 0, 
               icon: FileText, 
               color: 'from-blue-500 to-blue-600',
               bgColor: 'bg-blue-50',
+              darkBgColor: 'dark:bg-gray-800/80',
               change: '+12%',
               changeType: 'increase'
             },
             { 
               title: 'Active Cases', 
-              value: stats.activeCases, 
+              value: stats?.activeCases ?? 0, 
               icon: Activity, 
               color: 'from-orange-500 to-orange-600',
               bgColor: 'bg-orange-50',
+              darkBgColor: 'dark:bg-gray-800/80',
               change: '+8%',
-              changeType: 'increase'
+              changeType: 'increase',
+              href: '/officer/cases/active'
             },
             { 
               title: 'Resolved Cases', 
-              value: stats.resolvedCases, 
+              value: stats?.resolvedCases ?? 0, 
               icon: CheckCircle, 
               color: 'from-green-500 to-green-600',
               bgColor: 'bg-green-50',
+              darkBgColor: 'dark:bg-gray-800/80',
               change: '+15%',
-              changeType: 'increase'
+              changeType: 'increase',
+              href: '/officer/cases/resolved'
             },
             { 
               title: 'Pending Verifications', 
-              value: stats.pendingVerifications, 
+              value: stats?.pendingVerifications ?? 0, 
               icon: Shield, 
               color: 'from-purple-500 to-purple-600',
               bgColor: 'bg-purple-50',
+              darkBgColor: 'dark:bg-gray-800/80',
               change: '-5%',
-              changeType: 'decrease'
+              changeType: 'decrease',
+              href: '/officer/cases/verification'
             }
           ].map((stat, index) => (
             <motion.div
               key={stat.title}
-              className={`${stat.bgColor} p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-lg transition-all duration-300`}
+              className={`${stat.bgColor} ${stat.darkBgColor} p-6 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-lg dark:hover:shadow-gray-900/50 transition-all duration-300`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index, duration: 0.6 }}
               whileHover={{ scale: 1.02, y: -5 }}
+              onClick={() => {
+                // Navigate for Active Cases card
+                if ((stat as any).href) {
+                  handleNavigation((stat as any).href);
+                }
+              }}
+              role={(stat as any).href ? 'button' : undefined}
+              style={{ cursor: (stat as any).href ? 'pointer' as const : 'default' as const }}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
                   <stat.icon className="w-6 h-6 text-white" />
                 </div>
                 <div className={`flex items-center space-x-1 text-sm font-medium ${
-                  stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+                  stat.changeType === 'increase' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 }`}>
                   {stat.changeType === 'increase' ? (
                     <ArrowUpRight className="w-4 h-4" />
@@ -401,8 +262,8 @@ export default function OfficerDashboard() {
                 </div>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
               </div>
             </motion.div>
           ))}
@@ -410,237 +271,67 @@ export default function OfficerDashboard() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Activity */}
-          <motion.div
-            className="lg:col-span-2 bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 overflow-hidden"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-          >
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h3 className="text-xl font-semibold text-gray-900">Recent Activity</h3>
-                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                  <div className="relative w-full sm:w-64 mb-2 sm:mb-0">
-                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search activities..."
-                      className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex items-center gap-1 bg-gray-50 rounded-md border border-gray-100">
-                      <Filter className="w-3.5 h-3.5 text-gray-400 ml-2" />
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value as any)}
-                        className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 focus:outline-none appearance-none"
-                        style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
-                      >
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="active">Active</option>
-                        <option value="closed">Closed</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-1 bg-gray-50 rounded-md border border-gray-100">
-                      <Package className="w-3.5 h-3.5 text-gray-400 ml-2" />
-                      <select
-                        value={activityTypeFilter}
-                        onChange={(e) => setActivityTypeFilter(e.target.value as any)}
-                        className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 focus:outline-none appearance-none"
-                        style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
-                      >
-                        <option value="all">All Types</option>
-                        <option value="lost">Lost Items</option>
-                        <option value="found">Found Items</option>
-                        <option value="verification">Verification</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="max-h-96 overflow-y-auto">
-              {filteredRecentActivity.map((activity, index) => (
-                <motion.div
-                  key={activity.id}
-                  className="p-6 border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + (index * 0.1), duration: 0.4 }}
-                  whileHover={{ x: 5 }}
-                >
-                  <div className="flex items-start space-x-4">
-                    <img src={activity.imageUrl} alt={activity.title} className="flex-shrink-0 w-10 h-10 rounded-xl object-cover" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-semibold text-gray-900 truncate">
-                          {activity.title}
-                        </h4>
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(activity.priority)}`}>
-                            {activity.priority}
-                          </span>
-                          <span className="text-xs text-gray-500 flex-shrink-0">
-                            {activity.time}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
-                      <div className="flex items-center space-x-3">
-                        {activity.location && (
-                          <div className="flex items-center space-x-1 text-xs text-gray-500">
-                            <MapPin className="w-3 h-3" />
-                            <span>{activity.location}</span>
-                          </div>
-                        )}
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          activity.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                          activity.status === 'closed' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {activity.status}
-                        </span>
-                        <span className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          activity.type === 'lost' ? 'bg-red-50 text-red-700' :
-                          activity.type === 'found' ? 'bg-green-50 text-green-700' :
-                          activity.type === 'verification' ? 'bg-purple-50 text-purple-700' :
-                          activity.type === 'resolved' ? 'bg-blue-50 text-blue-700' :
-                          'bg-gray-50 text-gray-700'
-                        }`}>
-                          {getTypeIcon(activity.type)}
-                          <span className="ml-1">
-                            {activity.type === 'lost' ? 'Lost Item' :
-                             activity.type === 'found' ? 'Found Item' :
-                             activity.type === 'verification' ? 'Verification' :
-                             activity.type === 'resolved' ? 'Resolved' : activity.type}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    <button className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      <Eye className="w-4 h-4 text-gray-400" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+          <UnassignedCasesPanel onToast={pushToast} />
 
-          {/* Pending Cases Sidebar */}
+          {/* Urgent Cases Sidebar */}
           <motion.div
-            className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 overflow-hidden"
+            className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 dark:border-gray-700 overflow-hidden"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <div className="p-6 border-b border-gray-100">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Urgent Cases</h3>
-                  <p className="text-sm text-gray-600">Requires immediate attention</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Urgent Cases</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Requires immediate attention</p>
                 </div>
-                <div className="flex items-center gap-1 bg-gray-50 rounded-md border border-gray-100">
-                  <Package className="w-3.5 h-3.5 text-gray-400 ml-2" />
+                <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/70 rounded-md border border-gray-100 dark:border-gray-600 px-2">
+                  <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                   <select
                     value={urgentCaseTypeFilter}
                     onChange={(e) => setUrgentCaseTypeFilter(e.target.value as any)}
-                    className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 focus:outline-none appearance-none"
-                    style={{ backgroundPosition: 'right 0.25rem center', backgroundSize: '0.75em 0.75em' }}
+                    className="py-1.5 pl-1 pr-6 bg-transparent text-xs text-gray-600 dark:text-gray-300 focus:outline-none cursor-pointer"
                   >
-                    <option value="all">All Types</option>
-                    <option value="lost">Lost Items</option>
-                    <option value="found">Found Items</option>
-                    <option value="verification">Verification</option>
+                    <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">All Types</option>
+                    <option value="lost" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Lost Items</option>
+                    <option value="found" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Found Items</option>
+                    <option value="verification" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Verification</option>
                   </select>
                 </div>
               </div>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              {filteredPendingCases.map((case_, index) => (
-                <motion.div
-                  key={case_.id}
-                  className="p-4 border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 + (index * 0.1), duration: 0.4 }}
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <img src={case_.imageUrl} alt={case_.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-900 truncate mb-1">
-                          {case_.title}
-                        </h4>
-                        <p className="text-xs text-gray-600 mb-2">
-                          Case ID: {case_.id}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(case_.priority)}`}>
-                      {case_.priority}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-xs text-gray-600">
-                      <User className="w-3 h-3" />
-                      <span>{case_.reporter}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs text-gray-600">
-                      <MapPin className="w-3 h-3" />
-                      <span>{case_.location}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs text-gray-600">
-                      <Clock className="w-3 h-3" />
-                      <span>{case_.timeAgo}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs font-medium text-gray-700">{case_.status}</span>
-                        <span className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          case_.type === 'lost' ? 'bg-red-50 text-red-700' :
-                          case_.type === 'found' ? 'bg-green-50 text-green-700' :
-                          case_.type === 'verification' ? 'bg-purple-50 text-purple-700' :
-                          'bg-gray-50 text-gray-700'
-                        }`}>
-                          {getTypeIcon(case_.type)}
-                          <span className="ml-1">
-                            {case_.type === 'lost' ? 'Lost Item' :
-                             case_.type === 'found' ? 'Found Item' :
-                             case_.type === 'verification' ? 'Verification' : case_.type}
-                          </span>
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <motion.button
-                          className="p-1 hover:bg-green-100 rounded text-green-600 transition-colors"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </motion.button>
-                        <motion.button
-                          className="p-1 hover:bg-blue-100 rounded text-blue-600 transition-colors"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </motion.button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+              {urgentCases.length === 0 ? (
+                <div className="p-4">
+                  <EmptyState type="urgent" message="No urgent cases for now" />
+                </div>
+              ) : (
+                urgentCases.map((caseItem, index) => (
+                  <CaseCard
+                    key={caseItem._id}
+                    case={caseItem}
+                    onAssignSuccess={(id) => {
+                      removeFromUrgent(id);
+                      removeFromUnassigned(id);
+                      pushToast('success', 'Case assigned', 'The urgent case was assigned to you.');
+                      window.dispatchEvent(new Event('officer:refresh-stats'));
+                    }}
+                    onViewDetails={(id) => {
+                      handleNavigation(`/officer/cases/${id}`);
+                    }}
+                    onAssignError={(message) => {
+                      pushToast('error', 'Assignment failed', message);
+                    }}
+                    isUrgent
+                    index={index}
+                  />
+                ))
+              )}
             </div>
+            {urgentPagination && (
+              <Pagination pagination={urgentPagination} onPageChange={urgentGoToPage} />
+            )}
           </motion.div>
         </div>
 
@@ -658,7 +349,9 @@ export default function OfficerDashboard() {
               icon: Search,
               color: 'from-blue-500 to-blue-600',
               bgColor: 'bg-blue-50',
-              hoverColor: 'hover:bg-blue-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-blue-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Create Report',
@@ -666,7 +359,9 @@ export default function OfficerDashboard() {
               icon: FileText,
               color: 'from-green-500 to-green-600',
               bgColor: 'bg-green-50',
-              hoverColor: 'hover:bg-green-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-green-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Verify Ownership',
@@ -674,7 +369,9 @@ export default function OfficerDashboard() {
               icon: Shield,
               color: 'from-purple-500 to-purple-600',
               bgColor: 'bg-purple-50',
-              hoverColor: 'hover:bg-purple-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-purple-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Team Collaboration',
@@ -682,7 +379,9 @@ export default function OfficerDashboard() {
               icon: Users,
               color: 'from-orange-500 to-orange-600',
               bgColor: 'bg-orange-50',
-              hoverColor: 'hover:bg-orange-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-orange-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Emergency Cases',
@@ -690,7 +389,9 @@ export default function OfficerDashboard() {
               icon: AlertCircle,
               color: 'from-red-500 to-red-600',
               bgColor: 'bg-red-50',
-              hoverColor: 'hover:bg-red-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-red-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             },
             {
               title: 'Analytics & Reports',
@@ -698,29 +399,48 @@ export default function OfficerDashboard() {
               icon: TrendingUp,
               color: 'from-indigo-500 to-indigo-600',
               bgColor: 'bg-indigo-50',
-              hoverColor: 'hover:bg-indigo-100'
+              darkBgColor: 'dark:bg-gray-800/80',
+              hoverColor: 'hover:bg-indigo-100',
+              darkHoverColor: 'dark:hover:bg-gray-700/80'
             }
           ].map((action, index) => (
             <motion.button
               key={action.title}
-              className={`${action.bgColor} ${action.hoverColor} p-6 rounded-2xl border border-white/50 text-left transition-all duration-300 hover:shadow-lg group`}
+              className={`${action.bgColor} ${action.darkBgColor} ${action.hoverColor} ${action.darkHoverColor} p-6 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 text-left transition-all duration-300 hover:shadow-lg dark:hover:shadow-gray-900/50 group`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9 + (index * 0.1), duration: 0.4 }}
               whileHover={{ scale: 1.05, y: -5 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => console.log(`${action.title} clicked`)}
+              onClick={() => {
+                // Handle specific actions
+                if (action.title === 'Search & Match') {
+                  handleNavigation('/search');
+                } else if (action.title === 'Verify Ownership') {
+                  handleNavigation('/officer/cases/verification');
+                } else if (action.title === 'Create Report') {
+                  handleNavigation('/officer/reports');
+                } else if (action.title === 'Team Collaboration') {
+                  pushToast('info', 'Coming Soon', 'Team collaboration features are currently under development. Stay tuned!');
+                } else if (action.title === 'Emergency Cases') {
+                  pushToast('info', 'Coming Soon', 'Emergency case management features will be available soon!');
+                } else if (action.title === 'Analytics & Reports') {
+                  pushToast('info', 'Coming Soon', 'Advanced analytics dashboard is on the way!');
+                } else {
+                  handleNavigation(`/officer/${action.title.toLowerCase().replace(/\s+/g, '-')}`);
+                }
+              }}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
                   <action.icon className="w-6 h-6 text-white" />
                 </div>
-                <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                <ArrowUpRight className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-gray-700 transition-colors">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
                 {action.title}
               </h3>
-              <p className="text-sm text-gray-600 group-hover:text-gray-500 transition-colors">
+              <p className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300 transition-colors">
                 {action.description}
               </p>
             </motion.button>
@@ -729,7 +449,7 @@ export default function OfficerDashboard() {
 
         {/* Performance Summary */}
         <motion.div
-          className="mt-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-8 text-white"
+          className="mt-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-2xl p-8 text-white"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.6 }}
@@ -742,9 +462,9 @@ export default function OfficerDashboard() {
                 animate={{ scale: 1 }}
                 transition={{ delay: 1.3, type: "spring", stiffness: 200 }}
               >
-                {stats.lostReports}
+                {stats?.lostReports ?? 0}
               </motion.div>
-              <p className="text-gray-300">Lost Reports</p>
+              <p className="text-gray-300 dark:text-gray-400">Lost Reports</p>
             </div>
             <div className="text-center">
               <motion.div
@@ -753,9 +473,9 @@ export default function OfficerDashboard() {
                 animate={{ scale: 1 }}
                 transition={{ delay: 1.4, type: "spring", stiffness: 200 }}
               >
-                {stats.foundReports}
+                {stats?.foundReports ?? 0}
               </motion.div>
-              <p className="text-gray-300">Found Reports</p>
+              <p className="text-gray-300 dark:text-gray-400">Found Reports</p>
             </div>
             <div className="text-center">
               <motion.div
@@ -764,9 +484,9 @@ export default function OfficerDashboard() {
                 animate={{ scale: 1 }}
                 transition={{ delay: 1.5, type: "spring", stiffness: 200 }}
               >
-                {Math.round((stats.resolvedCases / stats.totalCases) * 100)}%
+                {stats && stats.totalCases > 0 ? Math.round((stats.resolvedCases / stats.totalCases) * 100) : 0}%
               </motion.div>
-              <p className="text-gray-300">Success Rate</p>
+              <p className="text-gray-300 dark:text-gray-400">Success Rate</p>
             </div>
             <div className="text-center">
               <motion.div
@@ -777,11 +497,12 @@ export default function OfficerDashboard() {
               >
                 4.8
               </motion.div>
-              <p className="text-gray-300">Satisfaction Rating</p>
+              <p className="text-gray-300 dark:text-gray-400">Satisfaction Rating</p>
             </div>
           </div>
         </motion.div>
       </main>
-    </div>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+    </>
   );
 }

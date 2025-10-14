@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserButton, useUser, useClerk } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, User, Settings, Shield } from 'lucide-react';
+import { LogOut, User, Settings, Shield, Building } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface UserProfileProps {
@@ -15,12 +15,66 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
   const { signOut } = useClerk();
   const router = useRouter();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [jwtUser, setJwtUser] = useState<any>(null);
+  const [userType, setUserType] = useState<'clerk' | 'jwt'>('clerk');
+
+  // Check for JWT user on component mount
+  useEffect(() => {
+    const checkJWTUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setJwtUser(data.user);
+            setUserType('jwt');
+            return;
+          }
+        }
+        
+        // If no JWT user, check for Clerk user
+        if (isLoaded && user) {
+          setUserType('clerk');
+        }
+      } catch (error) {
+        console.error('Error checking user type:', error);
+        // Fallback to Clerk user
+        if (isLoaded && user) {
+          setUserType('clerk');
+        }
+      }
+    };
+
+    checkJWTUser();
+  }, [isLoaded, user]);
 
   const handleSignOut = async () => {
     try {
-      await signOut({
-        redirectUrl: '/', // Redirect to home page after sign out
-      });
+      if (userType === 'jwt') {
+        // For JWT users, call our signout API
+        const response = await fetch('/api/auth/signout', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          // Clear any local storage if needed
+          localStorage.removeItem('customUser');
+          window.location.href = '/';
+        } else {
+          console.error('JWT signout failed');
+          // Still redirect
+          window.location.href = '/';
+        }
+      } else {
+        // For Clerk users, use Clerk's signOut
+        await signOut({
+          redirectUrl: '/', // Redirect to home page after sign out
+        });
+      }
       setIsOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -28,11 +82,16 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
   };
 
   const handleProfileClick = () => {
+    router.push('/profile');
     setIsOpen(false);
-    // Navigate to profile page if you have one, or just close for now
   };
 
-  if (!isLoaded || !user) {
+  // Don't render if neither user type is available
+  if (userType === 'clerk' && (!isLoaded || !user)) {
+    return null;
+  }
+  
+  if (userType === 'jwt' && !jwtUser) {
     return null;
   }
 
@@ -51,11 +110,23 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
         
         {/* User avatar */}
-        <img
-          src={user.imageUrl}
-          alt={user.fullName || user.emailAddresses[0]?.emailAddress || 'User'}
-          className="w-full h-full object-cover"
-        />
+        {userType === 'clerk' ? (
+          <img
+            src={user?.imageUrl}
+            alt={user?.fullName || user?.emailAddresses[0]?.emailAddress || 'User'}
+            className="w-full h-full object-cover"
+          />
+        ) : jwtUser?.profileImage ? (
+          <img
+            src={`/api/profile/image/${jwtUser.profileImage}?t=${Date.now()}`}
+            alt={`${jwtUser.firstName} ${jwtUser.lastName}`.trim() || jwtUser.email}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+            {jwtUser?.firstName?.charAt(0) || jwtUser?.email?.charAt(0) || 'U'}
+          </div>
+        )}
         
         {/* Online indicator */}
         <motion.div
@@ -90,19 +161,42 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
               <div className="p-4 border-b border-gray-200/20 dark:border-zinc-700/20">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-blue-500/20">
-                    <img
-                      src={user.imageUrl}
-                      alt={user.fullName || 'User'}
-                      className="w-full h-full object-cover"
-                    />
+                    {userType === 'clerk' ? (
+                      <img
+                        src={user?.imageUrl}
+                        alt={user?.fullName || 'User'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : jwtUser?.profileImage ? (
+                      <img
+                        src={`/api/profile/image/${jwtUser.profileImage}?t=${Date.now()}`}
+                        alt={`${jwtUser.firstName} ${jwtUser.lastName}`.trim()}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                        {jwtUser?.firstName?.charAt(0) || jwtUser?.email?.charAt(0) || 'U'}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {user.fullName || 'User'}
+                      {userType === 'clerk' 
+                        ? (user?.fullName || 'User')
+                        : (`${jwtUser?.firstName} ${jwtUser?.lastName}`.trim() || jwtUser?.email || 'User')
+                      }
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {user.emailAddresses[0]?.emailAddress}
+                      {userType === 'clerk' 
+                        ? user?.emailAddresses[0]?.emailAddress
+                        : jwtUser?.email
+                      }
                     </p>
+                    {userType === 'jwt' && jwtUser?.role && (
+                      <p className="text-xs text-blue-500 dark:text-blue-400 truncate capitalize">
+                        {jwtUser.role}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -128,6 +222,21 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
                   <Settings className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-purple-500 transition-colors" />
                   Account Settings
                 </motion.button>
+
+                {userType === 'jwt' && jwtUser?.role === 'institutional' && (
+                  <motion.button
+                    onClick={() => {
+                      router.push('/institutional-info');
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  >
+                    <Building className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
+                    Institution Info
+                  </motion.button>
+                )}
 
                 <motion.button
                   onClick={() => setIsOpen(false)}

@@ -30,6 +30,8 @@ export interface IUser extends Document {
     longitude?: number;
     address?: string; // Full address from reverse geocoding
   };
+  // Profile image for JWT users (not used for Clerk users)
+  profileImage?: string; // Filename stored in /uploads/profile directory
 }
 
 const UserSchema = new Schema<IUser>({
@@ -117,6 +119,11 @@ const UserSchema = new Schema<IUser>({
     address: {
       type: String,
     },
+  },
+  // Profile image for JWT users
+  profileImage: {
+    type: String,
+    required: false,
   },
 }, {
   timestamps: true,

@@ -38,6 +38,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/auth/signin',
   '/api/auth/signout',
   '/api/admin/init',
+  '/api/cases/:caseId', // Allow viewing case details (but claiming requires auth)
+  '/cases/:caseId', // Allow viewing case detail pages
 ])
 
 // Custom auth check function
@@ -108,7 +110,8 @@ export default clerkMiddleware(async (auth, req) => {
           dashboardUrl = '/officer/dashboard';
           break;
         case 'institutional':
-          dashboardUrl = '/institutional/dashboard';
+          // Institutional users go to search page instead of dashboard
+          dashboardUrl = '/search';
           break;
       }
       return NextResponse.redirect(new URL(dashboardUrl, req.url))

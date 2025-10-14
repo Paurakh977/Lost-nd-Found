@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
       permissions: user.permissions,
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
+      profileImage: user.profileImage,
+      address: user.address,
+      location: user.location,
     };
     
     return NextResponse.json({

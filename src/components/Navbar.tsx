@@ -26,6 +26,37 @@ const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { navigateTo, isNavigating } = useNavigation();
 
+  // Track JWT-authenticated user (custom auth)
+  const [jwtUser, setJwtUser] = useState<any>(null);
+  const [jwtChecked, setJwtChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch('/api/auth/me', { credentials: 'include' });
+        if (!cancelled && resp.ok) {
+          const data = await resp.json();
+          if (data?.success && data?.user) {
+            setJwtUser(data.user);
+          } else {
+            setJwtUser(null);
+          }
+        } else if (!cancelled) {
+          setJwtUser(null);
+        }
+      } catch {
+        if (!cancelled) setJwtUser(null);
+      } finally {
+        if (!cancelled) setJwtChecked(true);
+      }
+    })();
+    return () => { cancelled = true };
+  }, []);
+
+  // Consider the user authenticated if Clerk is signed in OR we have a JWT user
+  const isAuthenticated = (isLoaded && isSignedIn) || (!!jwtUser);
+
   // Use a ref to track if this is the initial render
   const isInitialRender = React.useRef(true);
 
@@ -105,20 +136,37 @@ const Navbar: React.FC = () => {
             damping: 20,
           }}
         >
-          {/* Logo */}
+          {/* Logo - Minimalistic Silver GOTUS */}
           <button
             onClick={handleLogoClick}
-            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-white/5"
+            className="px-3 sm:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-white/5 group"
             disabled={isNavigating}
           >
             <motion.div
-              className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
-              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              className="relative"
             >
-              <span className="text-white font-bold text-[10px] sm:text-xs">G</span>
+              <span className="font-[family-name:var(--font-orbitron)] text-xl sm:text-2xl font-bold tracking-wider text-gray-700 dark:text-gray-300 relative inline-block overflow-hidden">
+                GOTUS
+                {/* Silvery shine effect overlay - contained within text */}
+                <motion.span
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/70 dark:via-white/50 to-transparent pointer-events-none"
+                  style={{
+                    width: '30%',
+                  }}
+                  animate={{
+                    left: ['-30%', '100%'],
+                  }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    repeatDelay: 1.5,
+                  }}
+                />
+              </span>
             </motion.div>
-            <span className="text-xs sm:text-sm font-bold text-gray-800 dark:text-white hidden sm:block">GOTUS</span>
           </button>
 
           <div className="w-px h-4 sm:h-6 bg-gray-300 dark:bg-gray-600 mx-1 sm:mx-2" />
@@ -352,9 +400,9 @@ const Navbar: React.FC = () => {
           <div className="w-px h-4 sm:h-6 bg-gray-300 dark:bg-gray-600 mx-1 sm:mx-2" />
 
           {/* Authentication Section */}
-          {isLoaded ? (
-            isSignedIn ? (
-              // Show user profile when authenticated
+          {(isLoaded || jwtChecked) ? (
+            isAuthenticated ? (
+              // Show user profile when authenticated (Clerk or JWT)
               <div className="flex items-center gap-1 sm:gap-2">
                 {/* Theme Toggle */}
                 <motion.div
@@ -368,8 +416,7 @@ const Navbar: React.FC = () => {
                     <SkyToggle isDark={isDark} onToggle={toggleTheme} />
                   </div>
                 </motion.div>
-                
-                {/* User Profile */}
+                {/* User Profile (component already supports Clerk and JWT) */}
                 <UserProfile />
               </div>
             ) : (
@@ -387,12 +434,11 @@ const Navbar: React.FC = () => {
                     <SkyToggle isDark={isDark} onToggle={toggleTheme} />
                   </div>
                 </motion.div>
-
                 {/* Sign In Button */}
                 <motion.button
                   onClick={handleSignInClick}
                   disabled={isNavigating}
-                  className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-full hover:bg-gray-100/50 dark:hover:bg-white/5"
+                  className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-full hover:bg-gray-100/50 dark:hover:bg.white/5"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, x: 20 }}
@@ -402,8 +448,7 @@ const Navbar: React.FC = () => {
                   <LogIn size={14} strokeWidth={2} className="sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">Sign In</span>
                 </motion.button>
-
-                {/* Sign Up Button with Enhanced Shine Effect */}
+                {/* Sign Up Button */}
                 <motion.button
                   onClick={handleSignUpClick}
                   disabled={isNavigating}
@@ -446,7 +491,7 @@ const Navbar: React.FC = () => {
               </div>
             )
           ) : (
-            // Loading state
+            // Loading state while determining auth status
             <div className="flex items-center gap-1 sm:gap-2">
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
             </div>

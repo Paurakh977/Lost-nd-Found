@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../components/ThemeProvider";
 import FloatingParticles from "../../components/ui/FloatingParticles";
+import CaseDetailModal from "../../components/CaseDetailModal";
 
 // Types
 type ChatMessage = {
@@ -25,6 +26,14 @@ type ChatMessage = {
     content: string;
     attachments?: string[];
     audioUrl?: string;
+    foundItemsIds?: string[]; // Add found items IDs to chat messages
+};
+
+type FeedResult = {
+    id: string;
+    timestamp: Date;
+    query: string;
+    cases: any[];
 };
 
 // Helpers
@@ -201,8 +210,8 @@ const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: ()
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
-            className={`flex items-center gap-3 w-full p-3 rounded-xl ${
-                isDark ? 'bg-white/5 border border-white/10' : 'bg-gray-900/5 border border-gray-200/50'
+            className={`flex items-center gap-2 w-full p-2 rounded-lg ${
+                isDark ? 'bg-neutral-800/50 border border-neutral-700/50' : 'bg-neutral-100/80 border border-neutral-200/60'
             }`}
         >
             <audio ref={audioRef} src={audioUrl} preload="auto" />
@@ -210,19 +219,19 @@ const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: ()
                 onClick={togglePlay} 
                 whileHover={{ scale: 1.05 }} 
                 whileTap={{ scale: 0.95 }}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
                     isDark 
-                        ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
-                        : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
+                        ? 'bg-neutral-700/60 text-neutral-300 hover:bg-neutral-600/60' 
+                        : 'bg-neutral-200/80 text-neutral-600 hover:bg-neutral-300/80'
                 }`}
             >
-                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
             </motion.button>
-            <div className={`flex-1 h-1 rounded-full overflow-hidden ${
-                isDark ? 'bg-white/10' : 'bg-gray-900/10'
+            <div className={`flex-1 h-0.5 rounded-full overflow-hidden ${
+                isDark ? 'bg-neutral-700/60' : 'bg-neutral-300/60'
             }`}>
                 <motion.div 
-                    className={`h-full ${isDark ? 'bg-blue-400' : 'bg-blue-500'}`}
+                    className={`h-full ${isDark ? 'bg-neutral-400' : 'bg-neutral-600'}`}
                     style={{ width: `${progress}%` }}
                     transition={{ duration: 0.1 }}
                 />
@@ -231,13 +240,13 @@ const AudioPreview = ({ audioUrl, onDiscard }: { audioUrl: string, onDiscard: ()
                 onClick={onDiscard} 
                 whileHover={{ scale: 1.05 }} 
                 whileTap={{ scale: 0.95 }}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                     isDark 
-                        ? 'text-white/40 hover:text-red-400 hover:bg-red-500/20' 
-                        : 'text-gray-500 hover:text-red-500 hover:bg-red-500/10'
+                        ? 'text-neutral-500 hover:text-red-400 hover:bg-red-500/10' 
+                        : 'text-neutral-400 hover:text-red-500 hover:bg-red-500/10'
                 }`}
             >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-3 h-3" />
             </motion.button>
         </motion.div>
     );
@@ -332,13 +341,131 @@ export default function AgenticSearchPage() {
     const [audioPreview, setAudioPreview] = useState<{ url: string, blob: Blob } | null>(null);
     const [isSending, setIsSending] = useState(false);
     const [chat, setChat] = useState<ChatMessage[]>([]);
-    // Remove reliance on /api/auth/me for Clerk users; server proxy injects identity
-    const [userInfo] = useState<{ id: string; firstName?: string; lastName?: string } | null>(null);
+    // Track if a conversation has been initiated with the agent
+    const [conversationInitiated, setConversationInitiated] = useState(false);
+    // User info state for both Clerk and JWT users
+    const [userInfo, setUserInfo] = useState<{ 
+        id: string; 
+        firstName?: string; 
+        lastName?: string; 
+        email?: string;
+        role?: string;
+        userType: 'clerk' | 'jwt';
+    } | null>(null);
+    // Generate a new session ID on each page load to ensure fresh conversations
+    const [sessionId] = useState<string>(() => crypto.randomUUID());
     const { isDark, mounted } = useTheme();
+    const [matchedCases, setMatchedCases] = useState<any[]>([]);
+    const [feedResults, setFeedResults] = useState<FeedResult[]>([]);
+    const [selectedCase, setSelectedCase] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [userLostCaseId, setUserLostCaseId] = useState<string | null>(null);
 
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 48, maxHeight: 200 });
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
 
-    // No client auth fetch; access is already enforced by middleware and proxy
+    // Auto-scroll to bottom when new messages are added
+    const scrollToBottom = useCallback((smooth = true) => {
+        if (chatContainerRef.current) {
+            const scrollOptions: ScrollToOptions = {
+                top: chatContainerRef.current.scrollHeight,
+                behavior: smooth ? 'smooth' : 'auto'
+            };
+            chatContainerRef.current.scrollTo(scrollOptions);
+        }
+    }, []);
+
+    // Check if user has scrolled up from bottom
+    const handleScroll = useCallback(() => {
+        if (chatContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50; // 50px threshold for better sensitivity
+            setShowScrollButton(!isAtBottom && chat.length > 0);
+        }
+    }, [chat.length]);
+
+    // Scroll to bottom when chat updates
+    useEffect(() => {
+        // Small delay to ensure DOM has updated
+        const timer = setTimeout(() => {
+            scrollToBottom();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [chat, scrollToBottom]);
+    
+    // Add beforeunload event handler to show confirmation dialog when leaving the page
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (conversationInitiated) {
+                // Standard way to show a confirmation dialog
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        };
+        
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [conversationInitiated]);
+
+    // Also scroll to bottom when sending state changes (for better UX during agent responses)
+    useEffect(() => {
+        if (isSending) {
+            // Scroll to bottom when agent starts thinking
+            const timer = setTimeout(() => {
+                scrollToBottom();
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [isSending, scrollToBottom]);
+
+    // Fetch user info on component mount
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                // Try to get JWT user first (institutional/officer/admin)
+                const response = await fetch('/api/auth/me', {
+                    credentials: 'include',
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.user) {
+                        setUserInfo({
+                            id: data.user.id,
+                            firstName: data.user.firstName,
+                            lastName: data.user.lastName,
+                            email: data.user.email,
+                            role: data.user.role,
+                            userType: 'jwt'
+                        });
+                        return;
+                    }
+                }
+                
+                // Fallback: Check if Clerk user is available
+                // This will be handled by the agent API proxy
+                setUserInfo({
+                    id: 'clerk-user',
+                    firstName: 'User',
+                    lastName: '',
+                    userType: 'clerk'
+                });
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+                // Set default for Clerk user
+                setUserInfo({
+                    id: 'clerk-user',
+                    firstName: 'User',
+                    lastName: '',
+                    userType: 'clerk'
+                });
+            }
+        };
+
+        fetchUserInfo();
+    }, []);
 
     const handleRecordingStop = (audioBlob: Blob) => {
         const url = URL.createObjectURL(audioBlob);
@@ -350,6 +477,8 @@ export default function AgenticSearchPage() {
     const sendToAgent = useCallback(async () => {
         if (!message.trim() && attachments.length === 0 && !audioPreview) return;
         setIsSending(true);
+        // Mark conversation as initiated when sending a message to the agent
+        setConversationInitiated(true);
 
         let mime = "text/plain";
         let data = message.trim();
@@ -371,7 +500,7 @@ export default function AgenticSearchPage() {
             body.attachments = attPayload;
         }
 
-        const userMessageText = audioPreview ? "[Voice message]" : (message.trim() || (attachments.length > 0 ? "[Attachments]" : ""));
+        const userMessageText = audioPreview ? "" : (message.trim() || (attachments.length > 0 ? "[Attachments]" : ""));
         const userMsg: ChatMessage = {
             id: crypto.randomUUID(),
             role: "user",
@@ -390,18 +519,68 @@ export default function AgenticSearchPage() {
             // keep URL for bubble; will be released on refresh/navigation
             setAudioPreview(null);
         }
-        adjustHeight(true);
+        
+        // Reset textarea height after clearing message
+        setTimeout(() => {
+            adjustHeight(true);
+            if (textareaRef.current) {
+                textareaRef.current.value = "";
+            }
+        }, 0);
 
         try {
             const res = await fetch(`/api/agent/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
+                body: JSON.stringify({...body, session_id: sessionId}),
             });
             const json = await res.json();
+            console.log('[search] agent reply', { status: res.status, success: json?.success, ids: json?.found_items_ids });
             const text = json?.response_text || json?.error || "No response";
-            const botMsg: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: text };
+            const botMsg: ChatMessage = { 
+                id: crypto.randomUUID(), 
+                role: "assistant", 
+                content: text,
+                foundItemsIds: json?.found_items_ids
+            };
             setChat((prev) => [...prev, botMsg]);
+            
+            // If found items were returned, fetch the user's most recent LOST case for linking
+            if (json?.found_items_ids && json.found_items_ids.length > 0 && userInfo?.id) {
+                fetchUserMostRecentLostCase(userInfo.id);
+            }
+
+            // If backend returned matched ids, fetch their details and add to feed results
+            const ids: string[] | undefined = json?.found_items_ids;
+            console.log('[search] processing found_items_ids', { ids, length: ids?.length });
+            if (Array.isArray(ids) && ids.length > 0) {
+                try {
+                    const casesRes = await fetch('/api/cases/by-ids', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids }),
+                    });
+                    const casesJson = await casesRes.json();
+                    console.log('[search] by-ids result', { status: casesRes.status, count: casesJson?.cases?.length, ids: ids });
+                    if (Array.isArray(casesJson?.cases) && casesJson.cases.length > 0) {
+                        // Create a new feed result entry
+                        const newFeedResult: FeedResult = {
+                            id: crypto.randomUUID(),
+                            timestamp: new Date(),
+                            query: userMessageText,
+                            cases: casesJson.cases
+                        };
+                        setFeedResults((prev) => [...prev, newFeedResult]);
+                        console.log('[search] successfully loaded cases', casesJson.cases.map((c: any) => ({ id: c._id, title: c.title, imageCount: c.images?.length || 0 })));
+                    } else {
+                        console.warn('[search] by-ids returned 0 cases for ids', ids);
+                    }
+                } catch (e) {
+                    console.error('[search] by-ids fetch failed', e);
+                }
+            } else {
+                console.log('[search] no found_items_ids');
+            }
         } catch (e) {
             const botMsg: ChatMessage = { id: crypto.randomUUID(), role: "assistant", content: "Failed to reach agent server." };
             setChat((prev) => [...prev, botMsg]);
@@ -455,6 +634,44 @@ export default function AgenticSearchPage() {
     const discardAudio = () => {
         if (audioPreview) URL.revokeObjectURL(audioPreview.url);
         setAudioPreview(null);
+    };
+
+    const openCaseDetail = (caseData: any) => {
+        setSelectedCase(caseData);
+        setIsModalOpen(true);
+    };
+
+    const closeCaseDetail = () => {
+        setIsModalOpen(false);
+        setSelectedCase(null);
+    };
+    
+    const fetchUserMostRecentLostCase = async (userId: string) => {
+        try {
+            console.log('[search] Fetching most recent lost case for user:', userId);
+            const res = await fetch(`/api/cases/user-recent-lost?userId=${encodeURIComponent(userId)}`);
+            const data = await res.json();
+            
+            if (data.success && data.caseId) {
+                setUserLostCaseId(data.caseId);
+                console.log('[search] User\'s most recent lost case ID:', data.caseId);
+            } else {
+                console.warn('[search] No recent lost case found for user');
+                setUserLostCaseId(null);
+            }
+        } catch (error) {
+            console.error('[search] Error fetching user\'s recent lost case:', error);
+            setUserLostCaseId(null);
+        }
+    };
+    
+    const handleClaimFoundItem = (foundCaseId: string) => {
+        if (!userLostCaseId) {
+            console.warn('[search] No lost case ID available for claiming');
+            return;
+        }
+        // Navigate to the FOUND case page with the LOST case ID as query param
+        window.location.href = `/cases/${foundCaseId}?lostCaseId=${userLostCaseId}`;
     };
 
     if (!mounted) {
@@ -514,7 +731,7 @@ export default function AgenticSearchPage() {
                         transition: { staggerChildren: 0.2, delayChildren: 0.3 }
                     }
                 }}
-                className="relative z-20 flex flex-col min-h-screen w-full mx-auto max-w-3xl p-4"
+                className="relative z-20 flex flex-col min-h-screen w-full mx-auto max-w-3xl p-4 overflow-x-hidden"
             >
                 <motion.div
                     variants={{ hidden: { opacity: 0, y: -20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeInOut" } } }}
@@ -547,34 +764,300 @@ export default function AgenticSearchPage() {
                 </motion.div>
 
                 {/* Conversation */}
-                <div className="flex-1 mt-6 mb-4 overflow-y-auto space-y-3">
-                    {chat.map((m) => (
-                        <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-md ${
-                                m.role === 'user'
-                                    ? (isDark ? 'bg-blue-600 text-white shadow-blue-900/30' : 'bg-blue-600 text-white shadow-blue-300/40')
-                                    : (isDark ? 'bg-zinc-900/60 border border-white/10 text-gray-100 shadow-black/20' : 'bg-white/90 border border-gray-200 text-gray-900 shadow-gray-300/40 backdrop-blur')
+                <div 
+                    ref={chatContainerRef}
+                    onScroll={handleScroll}
+                    className={`flex-1 mt-6 mb-4 overflow-y-auto overflow-x-hidden space-y-5 scrollbar-thin scrollbar-track-transparent ${
+                        isDark 
+                            ? 'scrollbar-thumb-gray-600/40 hover:scrollbar-thumb-gray-500/60' 
+                            : 'scrollbar-thumb-gray-400/30 hover:scrollbar-thumb-gray-400/50'
+                    }`}
+                    style={{ 
+                        maxHeight: 'calc(100vh - 280px)',
+                        minHeight: '200px'
+                    }}
+                >
+                    {chat.length === 0 ? (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            className="flex flex-col items-center justify-center py-16 text-center"
+                        >
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                                isDark 
+                                    ? 'bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30' 
+                                    : 'bg-gradient-to-br from-indigo-100/50 to-purple-100/50 border border-indigo-200/50'
                             }`}>
-                                <div className="flex items-center gap-2 mb-1 opacity-80 text-xs">
-                                    {m.role === 'user' ? <UserIcon className="w-3.5 h-3.5" /> : <BotIcon className="w-3.5 h-3.5" />}
+                                <BotIcon className={`w-8 h-8 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                            </div>
+                            <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                                Start a conversation
+                            </h3>
+                            <p className={`text-sm max-w-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Describe what you lost or found, and I'll help you with the search process.
+                            </p>
+                        </motion.div>
+                    ) : (
+                        chat.map((m, chatIndex) => (
+                        <React.Fragment key={m.id}>
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                                className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            >
+                            <div 
+                                className={`relative max-w-[80%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${
+                                    m.role === 'user'
+                                        ? (isDark 
+                                            ? 'bg-gradient-to-br from-indigo-900/40 to-purple-900/40 text-neutral-50 backdrop-blur-md' 
+                                            : 'bg-gradient-to-br from-white to-purple-50/30 border border-purple-100/40 text-neutral-800')
+                                        : (isDark 
+                                            ? 'bg-neutral-900/30 text-neutral-50 backdrop-blur-md' 
+                                            : 'bg-white/90 text-neutral-800 backdrop-blur-md')
+                                }`}
+                                style={{
+    boxShadow: m.role === 'user'
+        ? (isDark 
+            ? '0 4px 12px -2px rgba(124, 58, 237, 0.25), inset 0 0 0 0.5px rgba(139, 92, 246, 0.3)' 
+            : '0 12px 24px -6px rgba(0, 0, 0, 0.15), 0 4px 10px -3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.02)')
+        : (isDark 
+            ? '0 4px 12px -2px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08)' 
+            : '0 16px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 12px -3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)')
+}}
+                            >
+                                {/* Glow effect for dark mode */}
+                                {isDark && (
+                                    <>
+                                        <div className={`absolute inset-0 rounded-2xl opacity-40 blur-xl -z-10 ${
+                                            m.role === 'user' 
+                                                ? 'bg-purple-600/25' 
+                                                : 'bg-blue-600/15'
+                                        }`} />
+                                        <div className={`absolute -inset-1 rounded-3xl opacity-20 blur-2xl -z-20 ${
+                                            m.role === 'user' 
+                                                ? 'bg-purple-500/20' 
+                                                : 'bg-blue-500/10'
+                                        }`} />
+                                    </>
+                                )}
+                                
+                                {/* Subtle gradient border */}
+                                <div className={`absolute inset-0 rounded-2xl -z-5 ${
+                                    m.role === 'user'
+                                        ? (isDark 
+                                            ? 'bg-gradient-to-br from-indigo-500/10 to-purple-500/10' 
+                                            : 'bg-gradient-to-br from-zinc-700/5 to-zinc-900/5')
+                                        : (isDark 
+                                            ? 'bg-gradient-to-br from-neutral-700/10 to-neutral-800/10' 
+                                            : 'bg-gradient-to-br from-neutral-200/30 to-neutral-300/30')
+                                }`} style={{
+                                    mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                    maskComposite: 'xor',
+                                    maskBorder: '1px',
+                                    WebkitMaskComposite: 'xor',
+                                    padding: '1px'
+                                }} />
+                                
+                                <div className={`flex items-center gap-2 mb-2 text-xs font-medium ${
+                                    m.role === 'user' 
+                                        ? (isDark ? 'text-indigo-300' : 'text-indigo-900')
+                                        : (isDark ? 'text-blue-300' : 'text-blue-500')
+                                }`}>
+                                    {m.role === 'user' 
+                                        ? <UserIcon className="w-3 h-3" /> 
+                                        : <BotIcon className="w-3 h-3" />
+                                    }
                                     <span>{m.role === 'user' ? 'You' : 'Agent'}</span>
                                 </div>
+                                
                                 {m.attachments && m.attachments.length > 0 && (
-                                    <div className="mb-2 grid grid-cols-2 gap-2">
+                                    <div className="mb-3 grid grid-cols-2 gap-2">
                                         {m.attachments.map((url, idx) => (
-                                            <img key={idx} src={url} className="w-full h-28 object-cover rounded-lg" alt="sent attachment" />
+                                            <motion.img 
+                                                key={idx} 
+                                                src={url} 
+                                                className="w-full h-24 object-cover rounded-xl border border-neutral-200/20" 
+                                                alt="sent attachment"
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ duration: 0.2, delay: idx * 0.1 }}
+                                            />
                                         ))}
                                     </div>
                                 )}
+                                
                                 {m.audioUrl && (
-                                    <div className="mb-2">
-                                        <audio controls src={m.audioUrl} className="w-full" />
+                                    <div className="mb-3">
+                                        <div className={`flex items-center gap-2 p-2 rounded-lg ${
+                                            isDark 
+                                                ? 'bg-neutral-800/40 backdrop-blur-md' 
+                                                : 'bg-neutral-100/70 backdrop-blur-md'
+                                        }`} style={{
+                                            boxShadow: isDark 
+                                                ? 'inset 0 0 0 0.5px rgba(255, 255, 255, 0.1)' 
+                                                : 'inset 0 0 0 0.5px rgba(0, 0, 0, 0.05)'
+                                        }}>
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                                isDark ? 'bg-neutral-700/60' : 'bg-neutral-200/80'
+                                            }`}>
+                                                <Mic className={`w-3 h-3 ${isDark ? 'text-neutral-300' : 'text-neutral-600'}`} />
+                                            </div>
+                                            <span className={`text-xs font-medium ${
+                                                isDark ? 'text-neutral-300' : 'text-neutral-600'
+                                            }`}>Voice message</span>
+                                            <audio controls src={m.audioUrl} className="flex-1 h-6" style={{ filter: isDark ? 'invert(0.8)' : 'invert(0.2)' }} />
+                                        </div>
                                     </div>
                                 )}
-                                <div className="whitespace-pre-wrap">{m.content}</div>
+                                
+                                {m.content?.trim() ? (
+                                    <div className="whitespace-pre-wrap">{m.content}</div>
+                                ) : null}
+                                
+                                {/* Subtle animated highlight for dark mode */}
+                                {isDark && m.role === 'user' && (
+                                    <motion.div 
+                                        className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-purple-500/10 to-transparent opacity-0"
+                                        animate={{ 
+                                            opacity: [0, 0.5, 0],
+                                            x: ['-100%', '200%', '200%']
+                                        }}
+                                        transition={{ 
+                                            duration: 3, 
+                                            repeat: Infinity, 
+                                            repeatDelay: 5,
+                                            ease: "easeInOut" 
+                                        }}
+                                    />
+                                )}
+                                
+                                {/* Subtle animated highlight for assistant in dark mode */}
+                                {isDark && m.role === 'assistant' && (
+                                    <motion.div 
+                                        className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-blue-500/10 to-transparent opacity-0"
+                                        animate={{ 
+                                            opacity: [0, 0.5, 0],
+                                            x: ['-100%', '200%', '200%']
+                                        }}
+                                        transition={{ 
+                                            duration: 3, 
+                                            repeat: Infinity, 
+                                            repeatDelay: 7,
+                                            ease: "easeInOut" 
+                                        }}
+                                    />
+                                )}
                             </div>
-                        </div>
-                    ))}
+                            </motion.div>
+                            
+                            {/* Render feed results after assistant messages with found items */}
+                            {m.role === 'assistant' && m.foundItemsIds && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+                                    className="w-full mt-4"
+                                >
+                                    {feedResults
+                                        .filter(result => 
+                                            // Find the feed result that matches this assistant message's found items
+                                            result.cases.some(c => m.foundItemsIds?.includes(c._id))
+                                        )
+                                        .slice(-1) // Get the most recent matching result
+                                        .map(result => (
+                                            <div
+                                                key={result.id}
+                                                className={`w-full rounded-2xl border ${isDark ? 'border-gray-800/60 bg-gray-900/40' : 'border-gray-200/80 bg-white/70'} backdrop-blur-xl`}
+                                            >
+                                                <div className="max-h-80 overflow-y-auto px-3 py-3 space-y-3">
+                                                    {result.cases.map((c: any) => (
+                                                        <div key={String(c._id)} className={`rounded-xl p-3 ${isDark ? 'bg-black/30 border border-white/10' : 'bg-gray-50/60 border border-gray-200/60'}`}>
+                                                            <div className="flex gap-3">
+                                                                {/* Image gallery - show first image, with indicator if more exist */}
+                                                                <div className="relative">
+                                                                    {Array.isArray(c.images) && c.images.length > 0 ? (
+                                                                        <div className="relative">
+                                                                            <img 
+                                                                                src={`/uploads/${c.images[0]}`} 
+                                                                                alt={c.title || 'image'} 
+                                                                                className="w-20 h-20 object-cover rounded-lg border border-black/10" 
+                                                                            />
+                                                                            {c.images.length > 1 && (
+                                                                                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium ${isDark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}>
+                                                                                    +{c.images.length - 1}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className={`w-20 h-20 rounded-lg flex items-center justify-center text-xs ${isDark ? 'bg-gray-800/60 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>No image</div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center justify-between gap-2">
+                                                                        <div className={`font-medium truncate ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{c.title}</div>
+                                                                        <span className={`text-xs px-2 py-0.5 rounded-full ${c.type === 'found' ? (isDark ? 'bg-green-500/20 text-green-300' : 'bg-green-100 text-green-700') : (isDark ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-700')}`}>{c.type}</span>
+                                                                    </div>
+                                                                    <div className={`text-xs mt-1 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c.description}</div>
+                                                                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                                                                        <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>By {c?.reportedBy?.name || 'Unknown'}</span>
+                                                                        {c?.reportedBy?.email && (
+                                                                            <>
+                                                                                <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                                                                                <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c.reportedBy.email}</span>
+                                                                            </>
+                                                                        )}
+                                                                        <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                                                                        <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{c?.location?.address || 'No address'}</span>
+                                                                        <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                                                                        <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{new Date(c.createdAt || c.reportedTime).toLocaleString()}</span>
+                                                                    </div>
+                                                                    {/* Show additional images count if more than 1 */}
+                                                                    {Array.isArray(c.images) && c.images.length > 1 && (
+                                                                        <div className={`mt-1 text-xs ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
+                                                                            {c.images.length} image{c.images.length !== 1 ? 's' : ''} available
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {/* Action Buttons */}
+                                                                    <div className="mt-3 flex gap-2 justify-end">
+                                                                        <button
+                                                                            onClick={() => openCaseDetail(c)}
+                                                                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                                                                                isDark 
+                                                                                    ? 'bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/30' 
+                                                                                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                                                                            }`}
+                                                                        >
+                                                                            View Details
+                                                                        </button>
+                                                                        {/* Show Claim button only if we have a lost case ID and case is not resolved */}
+                                                                        {userLostCaseId && c.status !== 'resolved' && (
+                                                                            <button
+                                                                                onClick={() => handleClaimFoundItem(c._id)}
+                                                                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                                                                                    isDark 
+                                                                                        ? 'bg-green-600/20 text-green-300 hover:bg-green-600/30 border border-green-500/30' 
+                                                                                        : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                                                                                }`}
+                                                                            >
+                                                                                Claim This
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                </motion.div>
+                            )}
+                        </React.Fragment>
+                    ))
+                    )}
                 </div>
 
                 {/* Chat Input Section */}
@@ -582,6 +1065,8 @@ export default function AgenticSearchPage() {
                     variants={{ hidden: { opacity: 0, y: 50 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeInOut" } } }}
                     className="w-full pb-4"
                 >
+                    {/* Feed Results integrated into chat */}
+                    {/* This section is now empty as feed results are rendered inline with messages */}
                     <div className={`w-full rounded-2xl border overflow-hidden transition-all duration-300 shadow-lg ${
                         isDark 
                             ? 'bg-gray-900/40 border-gray-800/40 backdrop-blur-xl focus-within:border-blue-400/60 focus-within:ring-1 focus-within:ring-blue-400/30' 
@@ -675,8 +1160,30 @@ export default function AgenticSearchPage() {
             </motion.div>
 
             <AnimatePresence>
+                {showScrollButton && (
+                    <motion.button
+                        key="scrollBtn"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        onClick={() => scrollToBottom()}
+                        className={`fixed ${isSending ? 'bottom-32' : 'bottom-24'} right-6 z-30 p-3 rounded-full shadow-lg transition-all duration-200 ${
+                            isDark 
+                                ? 'bg-gray-800/90 text-gray-200 hover:bg-gray-700/90 border border-gray-600/50' 
+                                : 'bg-white/90 text-gray-700 hover:bg-gray-50/90 border border-gray-200/60'
+                        } backdrop-blur-md hover:shadow-xl`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </motion.button>
+                )}
                 {isSending && (
                     <motion.div 
+                        key="thinking"
                         initial={{ opacity: 0, y: 10 }} 
                         animate={{ opacity: 1, y: 0 }} 
                         exit={{ opacity: 0, y: -10 }} 
@@ -697,8 +1204,15 @@ export default function AgenticSearchPage() {
                         </div>
                     </motion.div>
                 )}
-                {isRecording && <RecordingIndicator onStop={stopRecording} audioLevel={audioLevel} />}
+                {isRecording && <RecordingIndicator key="recOverlay" onStop={stopRecording} audioLevel={audioLevel} />}
             </AnimatePresence>
+
+            {/* Case Detail Modal */}
+            <CaseDetailModal
+                case={selectedCase}
+                isOpen={isModalOpen}
+                onClose={closeCaseDetail}
+            />
         </motion.div>
     );
 }

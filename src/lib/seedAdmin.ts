@@ -4,19 +4,23 @@ import { hashPassword } from './password';
 
 export async function seedAdminUser() {
   try {
+    console.log('Connecting to MongoDB...');
     await connectDB();
+    console.log('Connected to MongoDB successfully');
     
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@gotus.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123456';
     
+    console.log('Checking for existing admin user...');
     // Check if admin already exists
     const existingAdmin = await User.findOne({ email: adminEmail, role: 'admin' });
     
     if (existingAdmin) {
-      console.log('Admin user already exists');
+      console.log('Admin user already exists:', adminEmail);
       return existingAdmin;
     }
     
+    console.log('Creating new admin user...');
     // Create admin user
     const hashedPassword = await hashPassword(adminPassword);
     
@@ -42,7 +46,8 @@ export async function seedAdminUser() {
     
     console.log('Admin user created successfully:', {
       email: adminEmail,
-      password: adminPassword // In production, don't log passwords
+      role: 'admin',
+      // Don't log password in production
     });
     
     return adminUser;
@@ -55,9 +60,12 @@ export async function seedAdminUser() {
 // Auto-seed on server startup
 export async function initializeDatabase() {
   try {
-    await seedAdminUser();
-    console.log('Database initialization completed');
+    console.log('Starting database initialization...');
+    const admin = await seedAdminUser();
+    console.log('Database initialization completed successfully');
+    return admin;
   } catch (error) {
     console.error('Database initialization failed:', error);
+    throw error; // Re-throw to be handled by caller
   }
 }

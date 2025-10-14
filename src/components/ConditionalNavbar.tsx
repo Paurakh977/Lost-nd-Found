@@ -10,10 +10,9 @@ export default function ConditionalNavbar() {
   const hiddenPaths = [
     '/sign-in',
     '/sign-up',
-    '/admin/dashboard',
-    '/officer/dashboard',
-    '/institutional/dashboard',
-    
+    '/admin',
+    '/officer',
+    '/institutional',
   ];
 
   // Check if pathname starts with any of the hidden paths

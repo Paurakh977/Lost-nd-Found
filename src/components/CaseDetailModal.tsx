@@ -1,0 +1,541 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from "framer-motion";
+import { X, ChevronLeft, ChevronRight, MapPin, Calendar, User, Tag, DollarSign, AlertCircle, CheckCircle, FileText, UserCheck } from "lucide-react";
+import { useTheme } from "./ThemeProvider";
+
+interface CaseDetailModalProps {
+  case: any;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function CaseDetailModal({ case: caseData, isOpen, onClose }: CaseDetailModalProps) {
+  const { isDark } = useTheme();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [reporterInfo, setReporterInfo] = useState<{
+    name: string;
+    email?: string;
+    isJWTUser?: boolean;
+  } | null>(null);
+
+  // Fetch reporter information when case data changes
+  useEffect(() => {
+    const fetchReporterInfo = async () => {
+      if (!caseData?.reportedBy?.clerkId) return;
+
+      try {
+        // Check if it's a JWT user (institutional/officer/admin) by trying to fetch from our API
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user && data.user.id === caseData.reportedBy.clerkId) {
+            // It's a JWT user, use the data from our API
+            setReporterInfo({
+              name: `${data.user.firstName} ${data.user.lastName}`.trim() || data.user.email,
+              email: data.user.email,
+              isJWTUser: true
+            });
+            return;
+          }
+        }
+        
+        // If not a JWT user, it's likely a Clerk user
+        // For Clerk users, we'll use the data from the case
+        setReporterInfo({
+          name: caseData.reportedBy.name || 'Unknown',
+          email: caseData.reportedBy.email,
+          isJWTUser: false
+        });
+      } catch (error) {
+        console.error('Error fetching reporter info:', error);
+        // Fallback to case data
+        setReporterInfo({
+          name: caseData.reportedBy.name || 'Unknown',
+          email: caseData.reportedBy.email,
+          isJWTUser: false
+        });
+      }
+    };
+
+    fetchReporterInfo();
+  }, [caseData]);
+
+  if (!caseData) return null;
+
+  const images = Array.isArray(caseData.images) ? caseData.images : [];
+  const hasMultipleImages = images.length > 1;
+
+  const resolveImageSrc = (img: string) => {
+    if (!img) return '';
+    if (img.startsWith('http') || img.startsWith('/')) return img;
+    return `/uploads/${img}`;
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const formatDate = (date: string | Date) => {
+    try {
+      return new Date(date).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Unknown';
+    }
+  };
+
+  const modal = (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[10000] bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl ${
+                isDark ? 'bg-gray-900/95 border border-gray-800/50' : 'bg-white/95 border border-gray-200/50'
+              } backdrop-blur-xl shadow-2xl`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className={`px-6 py-4 border-b ${isDark ? 'border-gray-800/50' : 'border-gray-200/50'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      caseData.type === 'found' 
+                        ? (isDark ? 'bg-green-500/20 text-green-300' : 'bg-green-100 text-green-700')
+                        : (isDark ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-700')
+                    }`}>
+                      {caseData.type?.toUpperCase()}
+                    </span>
+                    <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {caseData.title}
+                    </h2>
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className={`p-2 rounded-full transition-colors ${
+                      isDark ? 'hover:bg-gray-800/50 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+                <div className="grid md:grid-cols-2 gap-6 p-6">
+                  {/* Images Section */}
+                  <div className="space-y-4">
+                    {images.length > 0 ? (
+                      <div className="relative">
+                        <div className="aspect-square overflow-hidden rounded-xl border border-gray-200/20">
+                          <img
+                            src={resolveImageSrc(images[currentImageIndex])}
+                            alt={`${caseData.title} - Image ${currentImageIndex + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        
+                        {hasMultipleImages && (
+                          <>
+                            {/* Navigation buttons */}
+                            <button
+                              onClick={prevImage}
+                              className={`absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full ${
+                                isDark ? 'bg-black/50 text-white hover:bg-black/70' : 'bg-white/80 text-gray-800 hover:bg-white'
+                              } backdrop-blur-sm transition-all`}
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={nextImage}
+                              className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full ${
+                                isDark ? 'bg-black/50 text-white hover:bg-black/70' : 'bg-white/80 text-gray-800 hover:bg-white'
+                              } backdrop-blur-sm transition-all`}
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                            
+                            {/* Image counter */}
+                            <div className={`absolute bottom-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${
+                              isDark ? 'bg-black/50 text-white' : 'bg-white/80 text-gray-800'
+                            } backdrop-blur-sm`}>
+                              {currentImageIndex + 1} / {images.length}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className={`aspect-square flex items-center justify-center rounded-xl border-2 border-dashed ${
+                        isDark ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-400'
+                      }`}>
+                        <div className="text-center">
+                          <AlertCircle className="w-12 h-12 mx-auto mb-2" />
+                          <p>No images available</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Image thumbnails */}
+                    {hasMultipleImages && (
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {images.map((img: string, idx: number) => (
+                          <button
+                            key={idx}
+                            onClick={() => setCurrentImageIndex(idx)}
+                            className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                              idx === currentImageIndex
+                                ? (isDark ? 'border-blue-500' : 'border-blue-600')
+                                : 'border-transparent opacity-60 hover:opacity-100'
+                            }`}
+                          >
+                            <img
+                              src={resolveImageSrc(img)}
+                              alt={`Thumbnail ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Details Section */}
+                  <div className="space-y-6">
+                    {/* Description */}
+                    <div>
+                      <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Description
+                      </h3>
+                      <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {caseData.description || 'No description provided'}
+                      </p>
+                    </div>
+
+                    {/* Item Details */}
+                    {caseData.itemDetails && (
+                      <div>
+                        <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          Item Details
+                        </h3>
+                        <div className="space-y-3">
+                          {caseData.itemDetails.detailedDescription && (
+                            <div>
+                              <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Detailed Description
+                              </label>
+                              <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {caseData.itemDetails.detailedDescription}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            {caseData.itemDetails.brand && (
+                              <div>
+                                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  Brand
+                                </label>
+                                <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                  {caseData.itemDetails.brand}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {caseData.itemDetails.model && (
+                              <div>
+                                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  Model
+                                </label>
+                                <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                  {caseData.itemDetails.model}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {caseData.itemDetails.color && (
+                              <div>
+                                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  Color
+                                </label>
+                                <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                  {caseData.itemDetails.color}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {caseData.itemDetails.category && (
+                              <div>
+                                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  Category
+                                </label>
+                                <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                  {caseData.itemDetails.category}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {caseData.itemDetails.identifyingFeatures && (
+                            <div>
+                              <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Identifying Features
+                              </label>
+                              <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {caseData.itemDetails.identifyingFeatures}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {caseData.itemDetails.estimatedValue && (
+                            <div className="flex items-center gap-2">
+                              <DollarSign className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                              <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                Estimated Value: ${caseData.itemDetails.estimatedValue}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Location & Time */}
+                    <div className="space-y-3">
+                      <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Location & Time
+                      </h3>
+                      
+                      {caseData.location && (
+                        <div className="flex items-start gap-2">
+                          <MapPin className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                          <div>
+                            <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {caseData.location.address}
+                            </p>
+                            {caseData.location.details && (
+                              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {caseData.location.details}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2">
+                        <Calendar className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                        <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                          Reported: {formatDate(caseData.reportedTime || caseData.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Reporter Info */}
+                    {caseData.reportedBy && (
+                      <div className="space-y-2">
+                        <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          Reported By
+                        </h3>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <User className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                            <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {reporterInfo?.name || caseData.reportedBy.name || 'Unknown'}
+                            </span>
+                            {reporterInfo?.isJWTUser && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                Institutional
+                              </span>
+                            )}
+                          </div>
+                          {(reporterInfo?.email || caseData.reportedBy.email) && (
+                            <div className="flex items-center gap-2 ml-6">
+                              <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Email:
+                              </span>
+                              <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {reporterInfo?.email || caseData.reportedBy.email}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Status & Urgency */}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Tag className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                        <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                          Status: <span className="capitalize">{caseData.status || 'pending'}</span>
+                        </span>
+                      </div>
+                      
+                      {caseData.urgencyLevel && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          caseData.urgencyLevel === 'high'
+                            ? (isDark ? 'bg-red-500/20 text-red-300' : 'bg-red-100 text-red-700')
+                            : caseData.urgencyLevel === 'medium'
+                            ? (isDark ? 'bg-yellow-500/20 text-yellow-300' : 'bg-yellow-100 text-yellow-700')
+                            : (isDark ? 'bg-gray-500/20 text-gray-300' : 'bg-gray-100 text-gray-700')
+                        }`}>
+                          {caseData.urgencyLevel} priority
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Resolution Information */}
+                    {caseData.status === 'resolved' && caseData.resolution && (
+                      <div className={`mt-6 p-4 rounded-xl border-2 ${
+                        isDark ? 'bg-green-500/10 border-green-500/20' : 'bg-green-50 border-green-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-4">
+                          <CheckCircle className={`w-5 h-5 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+                          <h3 className={`text-lg font-semibold ${isDark ? 'text-green-300' : 'text-green-900'}`}>
+                            Resolution Details
+                          </h3>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {/* Outcome */}
+                          <div>
+                            <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-green-300/70' : 'text-green-700'}`}>
+                              Outcome
+                            </label>
+                            <p className={`text-sm ${isDark ? 'text-green-200' : 'text-green-900'}`}>
+                              {caseData.resolution.outcome}
+                            </p>
+                          </div>
+
+                          {/* Notes */}
+                          {caseData.resolution.notes && (
+                            <div>
+                              <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-green-300/70' : 'text-green-700'}`}>
+                                <FileText className="w-3 h-3 inline mr-1" />
+                                Notes
+                              </label>
+                              <p className={`text-sm ${isDark ? 'text-green-200' : 'text-green-900'}`}>
+                                {caseData.resolution.notes}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Resolved By */}
+                          {caseData.resolution.resolvedBy && (
+                            <div className="flex items-center gap-2">
+                              <UserCheck className={`w-4 h-4 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+                              <span className={`text-sm ${isDark ? 'text-green-200' : 'text-green-900'}`}>
+                                Resolved by: {typeof caseData.resolution.resolvedBy === 'object' 
+                                  ? `${caseData.resolution.resolvedBy.firstName} ${caseData.resolution.resolvedBy.lastName}` 
+                                  : 'Officer'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Resolved At */}
+                          {caseData.resolution.resolvedAt && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className={`w-4 h-4 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+                              <span className={`text-sm ${isDark ? 'text-green-200' : 'text-green-900'}`}>
+                                Resolved on: {formatDate(caseData.resolution.resolvedAt)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Item Assigned To */}
+                          {caseData.resolution.itemAssignedTo && (
+                            <div className={`mt-3 p-3 rounded-lg ${
+                              isDark ? 'bg-green-600/10' : 'bg-white'
+                            }`}>
+                              <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-green-300/70' : 'text-green-700'}`}>
+                                Item Assigned To
+                              </label>
+                              <div className="space-y-1">
+                                <p className={`text-sm font-medium ${isDark ? 'text-green-100' : 'text-green-900'}`}>
+                                  {caseData.resolution.itemAssignedTo.name}
+                                </p>
+                                {caseData.resolution.itemAssignedTo.contactInfo && (
+                                  <p className={`text-xs ${isDark ? 'text-green-200/70' : 'text-green-700'}`}>
+                                    Contact: {caseData.resolution.itemAssignedTo.contactInfo}
+                                  </p>
+                                )}
+                                {caseData.resolution.itemAssignedTo.clerkId && (
+                                  <p className={`text-xs ${isDark ? 'text-green-200/70' : 'text-green-700'}`}>
+                                    User ID: {caseData.resolution.itemAssignedTo.clerkId}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Found By */}
+                          {caseData.resolution.foundBy && (
+                            <div className={`mt-3 p-3 rounded-lg ${
+                              isDark ? 'bg-green-600/10' : 'bg-white'
+                            }`}>
+                              <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-green-300/70' : 'text-green-700'}`}>
+                                Found By
+                              </label>
+                              <div className="space-y-1">
+                                <p className={`text-sm font-medium ${isDark ? 'text-green-100' : 'text-green-900'}`}>
+                                  {caseData.resolution.foundBy.name}
+                                </p>
+                                {caseData.resolution.foundBy.contactInfo && (
+                                  <p className={`text-xs ${isDark ? 'text-green-200/70' : 'text-green-700'}`}>
+                                    Contact: {caseData.resolution.foundBy.contactInfo}
+                                  </p>
+                                )}
+                                {caseData.resolution.foundBy.clerkId && (
+                                  <p className={`text-xs ${isDark ? 'text-green-200/70' : 'text-green-700'}`}>
+                                    User ID: {caseData.resolution.foundBy.clerkId}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+
+  // Render in a portal to avoid clipping within transformed/overflow ancestors
+  if (typeof window !== 'undefined') {
+    const root = document.body;
+    return createPortal(modal, root);
+  }
+  return modal;
+}
