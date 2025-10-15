@@ -7,6 +7,7 @@ import { MapPin, Clock, User, Package, Shield, CheckCircle, ArrowLeft, AlertCirc
 import { useToast } from '@/hooks/useToast';
 import { useUser } from '@clerk/nextjs';
 import ItemPlaceholder from '@/components/ItemPlaceholder';
+import dynamic from 'next/dynamic';
 
 // JWT User interface
 interface JWTUser {
@@ -77,6 +78,54 @@ interface Officer {
 
 interface LocationData {
   provinces: Array<{ name: string; districts: Array<{ name: string; municipalities: Array<{ name: string }> }> }>;
+}
+
+const ChatModal = dynamic(() => import('@/components/ChatModal'), { ssr: false });
+
+function CommunicationButtons({ caseItem, currentUser, caseId }: { caseItem: any; currentUser: any; caseId: string }) {
+  const [openConv, setOpenConv] = React.useState<string | null>(null);
+  const { pushToast } = useToast();
+
+  const myId = currentUser?.id;
+  const canMessageOfficer = !!caseItem.assignedOfficer?._id;
+  const canMessageReporter = !!caseItem.reportedBy?.clerkId;
+
+  const startChat = async (targetRole: 'officer' | 'reporter') => {
+    if (!myId) {
+      pushToast('error', 'Sign in required', 'Please sign in to send messages');
+      return;
+    }
+    const participantId = targetRole === 'officer' ? caseItem.assignedOfficer._id : caseItem.reportedBy.clerkId;
+    try {
+      const res = await fetch('/api/conversations/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId, caseId, role: targetRole === 'officer' ? 'officer' : 'user' })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOpenConv(String(data.conversation._id));
+      } else {
+        pushToast('error', 'Failed to start chat', data.error || '');
+      }
+    } catch (e) {
+      pushToast('error', 'Failed to start chat', 'Network error');
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {canMessageOfficer && (
+        <button onClick={() => startChat('officer')} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">💬 Message Officer</button>
+      )}
+      {canMessageReporter && (
+        <button onClick={() => startChat('reporter')} className="w-full bg-gray-900 text-white py-2 rounded-lg hover:bg-gray-800">💬 Message Finder/Reporter</button>
+      )}
+      {openConv && currentUser?.id && (
+        <ChatModal conversationId={openConv} currentUserId={currentUser.id} onClose={() => setOpenConv(null)} />
+      )}
+    </div>
+  );
 }
 
 export default function PublicCaseDetailPage() {
@@ -729,6 +778,12 @@ export default function PublicCaseDetailPage() {
                   {caseItem.reportedBy.email}
                 </a>
               </div>
+            </div>
+
+            {/* Communication */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Communication</h3>
+              <CommunicationButtons caseItem={caseItem} currentUser={user} caseId={params.caseId} />
             </div>
           </div>
         </motion.div>

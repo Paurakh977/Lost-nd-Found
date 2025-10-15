@@ -38,6 +38,7 @@ export default function OfficerNavbar({ currentUser, onSignOut, stats }: Officer
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [messagesUnreadCount, setMessagesUnreadCount] = useState(0);
   
   // Use real notifications hook
   const { 
@@ -46,6 +47,21 @@ export default function OfficerNavbar({ currentUser, onSignOut, stats }: Officer
     markAsRead, 
     markAllAsRead 
   } = useOfficerNotifications();
+
+  // Fetch unread messages count (poll)
+  useEffect(() => {
+    let mounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/conversations/unread-count');
+        const data = await res.json();
+        if (mounted && res.ok && data.success) setMessagesUnreadCount(data.count || 0);
+      } catch {}
+    };
+    fetchUnread();
+    const t = setInterval(fetchUnread, 30000);
+    return () => { mounted = false; clearInterval(t); };
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -358,6 +374,22 @@ export default function OfficerNavbar({ currentUser, onSignOut, stats }: Officer
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </motion.button>
+
+              {/* Messages Link */}
+                <motion.button
+                  type="button"
+                  className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200"
+                  onClick={() => handleNavigation('/officer/messages')}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="font-medium">Messages</span>
+                  {messagesUnreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {messagesUnreadCount > 9 ? '9+' : messagesUnreadCount}
+                    </span>
+                  )}
+                </motion.button>
 
               {/* Notifications */}
               <div className="relative">
