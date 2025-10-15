@@ -31,7 +31,9 @@ export interface IUser extends Document {
     address?: string; // Full address from reverse geocoding
   };
   // Profile image for JWT users (not used for Clerk users)
-  profileImage?: string; // Filename stored in /uploads/profile directory
+  // Stores only the filename (e.g., '12345-1234567890.jpg'), not a full URL
+  // To construct the image URL, use: `/api/profile/image/${profileImage}`
+  profileImage?: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -120,7 +122,7 @@ const UserSchema = new Schema<IUser>({
       type: String,
     },
   },
-  // Profile image for JWT users
+  // Profile image for JWT users - stores filename only (e.g., '12345-1234567890.jpg')
   profileImage: {
     type: String,
     required: false,
