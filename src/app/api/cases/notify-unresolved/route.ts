@@ -347,6 +347,25 @@ export async function POST(req: NextRequest) {
       }
     }
     
+    // Fetch the FOUND case document to use for email content
+    let foundCaseDoc: any = null;
+    if (actualFoundCaseId && mongoose.Types.ObjectId.isValid(actualFoundCaseId)) {
+      try {
+        foundCaseDoc = await casesCollection.findOne({
+          _id: new mongoose.Types.ObjectId(actualFoundCaseId)
+        });
+        
+        if (foundCaseDoc) {
+          console.log(`[notify-unresolved] ✅ Fetched FOUND case ${actualFoundCaseId} for email content`);
+        } else {
+          console.warn(`[notify-unresolved] ⚠️ FOUND case ${actualFoundCaseId} not found in database`);
+        }
+      } catch (err) {
+        console.error('[notify-unresolved] Error fetching FOUND case:', err);
+        foundCaseDoc = null;
+      }
+    }
+    
     // Send emails
     const emailResults = {
       sent: 0,
@@ -357,9 +376,18 @@ export async function POST(req: NextRequest) {
     for (const caseDoc of unresolvedCases) {
       try {
         const caseId = String(caseDoc._id);
-        const itemType = caseDoc.type || 'lost';
-        const title = caseDoc.title || 'Untitled Item';
-        const description = caseDoc.description || 'No description provided';
+        
+        // Use FOUND case details for email content if available, otherwise fall back to LOST case
+        const displayCase = foundCaseDoc || caseDoc;
+        const isFallback = !foundCaseDoc;
+        
+        if (isFallback) {
+          console.warn(`[notify-unresolved] ⚠️ Using LOST case ${caseId} details as fallback (FOUND case not available)`);
+        }
+        
+        const itemType = displayCase.type || 'found';
+        const title = displayCase.title || 'Untitled Item';
+        const description = displayCase.description || 'No description provided';
 
         // Determine reporter info (lost reporter)
         let lostReporterName = caseDoc.reportedBy?.name || 'Anonymous';
@@ -384,14 +412,14 @@ export async function POST(req: NextRequest) {
         const finderName = finder?.name || 'A GOTUS user';
         const finderEmail = finder?.email || '';
 
-        const locationAddress = caseDoc.location?.address || 'Unknown location';
-        const locationDetails = caseDoc.location?.details || '';
+        const locationAddress = displayCase.location?.address || 'Unknown location';
+        const locationDetails = displayCase.location?.details || '';
         const fullLocation = locationDetails 
           ? `${locationAddress} - ${locationDetails}`
           : locationAddress;
 
-        const reportedTime = caseDoc.reportedTime 
-          ? new Date(caseDoc.reportedTime).toLocaleString('en-US', {
+        const reportedTime = displayCase.reportedTime 
+          ? new Date(displayCase.reportedTime).toLocaleString('en-US', {
               year: 'numeric',
               month: 'long',
               day: 'numeric',
@@ -401,8 +429,8 @@ export async function POST(req: NextRequest) {
           : 'Unknown';
 
         let itemImageUrl = `${appUrl}/placeholder-item.png`;
-        if (caseDoc.images && caseDoc.images.length > 0) {
-          const imagePath = caseDoc.images[0];
+        if (displayCase.images && displayCase.images.length > 0) {
+          const imagePath = displayCase.images[0];
           if (imagePath.startsWith('http')) {
             itemImageUrl = imagePath;
           } else if (imagePath.startsWith('/')) {
@@ -411,12 +439,17 @@ export async function POST(req: NextRequest) {
             itemImageUrl = `${appUrl}/uploads/${imagePath}`;
           }
         }
-        // Include foundCaseId in URL if available, so claim submissions can link cases
+        // Link to FOUND case (primary view) with lostCaseId param (for claim linking)
+        // This way users see the FOUND item details and can claim it as theirs
         const caseDetailUrl = actualFoundCaseId 
-          ? `${appUrl}/cases/${caseId}?foundCaseId=${actualFoundCaseId}`
+          ? `${appUrl}/cases/${actualFoundCaseId}?lostCaseId=${caseId}`
           : `${appUrl}/cases/${caseId}`;
         
-        console.log(`[notify-unresolved] Email URL for case ${caseId}: ${caseDetailUrl}`);
+        console.log(`[notify-unresolved] Email URL for LOST case ${caseId}: ${caseDetailUrl}`, {
+          showingFoundCase: !!actualFoundCaseId,
+          foundCaseId: actualFoundCaseId || 'none',
+          lostCaseId: caseId
+        });
         const envLogo = process.env.NEXT_PUBLIC_LOGO_URL || process.env.LOGO_URL;
         const logoUrl = envLogo || `${appUrl}/Logo.png`;
 
@@ -442,6 +475,14 @@ export async function POST(req: NextRequest) {
           reporter_email: finderEmail || lostReporterEmail, // Contact: prefer finder email, fallback to lost reporter
           case_detail_url: caseDetailUrl
         };
+        
+        console.log(`[notify-unresolved] Email content for LOST case ${caseId}:`, {
+          usingFoundCase: !isFallback,
+          foundCaseId: actualFoundCaseId || 'none',
+          emailTitle: title,
+          emailType: itemType,
+          recipientEmail: lostReporterEmail ? `${lostReporterEmail.substring(0, 3)}***` : 'none'
+        });
 
         const htmlContent = generateEmailHTML(emailData);
 

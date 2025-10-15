@@ -42,12 +42,44 @@ export default function CaseDetailPage() {
   const [claimsLoading, setClaimsLoading] = useState(false);
   const [claimsError, setClaimsError] = useState<string | null>(null);
   const [expandedClaimId, setExpandedClaimId] = useState<string | null>(null);
+  
+  // Related found case (when viewing a LOST case)
+  const [relatedFoundCase, setRelatedFoundCase] = useState<any>(null);
+  const [relatedCaseLoading, setRelatedCaseLoading] = useState(false);
 
   // Fetch claims for verification cases
   useEffect(() => {
     if (caseItem && caseItem.type === 'verification') {
       fetchClaims();
     }
+  }, [caseItem]);
+  
+  // Fetch related found case if foundCaseId query param exists
+  useEffect(() => {
+    const fetchRelatedCase = async () => {
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        const foundCaseId = searchParams.get('foundCaseId');
+        
+        if (foundCaseId && caseItem) {
+          try {
+            setRelatedCaseLoading(true);
+            const res = await fetch(`/api/officer/cases/${foundCaseId}`, { credentials: 'include' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              setRelatedFoundCase(data.case);
+              console.log('[Officer Case Detail] Related FOUND case loaded:', foundCaseId);
+            }
+          } catch (e) {
+            console.error('[Officer Case Detail] Error fetching related case:', e);
+          } finally {
+            setRelatedCaseLoading(false);
+          }
+        }
+      }
+    };
+    
+    fetchRelatedCase();
   }, [caseItem]);
 
   const fetchClaims = async () => {
@@ -149,6 +181,58 @@ export default function CaseDetailPage() {
             <div className="mt-6">
               <h2 className="text-lg font-semibold mb-2">Assigned Officer</h2>
               <div className="flex items-center gap-2 text-sm"><User className="w-4 h-4" /> {caseItem.assignedOfficer.firstName} {caseItem.assignedOfficer.lastName} ({caseItem.assignedOfficer.email})</div>
+            </div>
+          )}
+
+          {/* Related Found Case Section */}
+          {relatedFoundCase && (
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2 text-blue-900">
+                <CheckCircle className="w-5 h-5" />
+                Related Found Item
+              </h2>
+              <div className="bg-white rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  {relatedFoundCase.images && relatedFoundCase.images.length > 0 ? (
+                    <img 
+                      src={`/uploads/${relatedFoundCase.images[0]}`}
+                      alt={relatedFoundCase.title} 
+                      className="w-20 h-20 rounded-lg object-cover border border-gray-200"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <ItemPlaceholder className="w-20 h-20 rounded-lg border border-gray-200" itemType={relatedFoundCase.type} />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">{relatedFoundCase.title}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{relatedFoundCase.description}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t">
+                  <div>
+                    <span className="text-gray-500">Found By:</span>
+                    <p className="font-medium">{relatedFoundCase.reportedBy.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Location:</span>
+                    <p className="font-medium">{relatedFoundCase.location.address}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-gray-500">Reported Time:</span>
+                    <p className="font-medium">{new Date(relatedFoundCase.reportedTime).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="pt-2">
+                  <a 
+                    href={`/officer/cases/${relatedFoundCase._id}`}
+                    className="text-blue-600 text-sm hover:underline flex items-center gap-1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View Full Found Case Details →
+                  </a>
+                </div>
+              </div>
             </div>
           )}
 
