@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
+import io from 'socket.io-client';
 import ChatPanel from '../../components/ChatPanel';
 
 export default function UserMessagesPage() {
+  const { user: clerkUser } = useUser();
   const [conversations, setConversations] = useState<any[]>([]);
   const [selected, setSelected] = useState<any | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -41,15 +44,25 @@ export default function UserMessagesPage() {
   useEffect(() => {
     const getMe = async () => {
       try {
+        // Try JWT first
         const jwtRes = await fetch('/api/auth/me');
         if (jwtRes.ok) {
           const data = await jwtRes.json();
-          if (data?.success && data?.user) setCurrentUserId(String(data.user.id));
+          if (data?.success && data?.user) {
+            setCurrentUserId(String(data.user.id));
+            return;
+          }
         }
-      } catch {}
+        // If no JWT user, use Clerk user ID
+        if (clerkUser?.id) {
+          setCurrentUserId(clerkUser.id);
+        }
+      } catch (err) {
+        console.error('Error fetching current user:', err);
+      }
     };
     getMe();
-  }, []);
+  }, [clerkUser]);
 
   const fetchConversations = async () => {
     const res = await fetch('/api/conversations');
@@ -59,6 +72,36 @@ export default function UserMessagesPage() {
 
   useEffect(() => { fetchConversations(); }, []);
 
+  // Socket listener for real-time conversation updates
+  useEffect(() => {
+    if (!currentUserId) return;
+    
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const socket = io(baseUrl, { path: '/socket.io/' });
+    
+    socket.emit('register_user', currentUserId);
+    
+    // Listen for new messages to update conversation list
+    socket.on('new_message', () => {
+      fetchConversations();
+    });
+    
+    // Listen for conversation updates
+    socket.on('conversation_updated', () => {
+      fetchConversations();
+    });
+    
+    return () => {
+      socket.disconnect();
+    };
+  }, [currentUserId]);
+
+  const handleConversationSelect = (conversation: any) => {
+    setSelected(conversation);
+    // Refetch after a short delay to update unread counts
+    setTimeout(() => fetchConversations(), 500);
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">Messages</h1>
@@ -66,7 +109,7 @@ export default function UserMessagesPage() {
         <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-xl border dark:border-gray-700 p-4">
           <div className="divide-y dark:divide-gray-700">
             {conversations.map((c: any) => (
-              <button key={c._id} onClick={() => setSelected(c)} className="w-full text-left py-3 hover:bg-gray-50 dark:hover:bg-gray-700 px-2 rounded">
+              <button key={c._id} onClick={() => handleConversationSelect(c)} className="w-full text-left py-3 hover:bg-gray-50 dark:hover:bg-gray-700 px-2 rounded">
                 <div className="flex items-center gap-3">
                   {renderAvatar(c.otherParticipant?.profile?.imageUrl, c.otherParticipant?.profile?.name)}
                   <div className="flex-1 min-w-0">
@@ -83,7 +126,11 @@ export default function UserMessagesPage() {
         </div>
         <div className="md:col-span-2">
           {selected ? (
-            <ChatPanel conversationId={selected._id} currentUserId={currentUserId || 'unknown'} />
+            <ChatPanel 
+              conversationId={selected._id} 
+              currentUserId={currentUserId || 'unknown'} 
+              onMessageSent={fetchConversations}
+            />
           ) : (
             <div className="h-[70vh] flex items-center justify-center text-gray-500 dark:text-gray-400">Select a conversation</div>
           )}

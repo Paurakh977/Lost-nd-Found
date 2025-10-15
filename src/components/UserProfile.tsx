@@ -5,6 +5,7 @@ import { UserButton, useUser, useClerk } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, User, Settings, Shield, Building } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import io from 'socket.io-client';
 
 interface UserProfileProps {
   className?: string;
@@ -62,8 +63,29 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
     };
     fetchUnread();
     const t = setInterval(fetchUnread, 30000);
+    
+    // Socket listener for real-time unread count updates
+    const userId = jwtUser?.id || user?.id;
+    if (userId) {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const socket = io(baseUrl, { path: '/socket.io/' });
+      
+      socket.emit('register_user', userId);
+      
+      // Listen for new messages to update unread count
+      socket.on('new_message', () => {
+        fetchUnread();
+      });
+      
+      return () => { 
+        mounted = false; 
+        clearInterval(t); 
+        socket.disconnect();
+      };
+    }
+    
     return () => { mounted = false; clearInterval(t); };
-  }, [isLoaded, user]);
+  }, [isLoaded, user, jwtUser]);
 
   const handleSignOut = async () => {
     try {

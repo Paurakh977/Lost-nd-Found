@@ -8,9 +8,10 @@ interface ChatModalProps {
   conversationId: string;
   currentUserId: string;
   onClose: () => void;
+  onMessageSent?: () => void;
 }
 
-export default function ChatModal({ conversationId, currentUserId, onClose }: ChatModalProps) {
+export default function ChatModal({ conversationId, currentUserId, onClose, onMessageSent }: ChatModalProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [conversation, setConversation] = useState<any | null>(null);
   const [input, setInput] = useState('');
@@ -73,6 +74,8 @@ export default function ChatModal({ conversationId, currentUserId, onClose }: Ch
       const data = await res.json();
       if (res.ok && data.success) {
         setInput('');
+        // Notify parent to refresh conversation list
+        if (onMessageSent) onMessageSent();
       }
     } finally {
       setSending(false);

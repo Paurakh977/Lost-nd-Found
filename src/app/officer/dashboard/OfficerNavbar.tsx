@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import io from 'socket.io-client';
 import { 
   Bell,
   ChevronDown,
@@ -60,8 +61,28 @@ export default function OfficerNavbar({ currentUser, onSignOut, stats }: Officer
     };
     fetchUnread();
     const t = setInterval(fetchUnread, 30000);
+    
+    // Socket listener for real-time unread count updates
+    if (currentUser?.id) {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const socket = io(baseUrl, { path: '/socket.io/' });
+      
+      socket.emit('register_user', currentUser.id);
+      
+      // Listen for new messages to update unread count
+      socket.on('new_message', () => {
+        fetchUnread();
+      });
+      
+      return () => { 
+        mounted = false; 
+        clearInterval(t); 
+        socket.disconnect();
+      };
+    }
+    
     return () => { mounted = false; clearInterval(t); };
-  }, []);
+  }, [currentUser]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

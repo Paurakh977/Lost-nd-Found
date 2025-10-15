@@ -7,9 +7,10 @@ import { useUser } from '@clerk/nextjs';
 interface ChatPanelProps {
   conversationId: string;
   currentUserId: string;
+  onMessageSent?: () => void;
 }
 
-export default function ChatPanel({ conversationId, currentUserId }: ChatPanelProps) {
+export default function ChatPanel({ conversationId, currentUserId, onMessageSent }: ChatPanelProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [conversation, setConversation] = useState<any | null>(null);
   const [input, setInput] = useState('');
@@ -66,7 +67,11 @@ export default function ChatPanel({ conversationId, currentUserId }: ChatPanelPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: input.trim() })
       });
-      if (res.ok) setInput('');
+      if (res.ok) {
+        setInput('');
+        // Notify parent to refresh conversation list
+        if (onMessageSent) onMessageSent();
+      }
     } finally {
       setSending(false);
     }
