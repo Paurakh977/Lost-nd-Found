@@ -417,6 +417,101 @@ const TrustSection = () => {
   );
 };
 
+// Video Tutorial Section - Minimalistic
+const VideoTutorialSection = () => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { once: false, margin: "-100px" });
+
+  useEffect(() => {
+    if (isInView && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {
+        // Autoplay might be blocked by browser, ignore the error
+      });
+    }
+  }, [isInView]);
+
+  return (
+    <section 
+      ref={sectionRef}
+      className="relative py-28 bg-gradient-to-b from-zinc-50/85 via-zinc-50/80 via-blue-50/15 to-zinc-50/85 dark:from-zinc-900/85 dark:via-zinc-900/80 dark:via-blue-950/8 dark:to-zinc-900/85 overflow-hidden"
+    >
+      {/* Enhanced aurora background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.025),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.018),transparent)] dark:bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.035),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.028),transparent)]"></div>
+      
+      {/* Cosmic Particles */}
+      <div className="cosmic-parallax">
+        <CosmicParticles density="medium" />
+      </div>
+      
+      {/* Floating cosmic elements */}
+      <motion.div 
+        className="absolute top-1/5 left-1/8 w-20 h-20 bg-gradient-to-br from-blue-500/6 to-indigo-500/6 rounded-full blur-2xl"
+        animate={{ 
+          scale: [1, 1.3, 1],
+          opacity: [0.3, 0.6, 0.3],
+          rotate: [0, 180, 360]
+        }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div 
+        className="absolute bottom-1/5 right-1/8 w-16 h-16 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-full blur-xl"
+        animate={{ 
+          scale: [1, 1.4, 1],
+          opacity: [0.2, 0.5, 0.2],
+          rotate: [360, 180, 0]
+        }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+      />
+      
+      <motion.div
+        className="relative max-w-5xl mx-auto px-6"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+      >
+        {/* Optional minimal header */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <motion.h2 
+            className="text-2xl lg:text-3xl font-extralight text-zinc-800 dark:text-zinc-50 tracking-wide"
+            whileInView={{ opacity: [0, 1] }}
+            transition={{ duration: 1.2 }}
+          >
+            <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Quick Guide</span>
+          </motion.h2>
+        </motion.div>
+
+        {/* Video Container */}
+        <motion.div 
+          className="relative rounded-3xl overflow-hidden backdrop-blur-md bg-white/40 dark:bg-zinc-800/30 border border-white/30 dark:border-zinc-700/30 shadow-lg hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-700"
+          whileHover={{ scale: 1.01, y: -4 }}
+          transition={{ type: "spring", stiffness: 200 }}
+        >
+          {/* Subtle inner glow on hover */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5 rounded-3xl opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+          
+          <video
+            ref={videoRef}
+            src="/search_guide.mp4"
+            muted
+            loop
+            playsInline
+            className="w-full aspect-video object-contain relative z-10"
+          />
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+};
+
 // Enhanced Features Section with cosmic atmosphere
 const FeaturesSection = () => {
   const features = [
@@ -661,176 +756,6 @@ const TestimonialsSection = () => {
   );
 };
 
-// Enhanced Ethereal Pricing Section
-const PricingSection = () => {
-  const plans = [
-    {
-      name: 'Free',
-      price: '$0',
-      description: 'Perfect for individuals',
-      features: ['Basic search', 'Email notifications', 'Community access'],
-      popular: false
-    },
-    {
-      name: 'Pro',
-      price: '$19',
-      description: 'Enhanced recovery tools',
-      features: ['Advanced AI', 'Priority support', 'Multiple tracking', 'Analytics', 'Mobile app'],
-      popular: true
-    },
-    {
-      name: 'Enterprise',
-      price: 'Custom',
-      description: 'For organizations',
-      features: ['Bulk management', 'API access', 'Custom integrations', 'Dedicated support'],
-      popular: false
-    }
-  ];
-
-  return (
-    <section className="relative py-32 bg-gradient-to-b from-zinc-50/65 via-zinc-50/60 via-emerald-50/20 to-zinc-50/55 dark:from-zinc-900/65 dark:via-zinc-900/60 dark:via-emerald-950/12 dark:to-zinc-900/55 overflow-hidden">
-      {/* Enhanced ethereal aurora flows */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1000px_500px_at_20%_50%,rgba(16,185,129,0.025),transparent),radial-gradient(ellipse_800px_400px_at_80%_50%,rgba(59,130,246,0.02),transparent),radial-gradient(ellipse_600px_300px_at_50%_0%,rgba(168,85,247,0.015),transparent)] dark:bg-[radial-gradient(ellipse_1000px_500px_at_20%_50%,rgba(16,185,129,0.035),transparent),radial-gradient(ellipse_800px_400px_at_80%_50%,rgba(59,130,246,0.03),transparent),radial-gradient(ellipse_600px_300px_at_50%_0%,rgba(168,85,247,0.025),transparent)]"></div>
-      
-      {/* Ultra-dense cosmic field */}
-      <div className="cosmic-parallax">
-        <CosmicParticles density="ultra" />
-      </div>
-      
-      {/* Floating cosmic storms */}
-      <motion.div 
-        className="absolute top-1/6 left-1/12 w-36 h-36 bg-gradient-to-br from-emerald-500/6 to-blue-500/6 rounded-full blur-3xl"
-        animate={{ 
-          scale: [1, 1.5, 1],
-          opacity: [0.3, 0.7, 0.3],
-          rotate: [0, 180, 360]
-        }}
-        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div 
-        className="absolute bottom-1/6 right-1/12 w-28 h-28 bg-gradient-to-br from-blue-500/7 to-purple-500/7 rounded-full blur-2xl"
-        animate={{ 
-          scale: [1, 1.3, 1],
-          opacity: [0.4, 0.6, 0.4],
-          rotate: [360, 0]
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 5 }}
-      />
-      <motion.div 
-        className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-br from-cyan-500/4 to-emerald-500/4 rounded-full blur-xl"
-        animate={{ 
-          scale: [1, 1.6, 1],
-          opacity: [0.2, 0.5, 0.2],
-          x: [0, -40, 0],
-          y: [0, -20, 0]
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 10 }}
-      />
-      
-      <div className="relative max-w-5xl mx-auto px-6">
-        <motion.div
-          className="text-center mb-20"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.h2 
-            className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide gsap-reveal"
-            whileInView={{ opacity: [0, 1] }}
-            transition={{ duration: 1.2 }}
-          >
-            Simple <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-blue-600">Pricing</span>
-          </motion.h2>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-8 gsap-stagger-parent">
-          {plans.map((plan, i) => (
-            <motion.div
-              key={i}
-              className="relative group"
-              initial={{ opacity: 0, y: 60, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: i * 0.1, duration: 0.8, ease: "easeOut" }}
-              viewport={{ once: true }}
-            >
-              {plan.popular && (
-                <motion.div 
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-emerald-500/90 to-blue-500/90 text-white text-xs font-light rounded-full backdrop-blur-sm"
-                  initial={{ opacity: 0, scale: 0, y: 10 }}
-                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 + 0.3, type: "spring" }}
-                >
-                  Most Popular
-                </motion.div>
-              )}
-              
-              <motion.div 
-                className={cn(
-                  "relative p-8 rounded-3xl backdrop-blur-xl border transition-all duration-700 overflow-hidden",
-                  plan.popular 
-                    ? "bg-white/60 dark:bg-zinc-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:border-emerald-300/60 dark:hover:border-emerald-600/60" 
-                    : "bg-white/50 dark:bg-zinc-800/40 border-white/40 dark:border-zinc-700/30 hover:border-zinc-200/60 dark:hover:border-zinc-600/50"
-                )}
-                whileHover={{ y: -16, scale: 1.02, rotateY: 2 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
-                {/* Subtle aurora glow */}
-                <div className={cn(
-                  "absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700",
-                  plan.popular 
-                    ? "bg-gradient-to-br from-emerald-500/4 via-transparent to-blue-500/4"
-                    : "bg-gradient-to-br from-zinc-500/3 via-transparent to-slate-500/3"
-                )}></div>
-                
-                <div className="relative text-center">
-                  <h3 className="text-xl font-normal text-zinc-800 dark:text-zinc-50 mb-2 tracking-wide">
-                    {plan.name}
-                  </h3>
-                  <div className="mb-6">
-                    <span className="text-3xl font-extralight text-zinc-800 dark:text-zinc-50">{plan.price}</span>
-                    {plan.price !== 'Custom' && <span className="text-zinc-600 dark:text-zinc-300 text-sm font-normal">/mo</span>}
-                  </div>
-                  <p className="text-zinc-700 dark:text-zinc-300 text-sm font-normal mb-8 tracking-wide">
-                    {plan.description}
-                  </p>
-                  
-                  <div className="space-y-3 mb-8">
-                    {plan.features.map((feature, featureIndex) => (
-                      <motion.div 
-                        key={featureIndex}
-                        className="flex items-center justify-center gap-2"
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 + featureIndex * 0.05 }}
-                      >
-                        <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
-                        <span className="text-zinc-700 dark:text-zinc-300 text-sm font-normal tracking-wide">{feature}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-                  
-                  <motion.button
-                    className={cn(
-                      "w-full py-3 rounded-2xl font-light tracking-wide transition-all backdrop-blur-sm",
-                      plan.popular
-                        ? "bg-gradient-to-r from-emerald-500/90 to-blue-500/90 text-white hover:from-emerald-600/90 hover:to-blue-600/90"
-                        : "border border-zinc-300/50 dark:border-zinc-600/50 text-zinc-700 dark:text-zinc-300 hover:bg-white/30 dark:hover:bg-zinc-700/30"
-                    )}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {plan.price === 'Custom' ? 'Contact Sales' : 'Get Started'}
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
 
 // Enhanced How It Works with cosmic energy streams
 const HowItWorksSection = () => {
@@ -1428,9 +1353,9 @@ export default function App() {
           >
             <HeroSection />
             <TrustSection />
+            <VideoTutorialSection />
             <FeaturesSection />
             <TestimonialsSection />
-            <PricingSection />
             <HowItWorksSection />
             <CTASection />
             <Footer />
