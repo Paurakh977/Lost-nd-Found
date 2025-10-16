@@ -418,7 +418,7 @@ const TrustSection = () => {
 };
 
 // Video Tutorial Section - Minimalistic
-// Video Tutorial Section - Enhanced with smooth animations and better presentation
+// Video Tutorial Section - Minimalistic with Enhanced Theme Integration
 const VideoTutorialSection = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -433,110 +433,129 @@ const VideoTutorialSection = () => {
     }
   }, [isInView]);
 
+  const features = [
+    { 
+      icon: Zap, 
+      label: 'Quick Setup', 
+      desc: 'Start searching in under 30 seconds',
+      gradient: 'from-blue-500/20 to-cyan-500/20'
+    },
+    { 
+      icon: Search, 
+      label: 'Smart Match', 
+      desc: 'AI finds the best matches instantly',
+      gradient: 'from-indigo-500/20 to-blue-500/20'
+    },
+    { 
+      icon: Shield, 
+      label: 'Secure Process', 
+      desc: 'Your data stays private and protected',
+      gradient: 'from-purple-500/20 to-indigo-500/20'
+    }
+  ];
+
   return (
     <section 
       ref={sectionRef}
-      className="relative py-32 bg-gradient-to-b from-zinc-50/85 via-zinc-50/80 via-blue-50/15 to-zinc-50/85 dark:from-zinc-900/85 dark:via-zinc-900/80 dark:via-blue-950/8 dark:to-zinc-900/85 overflow-hidden"
+      className="relative py-32 bg-gradient-to-b from-zinc-50/85 via-white/95 to-zinc-50/85 dark:from-zinc-900/85 dark:via-zinc-900/80 dark:to-zinc-900/85 overflow-hidden"
     >
-      {/* Enhanced aurora background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.025),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.018),transparent)] dark:bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.035),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.028),transparent)]"></div>
+      {/* Subtle aurora background for light theme */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1400px_700px_at_50%_-50%,rgba(59,130,246,0.04),transparent),radial-gradient(ellipse_900px_450px_at_20%_80%,rgba(99,102,241,0.03),transparent)] dark:bg-[radial-gradient(ellipse_1400px_700px_at_50%_-50%,rgba(99,102,241,0.035),transparent),radial-gradient(ellipse_900px_450px_at_20%_80%,rgba(139,92,246,0.028),transparent)]"></div>
       
-      {/* Cosmic Particles */}
-      <div className="cosmic-parallax">
-        <CosmicParticles density="medium" />
+      {/* Cosmic Particles - more visible in light theme */}
+      <div className="cosmic-parallax opacity-60 dark:opacity-100">
+        <CosmicParticles density="low" />
       </div>
       
-      {/* Floating cosmic elements */}
+      {/* Subtle floating elements */}
       <motion.div 
-        className="absolute top-1/5 left-1/8 w-20 h-20 bg-gradient-to-br from-blue-500/6 to-indigo-500/6 rounded-full blur-2xl"
+        className="absolute top-1/4 left-1/12 w-32 h-32 bg-gradient-to-br from-blue-400/8 to-indigo-400/8 dark:from-blue-500/6 dark:to-indigo-500/6 rounded-full blur-3xl"
         animate={{ 
-          scale: [1, 1.3, 1],
-          opacity: [0.3, 0.6, 0.3],
-          rotate: [0, 180, 360]
+          scale: [1, 1.2, 1],
+          opacity: [0.4, 0.6, 0.4],
+          x: [0, 20, 0]
         }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div 
-        className="absolute bottom-1/5 right-1/8 w-16 h-16 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-full blur-xl"
+        className="absolute bottom-1/4 right-1/12 w-28 h-28 bg-gradient-to-br from-purple-400/6 to-pink-400/6 dark:from-purple-500/5 dark:to-pink-500/5 rounded-full blur-2xl"
         animate={{ 
-          scale: [1, 1.4, 1],
-          opacity: [0.2, 0.5, 0.2],
-          rotate: [360, 180, 0]
+          scale: [1, 1.3, 1],
+          opacity: [0.3, 0.5, 0.3],
+          y: [0, -15, 0]
         }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 3 }}
       />
       
       <div className="relative max-w-6xl mx-auto px-6">
-        {/* Enhanced Header with Description */}
+        {/* Minimal Header */}
         <motion.div
-          className="text-center mb-16 max-w-3xl mx-auto"
-          initial={{ opacity: 0, y: 40 }}
+          className="text-center mb-14 max-w-2xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.7, ease: "easeOut" }}
         >
           <motion.h2 
-            className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 tracking-wide mb-4"
-            initial={{ opacity: 0, y: 20 }}
+            className="text-2xl lg:text-3xl font-extralight text-zinc-800 dark:text-zinc-50 tracking-wide mb-3"
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.15 }}
           >
-            See It In <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Action</span>
+            See How It <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Works</span>
           </motion.h2>
           
           <motion.p 
-            className="text-zinc-600 dark:text-zinc-400 text-base lg:text-lg font-light leading-relaxed tracking-wide"
-            initial={{ opacity: 0, y: 20 }}
+            className="text-zinc-600 dark:text-zinc-400 text-sm lg:text-base font-light leading-relaxed"
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.4 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
           >
-            Watch how easy it is to search and recover your lost items in seconds
+            A quick walkthrough of the search process
           </motion.p>
         </motion.div>
 
-        {/* Video Container with Smooth Entry Animation */}
+        {/* Video Container with Smooth Entry */}
         <motion.div 
-          className="relative"
-          initial={{ opacity: 0, y: 60, scale: 0.95 }}
+          className="relative mb-14"
+          initial={{ opacity: 0, y: 50, scale: 0.96 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, margin: "-80px" }}
           transition={{ 
-            duration: 0.9, 
-            ease: [0.25, 0.46, 0.45, 0.94],
-            delay: 0.2
+            duration: 0.8, 
+            ease: [0.22, 1, 0.36, 1],
+            delay: 0.15
           }}
         >
-          {/* Ambient Glow */}
+          {/* Soft ambient glow - more visible in light mode */}
           <motion.div 
-            className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 rounded-[2.5rem] blur-2xl"
+            className="absolute -inset-6 bg-gradient-to-r from-blue-500/15 via-indigo-500/15 to-purple-500/15 dark:from-blue-500/10 dark:via-indigo-500/10 dark:to-purple-500/10 rounded-[3rem] blur-3xl"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.2, delay: 0.5 }}
+            transition={{ duration: 1, delay: 0.4 }}
           />
           
           <motion.div 
-            className="relative rounded-3xl overflow-hidden backdrop-blur-md bg-white/50 dark:bg-zinc-800/40 border border-white/40 dark:border-zinc-700/40 shadow-2xl"
+            className="relative rounded-3xl overflow-hidden backdrop-blur-sm bg-white/70 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/40 shadow-xl"
             whileHover={{ 
-              scale: 1.01, 
-              y: -6,
-              boxShadow: "0 25px 50px -12px rgba(59, 130, 246, 0.25)"
+              scale: 1.005, 
+              y: -4,
+              boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.15)"
             }}
-            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
-            {/* Decorative Corner Elements */}
-            <div className="absolute top-0 left-0 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-transparent rounded-br-3xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-tr-3xl pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-20 h-20 bg-gradient-to-tl from-pink-500/10 to-transparent rounded-tl-3xl pointer-events-none" />
+            {/* Minimal corner accents */}
+            <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-blue-500/8 to-transparent dark:from-blue-500/10 dark:to-transparent rounded-br-2xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-tl from-indigo-500/8 to-transparent dark:from-indigo-500/10 dark:to-transparent rounded-tl-2xl pointer-events-none" />
             
-            {/* Subtle inner glow on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5 rounded-3xl opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+            {/* Subtle hover glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 via-transparent to-indigo-500/0 hover:from-blue-500/5 hover:to-indigo-500/5 dark:hover:from-blue-500/8 dark:hover:to-indigo-500/8 rounded-3xl transition-all duration-700 pointer-events-none"></div>
             
-            {/* Video with Cover Fit (crops black bars) */}
-            <div className="relative w-full aspect-video bg-zinc-900 dark:bg-zinc-950">
+            {/* Video with cover fit */}
+            <div className="relative w-full aspect-video bg-zinc-100 dark:bg-zinc-950">
               <video
                 ref={videoRef}
                 src="/search_guide.mp4"
@@ -544,39 +563,59 @@ const VideoTutorialSection = () => {
                 loop
                 playsInline
                 className="w-full h-full object-cover relative z-10"
-                style={{ objectFit: 'cover' }}
               />
             </div>
           </motion.div>
         </motion.div>
 
-        {/* Feature Highlights Below Video */}
+        {/* Minimalistic Feature Cards */}
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 40 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          transition={{ duration: 0.7, delay: 0.4 }}
         >
-          {[
-            { icon: '⚡', label: 'Quick Setup', desc: 'Start searching in under 30 seconds' },
-            { icon: '🎯', label: 'Smart Match', desc: 'AI finds the best matches instantly' },
-            { icon: '🔒', label: 'Secure Process', desc: 'Your data stays private and protected' }
-          ].map((item, i) => (
-            <motion.div
-              key={i}
-              className="text-center p-6 rounded-2xl bg-white/30 dark:bg-zinc-800/20 backdrop-blur-sm border border-white/30 dark:border-zinc-700/30"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.7 + i * 0.1 }}
-              whileHover={{ y: -4, scale: 1.02 }}
-            >
-              <div className="text-3xl mb-3">{item.icon}</div>
-              <h4 className="text-zinc-800 dark:text-zinc-200 font-medium text-sm mb-2">{item.label}</h4>
-              <p className="text-zinc-600 dark:text-zinc-400 text-xs font-light">{item.desc}</p>
-            </motion.div>
-          ))}
+          {features.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={i}
+                className="group relative"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.5 + i * 0.08 }}
+              >
+                <motion.div
+                  className="relative p-5 rounded-2xl bg-white/60 dark:bg-zinc-800/30 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-700/30 hover:border-blue-300/60 dark:hover:border-blue-600/40 transition-all duration-500"
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  {/* Soft glow on hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10`}></div>
+                  
+                  <div className="flex items-start gap-4">
+                    <motion.div 
+                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                      whileHover={{ rotate: 5 }}
+                    >
+                      <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </motion.div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-zinc-800 dark:text-zinc-100 font-medium text-sm mb-1.5 tracking-wide group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {item.label}
+                      </h4>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-xs font-light leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            );
+          })}
         </motion.div>
       </div>
     </section>
