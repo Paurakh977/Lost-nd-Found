@@ -418,6 +418,7 @@ const TrustSection = () => {
 };
 
 // Video Tutorial Section - Minimalistic
+// Video Tutorial Section - Enhanced with smooth animations and better presentation
 const VideoTutorialSection = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -435,7 +436,7 @@ const VideoTutorialSection = () => {
   return (
     <section 
       ref={sectionRef}
-      className="relative py-28 bg-gradient-to-b from-zinc-50/85 via-zinc-50/80 via-blue-50/15 to-zinc-50/85 dark:from-zinc-900/85 dark:via-zinc-900/80 dark:via-blue-950/8 dark:to-zinc-900/85 overflow-hidden"
+      className="relative py-32 bg-gradient-to-b from-zinc-50/85 via-zinc-50/80 via-blue-50/15 to-zinc-50/85 dark:from-zinc-900/85 dark:via-zinc-900/80 dark:via-blue-950/8 dark:to-zinc-900/85 overflow-hidden"
     >
       {/* Enhanced aurora background */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.025),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.018),transparent)] dark:bg-[radial-gradient(ellipse_1200px_600px_at_50%_-50%,rgba(99,102,241,0.035),transparent),radial-gradient(ellipse_800px_400px_at_20%_80%,rgba(139,92,246,0.028),transparent)]"></div>
@@ -465,53 +466,122 @@ const VideoTutorialSection = () => {
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
       />
       
-      <motion.div
-        className="relative max-w-5xl mx-auto px-6"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
-        {/* Optional minimal header */}
+      <div className="relative max-w-6xl mx-auto px-6">
+        {/* Enhanced Header with Description */}
         <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 20 }}
+          className="text-center mb-16 max-w-3xl mx-auto"
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
         >
           <motion.h2 
-            className="text-2xl lg:text-3xl font-extralight text-zinc-800 dark:text-zinc-50 tracking-wide"
-            whileInView={{ opacity: [0, 1] }}
-            transition={{ duration: 1.2 }}
+            className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 tracking-wide mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Quick Guide</span>
+            See It In <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Action</span>
           </motion.h2>
+          
+          <motion.p 
+            className="text-zinc-600 dark:text-zinc-400 text-base lg:text-lg font-light leading-relaxed tracking-wide"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            Watch how easy it is to search and recover your lost items in seconds
+          </motion.p>
         </motion.div>
 
-        {/* Video Container */}
+        {/* Video Container with Smooth Entry Animation */}
         <motion.div 
-          className="relative rounded-3xl overflow-hidden backdrop-blur-md bg-white/40 dark:bg-zinc-800/30 border border-white/30 dark:border-zinc-700/30 shadow-lg hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-700"
-          whileHover={{ scale: 1.01, y: -4 }}
-          transition={{ type: "spring", stiffness: 200 }}
+          className="relative"
+          initial={{ opacity: 0, y: 60, scale: 0.95 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ 
+            duration: 0.9, 
+            ease: [0.25, 0.46, 0.45, 0.94],
+            delay: 0.2
+          }}
         >
-          {/* Subtle inner glow on hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5 rounded-3xl opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-          
-          <video
-            ref={videoRef}
-            src="/search_guide.mp4"
-            muted
-            loop
-            playsInline
-            className="w-full aspect-video object-contain relative z-10"
+          {/* Ambient Glow */}
+          <motion.div 
+            className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 rounded-[2.5rem] blur-2xl"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2, delay: 0.5 }}
           />
+          
+          <motion.div 
+            className="relative rounded-3xl overflow-hidden backdrop-blur-md bg-white/50 dark:bg-zinc-800/40 border border-white/40 dark:border-zinc-700/40 shadow-2xl"
+            whileHover={{ 
+              scale: 1.01, 
+              y: -6,
+              boxShadow: "0 25px 50px -12px rgba(59, 130, 246, 0.25)"
+            }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          >
+            {/* Decorative Corner Elements */}
+            <div className="absolute top-0 left-0 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-transparent rounded-br-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-tr-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-20 h-20 bg-gradient-to-tl from-pink-500/10 to-transparent rounded-tl-3xl pointer-events-none" />
+            
+            {/* Subtle inner glow on hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5 rounded-3xl opacity-0 hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+            
+            {/* Video with Cover Fit (crops black bars) */}
+            <div className="relative w-full aspect-video bg-zinc-900 dark:bg-zinc-950">
+              <video
+                ref={videoRef}
+                src="/search_guide.mp4"
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover relative z-10"
+                style={{ objectFit: 'cover' }}
+              />
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+
+        {/* Feature Highlights Below Video */}
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+        >
+          {[
+            { icon: '⚡', label: 'Quick Setup', desc: 'Start searching in under 30 seconds' },
+            { icon: '🎯', label: 'Smart Match', desc: 'AI finds the best matches instantly' },
+            { icon: '🔒', label: 'Secure Process', desc: 'Your data stays private and protected' }
+          ].map((item, i) => (
+            <motion.div
+              key={i}
+              className="text-center p-6 rounded-2xl bg-white/30 dark:bg-zinc-800/20 backdrop-blur-sm border border-white/30 dark:border-zinc-700/30"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.7 + i * 0.1 }}
+              whileHover={{ y: -4, scale: 1.02 }}
+            >
+              <div className="text-3xl mb-3">{item.icon}</div>
+              <h4 className="text-zinc-800 dark:text-zinc-200 font-medium text-sm mb-2">{item.label}</h4>
+              <p className="text-zinc-600 dark:text-zinc-400 text-xs font-light">{item.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
     </section>
   );
 };
-
 // Enhanced Features Section with cosmic atmosphere
 const FeaturesSection = () => {
   const features = [
