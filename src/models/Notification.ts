@@ -4,7 +4,8 @@ export type NotificationType =
   | 'case_assigned' 
   | 'verification_required' 
   | 'new_claim' 
-  | 'case_resolved';
+  | 'case_resolved'
+  | 'new_message';
 
 export interface INotification extends Document {
   officerId: mongoose.Types.ObjectId; // Reference to User model (officer)

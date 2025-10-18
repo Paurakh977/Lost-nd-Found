@@ -50,7 +50,7 @@ export async function createNotification(params: CreateNotificationParams): Prom
     console.log(`[Notification] Created ${params.type} notification for officer ${params.officerId}`);
   } catch (error) {
     // Log error but don't throw - notifications should not break main business logic
-    console.error('[Notification] Failed to create notification:', error);
+    console.warn('[Notification] Failed to create notification (non-fatal):', (error as any)?.message || error);
   }
 }
 
@@ -64,16 +64,16 @@ export function generateNotificationMessage(
   switch (type) {
     case 'case_assigned':
       return `New case assigned: ${metadata.caseTitle || 'Untitled case'}`;
-    
     case 'verification_required':
       return `Verification required for case: ${metadata.caseTitle || 'Untitled case'}`;
-    
     case 'new_claim':
       return `New claim submitted for case: ${metadata.caseTitle || 'Untitled case'}${metadata.claimantName ? ` by ${metadata.claimantName}` : ''}`;
-    
     case 'case_resolved':
       return `Case resolved: ${metadata.caseTitle || 'Untitled case'}`;
-    
+    case 'new_message':
+      return metadata?.messagePreview
+        ? `New message: ${metadata.messagePreview}`
+        : 'New message received';
     default:
       return 'New notification';
   }
@@ -87,4 +87,29 @@ export async function createNotificationWithAutoMessage(
 ): Promise<void> {
   const message = generateNotificationMessage(params.type, params.metadata);
   await createNotification({ ...params, message });
+}
+
+export async function createChatNotification({
+  recipientOfficerId,
+  senderId,
+  senderName,
+  conversationId,
+  messagePreview
+}: {
+  recipientOfficerId: string;
+  senderId: string;
+  senderName: string;
+  conversationId: string;
+  messagePreview: string;
+}) {
+  await createNotificationWithAutoMessage({
+    officerId: recipientOfficerId,
+    type: 'new_message',
+    metadata: {
+      senderId,
+      senderName,
+      conversationId,
+      messagePreview: messagePreview.substring(0, 50) + (messagePreview.length > 50 ? '...' : '')
+    }
+  });
 }

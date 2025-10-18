@@ -417,6 +417,210 @@ const TrustSection = () => {
   );
 };
 
+// Video Tutorial Section - Minimalistic
+// Video Tutorial Section - Minimalistic with Enhanced Theme Integration
+const VideoTutorialSection = () => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { once: false, margin: "-100px" });
+
+  useEffect(() => {
+    if (isInView && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {
+        // Autoplay might be blocked by browser, ignore the error
+      });
+    }
+  }, [isInView]);
+
+  const features = [
+    { 
+      icon: Zap, 
+      label: 'Quick Setup', 
+      desc: 'Start searching in under 30 seconds',
+      gradient: 'from-blue-500/20 to-cyan-500/20'
+    },
+    { 
+      icon: Search, 
+      label: 'Smart Match', 
+      desc: 'AI finds the best matches instantly',
+      gradient: 'from-indigo-500/20 to-blue-500/20'
+    },
+    { 
+      icon: Shield, 
+      label: 'Secure Process', 
+      desc: 'Your data stays private and protected',
+      gradient: 'from-purple-500/20 to-indigo-500/20'
+    }
+  ];
+
+  return (
+    <section 
+      ref={sectionRef}
+      className="relative py-32 bg-gradient-to-b from-zinc-50/85 via-white/95 to-zinc-50/85 dark:from-zinc-900/85 dark:via-zinc-900/80 dark:to-zinc-900/85 overflow-hidden"
+    >
+      {/* Subtle aurora background for light theme */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1400px_700px_at_50%_-50%,rgba(59,130,246,0.04),transparent),radial-gradient(ellipse_900px_450px_at_20%_80%,rgba(99,102,241,0.03),transparent)] dark:bg-[radial-gradient(ellipse_1400px_700px_at_50%_-50%,rgba(99,102,241,0.035),transparent),radial-gradient(ellipse_900px_450px_at_20%_80%,rgba(139,92,246,0.028),transparent)]"></div>
+      
+      {/* Cosmic Particles - more visible in light theme */}
+      <div className="cosmic-parallax opacity-60 dark:opacity-100">
+        <CosmicParticles density="low" />
+      </div>
+      
+      {/* Subtle floating elements */}
+      <motion.div 
+        className="absolute top-1/4 left-1/12 w-32 h-32 bg-gradient-to-br from-blue-400/8 to-indigo-400/8 dark:from-blue-500/6 dark:to-indigo-500/6 rounded-full blur-3xl"
+        animate={{ 
+          scale: [1, 1.2, 1],
+          opacity: [0.4, 0.6, 0.4],
+          x: [0, 20, 0]
+        }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div 
+        className="absolute bottom-1/4 right-1/12 w-28 h-28 bg-gradient-to-br from-purple-400/6 to-pink-400/6 dark:from-purple-500/5 dark:to-pink-500/5 rounded-full blur-2xl"
+        animate={{ 
+          scale: [1, 1.3, 1],
+          opacity: [0.3, 0.5, 0.3],
+          y: [0, -15, 0]
+        }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+      />
+      
+      <div className="relative max-w-6xl mx-auto px-6">
+        {/* Minimal Header */}
+        <motion.div
+          className="text-center mb-14 max-w-2xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+        >
+          <motion.h2 
+            className="text-2xl lg:text-3xl font-extralight text-zinc-800 dark:text-zinc-50 tracking-wide mb-3"
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+          >
+            See How It <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Works</span>
+          </motion.h2>
+          
+          <motion.p 
+            className="text-zinc-600 dark:text-zinc-400 text-sm lg:text-base font-light leading-relaxed"
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            A quick walkthrough of the search process
+          </motion.p>
+        </motion.div>
+
+        {/* Video Container with Smooth Entry */}
+        <motion.div 
+          className="relative mb-14"
+          initial={{ opacity: 0, y: 50, scale: 0.96 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ 
+            duration: 0.8, 
+            ease: [0.22, 1, 0.36, 1],
+            delay: 0.15
+          }}
+        >
+          {/* Soft ambient glow - more visible in light mode */}
+          <motion.div 
+            className="absolute -inset-6 bg-gradient-to-r from-blue-500/15 via-indigo-500/15 to-purple-500/15 dark:from-blue-500/10 dark:via-indigo-500/10 dark:to-purple-500/10 rounded-[3rem] blur-3xl"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.4 }}
+          />
+          
+          <motion.div 
+            className="relative rounded-3xl overflow-hidden backdrop-blur-sm bg-white/70 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/40 shadow-xl"
+            whileHover={{ 
+              scale: 1.005, 
+              y: -4,
+              boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.15)"
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            {/* Minimal corner accents */}
+            <div className="absolute top-0 left-0 w-16 h-16 bg-gradient-to-br from-blue-500/8 to-transparent dark:from-blue-500/10 dark:to-transparent rounded-br-2xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-tl from-indigo-500/8 to-transparent dark:from-indigo-500/10 dark:to-transparent rounded-tl-2xl pointer-events-none" />
+            
+            {/* Subtle hover glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 via-transparent to-indigo-500/0 hover:from-blue-500/5 hover:to-indigo-500/5 dark:hover:from-blue-500/8 dark:hover:to-indigo-500/8 rounded-3xl transition-all duration-700 pointer-events-none"></div>
+            
+            {/* Video with cover fit */}
+            <div className="relative w-full aspect-video bg-zinc-100 dark:bg-zinc-950">
+              <video
+                ref={videoRef}
+                src="/search_guide.mp4"
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover relative z-10"
+              />
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Minimalistic Feature Cards */}
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.4 }}
+        >
+          {features.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={i}
+                className="group relative"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.5 + i * 0.08 }}
+              >
+                <motion.div
+                  className="relative p-5 rounded-2xl bg-white/60 dark:bg-zinc-800/30 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-700/30 hover:border-blue-300/60 dark:hover:border-blue-600/40 transition-all duration-500"
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  {/* Soft glow on hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10`}></div>
+                  
+                  <div className="flex items-start gap-4">
+                    <motion.div 
+                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                      whileHover={{ rotate: 5 }}
+                    >
+                      <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </motion.div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-zinc-800 dark:text-zinc-100 font-medium text-sm mb-1.5 tracking-wide group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {item.label}
+                      </h4>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-xs font-light leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
 // Enhanced Features Section with cosmic atmosphere
 const FeaturesSection = () => {
   const features = [
@@ -661,176 +865,6 @@ const TestimonialsSection = () => {
   );
 };
 
-// Enhanced Ethereal Pricing Section
-const PricingSection = () => {
-  const plans = [
-    {
-      name: 'Free',
-      price: '$0',
-      description: 'Perfect for individuals',
-      features: ['Basic search', 'Email notifications', 'Community access'],
-      popular: false
-    },
-    {
-      name: 'Pro',
-      price: '$19',
-      description: 'Enhanced recovery tools',
-      features: ['Advanced AI', 'Priority support', 'Multiple tracking', 'Analytics', 'Mobile app'],
-      popular: true
-    },
-    {
-      name: 'Enterprise',
-      price: 'Custom',
-      description: 'For organizations',
-      features: ['Bulk management', 'API access', 'Custom integrations', 'Dedicated support'],
-      popular: false
-    }
-  ];
-
-  return (
-    <section className="relative py-32 bg-gradient-to-b from-zinc-50/65 via-zinc-50/60 via-emerald-50/20 to-zinc-50/55 dark:from-zinc-900/65 dark:via-zinc-900/60 dark:via-emerald-950/12 dark:to-zinc-900/55 overflow-hidden">
-      {/* Enhanced ethereal aurora flows */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_1000px_500px_at_20%_50%,rgba(16,185,129,0.025),transparent),radial-gradient(ellipse_800px_400px_at_80%_50%,rgba(59,130,246,0.02),transparent),radial-gradient(ellipse_600px_300px_at_50%_0%,rgba(168,85,247,0.015),transparent)] dark:bg-[radial-gradient(ellipse_1000px_500px_at_20%_50%,rgba(16,185,129,0.035),transparent),radial-gradient(ellipse_800px_400px_at_80%_50%,rgba(59,130,246,0.03),transparent),radial-gradient(ellipse_600px_300px_at_50%_0%,rgba(168,85,247,0.025),transparent)]"></div>
-      
-      {/* Ultra-dense cosmic field */}
-      <div className="cosmic-parallax">
-        <CosmicParticles density="ultra" />
-      </div>
-      
-      {/* Floating cosmic storms */}
-      <motion.div 
-        className="absolute top-1/6 left-1/12 w-36 h-36 bg-gradient-to-br from-emerald-500/6 to-blue-500/6 rounded-full blur-3xl"
-        animate={{ 
-          scale: [1, 1.5, 1],
-          opacity: [0.3, 0.7, 0.3],
-          rotate: [0, 180, 360]
-        }}
-        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div 
-        className="absolute bottom-1/6 right-1/12 w-28 h-28 bg-gradient-to-br from-blue-500/7 to-purple-500/7 rounded-full blur-2xl"
-        animate={{ 
-          scale: [1, 1.3, 1],
-          opacity: [0.4, 0.6, 0.4],
-          rotate: [360, 0]
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 5 }}
-      />
-      <motion.div 
-        className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-br from-cyan-500/4 to-emerald-500/4 rounded-full blur-xl"
-        animate={{ 
-          scale: [1, 1.6, 1],
-          opacity: [0.2, 0.5, 0.2],
-          x: [0, -40, 0],
-          y: [0, -20, 0]
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 10 }}
-      />
-      
-      <div className="relative max-w-5xl mx-auto px-6">
-        <motion.div
-          className="text-center mb-20"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.h2 
-            className="text-3xl lg:text-4xl font-extralight text-zinc-800 dark:text-zinc-50 mb-4 tracking-wide gsap-reveal"
-            whileInView={{ opacity: [0, 1] }}
-            transition={{ duration: 1.2 }}
-          >
-            Simple <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-blue-600">Pricing</span>
-          </motion.h2>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-8 gsap-stagger-parent">
-          {plans.map((plan, i) => (
-            <motion.div
-              key={i}
-              className="relative group"
-              initial={{ opacity: 0, y: 60, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: i * 0.1, duration: 0.8, ease: "easeOut" }}
-              viewport={{ once: true }}
-            >
-              {plan.popular && (
-                <motion.div 
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-emerald-500/90 to-blue-500/90 text-white text-xs font-light rounded-full backdrop-blur-sm"
-                  initial={{ opacity: 0, scale: 0, y: 10 }}
-                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 + 0.3, type: "spring" }}
-                >
-                  Most Popular
-                </motion.div>
-              )}
-              
-              <motion.div 
-                className={cn(
-                  "relative p-8 rounded-3xl backdrop-blur-xl border transition-all duration-700 overflow-hidden",
-                  plan.popular 
-                    ? "bg-white/60 dark:bg-zinc-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:border-emerald-300/60 dark:hover:border-emerald-600/60" 
-                    : "bg-white/50 dark:bg-zinc-800/40 border-white/40 dark:border-zinc-700/30 hover:border-zinc-200/60 dark:hover:border-zinc-600/50"
-                )}
-                whileHover={{ y: -16, scale: 1.02, rotateY: 2 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
-                {/* Subtle aurora glow */}
-                <div className={cn(
-                  "absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700",
-                  plan.popular 
-                    ? "bg-gradient-to-br from-emerald-500/4 via-transparent to-blue-500/4"
-                    : "bg-gradient-to-br from-zinc-500/3 via-transparent to-slate-500/3"
-                )}></div>
-                
-                <div className="relative text-center">
-                  <h3 className="text-xl font-normal text-zinc-800 dark:text-zinc-50 mb-2 tracking-wide">
-                    {plan.name}
-                  </h3>
-                  <div className="mb-6">
-                    <span className="text-3xl font-extralight text-zinc-800 dark:text-zinc-50">{plan.price}</span>
-                    {plan.price !== 'Custom' && <span className="text-zinc-600 dark:text-zinc-300 text-sm font-normal">/mo</span>}
-                  </div>
-                  <p className="text-zinc-700 dark:text-zinc-300 text-sm font-normal mb-8 tracking-wide">
-                    {plan.description}
-                  </p>
-                  
-                  <div className="space-y-3 mb-8">
-                    {plan.features.map((feature, featureIndex) => (
-                      <motion.div 
-                        key={featureIndex}
-                        className="flex items-center justify-center gap-2"
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 + featureIndex * 0.05 }}
-                      >
-                        <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
-                        <span className="text-zinc-700 dark:text-zinc-300 text-sm font-normal tracking-wide">{feature}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-                  
-                  <motion.button
-                    className={cn(
-                      "w-full py-3 rounded-2xl font-light tracking-wide transition-all backdrop-blur-sm",
-                      plan.popular
-                        ? "bg-gradient-to-r from-emerald-500/90 to-blue-500/90 text-white hover:from-emerald-600/90 hover:to-blue-600/90"
-                        : "border border-zinc-300/50 dark:border-zinc-600/50 text-zinc-700 dark:text-zinc-300 hover:bg-white/30 dark:hover:bg-zinc-700/30"
-                    )}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {plan.price === 'Custom' ? 'Contact Sales' : 'Get Started'}
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
 
 // Enhanced How It Works with cosmic energy streams
 const HowItWorksSection = () => {
@@ -1428,9 +1462,9 @@ export default function App() {
           >
             <HeroSection />
             <TrustSection />
+            <VideoTutorialSection />
             <FeaturesSection />
             <TestimonialsSection />
-            <PricingSection />
             <HowItWorksSection />
             <CTASection />
             <Footer />

@@ -7,6 +7,7 @@ import { MapPin, Clock, User, Package, Shield, CheckCircle, ArrowLeft, AlertCirc
 import { useToast } from '@/hooks/useToast';
 import { useUser } from '@clerk/nextjs';
 import ItemPlaceholder from '@/components/ItemPlaceholder';
+import dynamic from 'next/dynamic';
 
 // JWT User interface
 interface JWTUser {
@@ -77,6 +78,54 @@ interface Officer {
 
 interface LocationData {
   provinces: Array<{ name: string; districts: Array<{ name: string; municipalities: Array<{ name: string }> }> }>;
+}
+
+const ChatModal = dynamic(() => import('@/components/ChatModal'), { ssr: false });
+
+function CommunicationButtons({ caseItem, currentUser, caseId }: { caseItem: any; currentUser: any; caseId: string }) {
+  const [openConv, setOpenConv] = React.useState<string | null>(null);
+  const { pushToast } = useToast();
+
+  const myId = currentUser?.id;
+  const canMessageOfficer = !!caseItem.assignedOfficer?._id;
+  const canMessageReporter = !!caseItem.reportedBy?.clerkId;
+
+  const startChat = async (targetRole: 'officer' | 'reporter') => {
+    if (!myId) {
+      pushToast('error', 'Sign in required', 'Please sign in to send messages');
+      return;
+    }
+    const participantId = targetRole === 'officer' ? caseItem.assignedOfficer._id : caseItem.reportedBy.clerkId;
+    try {
+      const res = await fetch('/api/conversations/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId, caseId, role: targetRole === 'officer' ? 'officer' : 'user' })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOpenConv(String(data.conversation._id));
+      } else {
+        pushToast('error', 'Failed to start chat', data.error || '');
+      }
+    } catch (e) {
+      pushToast('error', 'Failed to start chat', 'Network error');
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {canMessageOfficer && (
+        <button onClick={() => startChat('officer')} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">💬 Message Officer</button>
+      )}
+      {canMessageReporter && (
+        <button onClick={() => startChat('reporter')} className="w-full bg-gray-900 text-white py-2 rounded-lg hover:bg-gray-800">💬 Message Finder/Reporter</button>
+      )}
+      {openConv && currentUser?.id && (
+        <ChatModal conversationId={openConv} currentUserId={currentUser.id} onClose={() => setOpenConv(null)} />
+      )}
+    </div>
+  );
 }
 
 export default function PublicCaseDetailPage() {
@@ -730,6 +779,12 @@ export default function PublicCaseDetailPage() {
                 </a>
               </div>
             </div>
+
+            {/* Communication */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Communication</h3>
+              <CommunicationButtons caseItem={caseItem} currentUser={user} caseId={params.caseId} />
+            </div>
           </div>
         </motion.div>
       </div>
@@ -740,28 +795,28 @@ export default function PublicCaseDetailPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
           >
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Claim This Item</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Claim This Item</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               Please provide evidence and your information to claim this item. An officer will review your claim.
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column - Evidence */}
               <div className="space-y-4">
-                <h4 className="text-lg font-medium text-gray-900">Evidence of Ownership</h4>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white">Evidence of Ownership</h4>
                 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description * <span className="text-gray-500">(Required)</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description * <span className="text-gray-500 dark:text-gray-400">(Required)</span>
                   </label>
                   <textarea
                     value={claimDescription}
                     onChange={(e) => setClaimDescription(e.target.value)}
                     placeholder="Describe how you can prove this item belongs to you. Include specific details, serial numbers, unique features, purchase receipts, or any other evidence..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     rows={4}
                     required
                   />
@@ -769,10 +824,10 @@ export default function PublicCaseDetailPage() {
 
                 {/* Evidence Images */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Evidence Images <span className="text-gray-500">(Optional)</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Evidence Images <span className="text-gray-500 dark:text-gray-400">(Optional)</span>
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-700">
                     <input
                       type="file"
                       multiple
@@ -784,15 +839,15 @@ export default function PublicCaseDetailPage() {
                     />
                     <label
                       htmlFor="evidence-upload"
-                      className="cursor-pointer flex flex-col items-center justify-center py-4 hover:bg-gray-50"
+                      className="cursor-pointer flex flex-col items-center justify-center py-4 hover:bg-gray-50 dark:hover:bg-gray-600"
                     >
-                      <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
                         Click to add evidence images
                       </p>
-                      <p className="text-xs text-gray-500">JPG, PNG, GIF up to 10MB each</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">JPG, PNG, GIF up to 10MB each</p>
                     </label>
                   </div>
                   
@@ -821,31 +876,31 @@ export default function PublicCaseDetailPage() {
 
               {/* Right Column - Personal Info & Officer Selection */}
               <div className="space-y-4">
-                <h4 className="text-lg font-medium text-gray-900">Your Information</h4>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white">Your Information</h4>
                 
                 {/* Personal Details */}
                 <div className="space-y-3">
                   {/* Display user info from Clerk (read-only) */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                     <input
                       type="text"
                       value={user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
                       disabled
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                     />
-                    <p className="text-xs text-gray-500 mt-1">From your account</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">From your account</p>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                     <input
                       type="email"
                       value={user?.primaryEmailAddress?.emailAddress || ''}
                       disabled
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                     />
-                    <p className="text-xs text-gray-500 mt-1">From your account</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">From your account</p>
                     {checkingClaim && (
                       <p className="text-xs text-blue-600 mt-1">Checking if you've already claimed...</p>
                     )}
@@ -855,19 +910,19 @@ export default function PublicCaseDetailPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number *</label>
                     <input
                       type="tel"
                       value={claimantInfo.phone}
                       onChange={(e) => setClaimantInfo(prev => ({ ...prev, phone: e.target.value }))}
                       placeholder="Your contact number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Address</label>
                     <textarea
                       value={claimantInfo.address.fullAddress}
                       onChange={(e) => setClaimantInfo(prev => ({ 
@@ -875,28 +930,28 @@ export default function PublicCaseDetailPage() {
                         address: { ...prev.address, fullAddress: e.target.value }
                       }))}
                       placeholder="Your complete address..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       rows={2}
                     />
                   </div>
                 </div>
 
-                <div className="border-t pt-4">
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
                   {caseItem.status === 'active' && caseItem.assignedOfficer ? (
                     // Case already has an assigned officer
                     <div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-3">Assigned Officer</h4>
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Assigned Officer</h4>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                         <div className="flex items-center gap-3">
-                          <Users className="w-5 h-5 text-blue-600" />
+                          <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                           <div>
-                            <p className="font-medium text-gray-900">
+                            <p className="font-medium text-gray-900 dark:text-white">
                               {caseItem.assignedOfficer.firstName} {caseItem.assignedOfficer.lastName}
                             </p>
-                            <p className="text-sm text-gray-600">{caseItem.assignedOfficer.email}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{caseItem.assignedOfficer.email}</p>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
                           This officer will review your claim.
                         </p>
                       </div>
@@ -904,14 +959,14 @@ export default function PublicCaseDetailPage() {
                   ) : (
                     // Need to select an officer
                     <div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-3">Select Officer <span className="text-gray-500 text-sm font-normal">(Optional)</span></h4>
-                      <p className="text-sm text-gray-600 mb-3">
+                      <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Select Officer <span className="text-gray-500 dark:text-gray-400 text-sm font-normal">(Optional)</span></h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                         You can select a specific officer, or leave it unassigned for any officer to take the case.
                       </p>
                       
                       {/* Province Selection */}
                       <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Province</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Province</label>
                         <select
                           value={selectedProvince}
                           onChange={(e) => {
@@ -921,7 +976,7 @@ export default function PublicCaseDetailPage() {
                             setOfficers([]);
                             setSelectedOfficer('');
                           }}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value="">Select Province</option>
                           {locationData?.provinces?.map(province => (
@@ -934,7 +989,7 @@ export default function PublicCaseDetailPage() {
                       
                       {/* District Selection */}
                       <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">District</label>
                         <select
                           value={selectedDistrict}
                           onChange={(e) => {
@@ -944,7 +999,7 @@ export default function PublicCaseDetailPage() {
                             setSelectedOfficer('');
                           }}
                           disabled={!selectedProvince}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600"
                         >
                           <option value="">Select District</option>
                           {selectedProvince && locationData?.provinces
@@ -959,7 +1014,7 @@ export default function PublicCaseDetailPage() {
 
                       {/* Municipality Selection */}
                       <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Municipality</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Municipality</label>
                         <select
                           value={selectedMunicipality}
                           onChange={(e) => {
@@ -968,7 +1023,7 @@ export default function PublicCaseDetailPage() {
                             setSelectedOfficer('');
                           }}
                           disabled={!selectedDistrict}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600"
                         >
                           <option value="">Select Municipality</option>
                           {selectedDistrict && locationData?.provinces
@@ -985,9 +1040,9 @@ export default function PublicCaseDetailPage() {
 
                       {/* Officer Selection */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Officer</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Officer</label>
                         {loadingOfficers ? (
-                          <div className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-center">
+                          <div className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-center">
                             Loading officers...
                           </div>
                         ) : (
@@ -995,7 +1050,7 @@ export default function PublicCaseDetailPage() {
                             value={selectedOfficer}
                             onChange={(e) => setSelectedOfficer(e.target.value)}
                             disabled={!selectedMunicipality || officers.length === 0}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600"
                           >
                             <option value="">
                               {officers.length === 0 ? 'No officers available' : 'Select Officer'}
@@ -1014,10 +1069,10 @@ export default function PublicCaseDetailPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6 pt-4 border-t">
+            <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
               <button
                 onClick={() => setShowClaimModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 disabled={submitting}
               >
                 Cancel
@@ -1025,7 +1080,7 @@ export default function PublicCaseDetailPage() {
               <button
                 onClick={handleSubmitClaim}
                 disabled={submitting || !claimDescription.trim() || !claimantInfo.phone.trim() || hasClaimed || checkingClaim || !user}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                className="flex-1 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600"
               >
                 {submitting ? 'Submitting...' : hasClaimed ? 'Already Claimed' : checkingClaim ? 'Checking...' : !user ? 'Sign In Required' : 'Submit Claim'}
               </button>

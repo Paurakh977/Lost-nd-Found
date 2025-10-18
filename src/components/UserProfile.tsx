@@ -5,6 +5,7 @@ import { UserButton, useUser, useClerk } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, User, Settings, Shield, Building } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import io from 'socket.io-client';
 
 interface UserProfileProps {
   className?: string;
@@ -17,6 +18,7 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [jwtUser, setJwtUser] = useState<any>(null);
   const [userType, setUserType] = useState<'clerk' | 'jwt'>('clerk');
+  const [userUnreadCount, setUserUnreadCount] = useState<number>(0);
 
   // Check for JWT user on component mount
   useEffect(() => {
@@ -49,7 +51,41 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
     };
 
     checkJWTUser();
-  }, [isLoaded, user]);
+
+    // unread messages poll
+    let mounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/conversations/unread-count');
+        const data = await res.json();
+        if (mounted && res.ok && data.success) setUserUnreadCount(data.count || 0);
+      } catch {}
+    };
+    fetchUnread();
+    const t = setInterval(fetchUnread, 30000);
+    
+    // Socket listener for real-time unread count updates
+    const userId = jwtUser?.id || user?.id;
+    if (userId) {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const socket = io(baseUrl, { path: '/socket.io/' });
+      
+      socket.emit('register_user', userId);
+      
+      // Listen for new messages to update unread count
+      socket.on('new_message', () => {
+        fetchUnread();
+      });
+      
+      return () => { 
+        mounted = false; 
+        clearInterval(t); 
+        socket.disconnect();
+      };
+    }
+    
+    return () => { mounted = false; clearInterval(t); };
+  }, [isLoaded, user, jwtUser]);
 
   const handleSignOut = async () => {
     try {
@@ -106,6 +142,11 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
       >
+        {userUnreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10">
+            {userUnreadCount > 9 ? '9+' : userUnreadCount}
+          </span>
+        )}
         {/* Subtle glow effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
         
@@ -115,12 +156,14 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
             src={user?.imageUrl}
             alt={user?.fullName || user?.emailAddresses[0]?.emailAddress || 'User'}
             className="w-full h-full object-cover"
+            onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/default-avatar.png'}}
           />
         ) : jwtUser?.profileImage ? (
           <img
             src={`/api/profile/image/${jwtUser.profileImage}?t=${Date.now()}`}
             alt={`${jwtUser.firstName} ${jwtUser.lastName}`.trim() || jwtUser.email}
             className="w-full h-full object-cover"
+            onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/default-avatar.png'}}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
@@ -166,12 +209,14 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
                         src={user?.imageUrl}
                         alt={user?.fullName || 'User'}
                         className="w-full h-full object-cover"
+                        onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/default-avatar.png'}}
                       />
                     ) : jwtUser?.profileImage ? (
                       <img
                         src={`/api/profile/image/${jwtUser.profileImage}?t=${Date.now()}`}
                         alt={`${jwtUser.firstName} ${jwtUser.lastName}`.trim()}
                         className="w-full h-full object-cover"
+                        onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/default-avatar.png'}}
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
@@ -203,6 +248,21 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
 
               {/* Menu Items */}
               <div className="py-2">
+                <motion.button
+                  onClick={() => { router.push('/messages'); setIsOpen(false); }}
+                  className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
+                  whileHover={{ x: 4 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                  <User className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  Messages
+                  {userUnreadCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2">
+                      {userUnreadCount > 9 ? '9+' : userUnreadCount}
+                    </span>
+                  )}
+                </motion.button>
+
                 <motion.button
                   onClick={handleProfileClick}
                   className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"

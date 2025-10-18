@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint"
+    "build": "next build",
+    "start": "node -e \"process.env.NODE_ENV='production'; require('./server.js')\"",
+    "start:next": "node -e \"process.env.NODE_ENV='production'; require('child_process').spawn('next', ['start'], { stdio: 'inherit', shell: true })\"",
+    "lint": "eslint",
+    "dev:socket": "node server.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.8",
@@ -29,6 +31,9 @@
     "nodemailer": "^6.10.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "redis": "^4.7.1",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
     "xlsx": "^0.18.5"
   },
@@ -45,6 +50,7 @@
     "eslint-config-next": "15.5.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5"
+    "typescript": "^5",
+    "cross-env": "^7.0.3"
   }
 }
