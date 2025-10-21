@@ -5,6 +5,9 @@ import connectDB from '../../../../lib/mongodb';
 import Case from '../../../../models/Case';
 import User from '../../../../models/User';
 
+// Force dynamic rendering to ensure POST works in production
+export const dynamic = 'force-dynamic';
+
 interface EmailTemplateData {
   logo_url: string;
   item_type: string;
