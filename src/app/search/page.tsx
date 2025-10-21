@@ -15,6 +15,7 @@ import {
     User as UserIcon,
     Bot as BotIcon,
 } from "lucide-react";
+import { useAuth, useUser } from '@clerk/nextjs';
 import { useTheme } from "../../components/ThemeProvider";
 import FloatingParticles from "../../components/ui/FloatingParticles";
 import CaseDetailModal from "../../components/CaseDetailModal";
@@ -352,6 +353,10 @@ export default function AgenticSearchPage() {
         role?: string;
         userType: 'clerk' | 'jwt';
     } | null>(null);
+    
+    // Clerk authentication hooks
+    const { isSignedIn: isClerkSignedIn, userId: clerkUserId, isLoaded: isClerkAuthLoaded } = useAuth();
+    const { user: clerkUser, isLoaded: isClerkUserLoaded } = useUser();
     // Generate a new session ID on each page load to ensure fresh conversations
     const [sessionId] = useState<string>(() => crypto.randomUUID());
     const { isDark, mounted } = useTheme();
@@ -420,9 +425,9 @@ export default function AgenticSearchPage() {
         }
     }, [isSending, scrollToBottom]);
 
-    // Fetch user info on component mount
+    // Fetch user info on component mount - JWT users
     useEffect(() => {
-        const fetchUserInfo = async () => {
+        const fetchJWTUserInfo = async () => {
             try {
                 // Try to get JWT user first (institutional/officer/admin)
                 const response = await fetch('/api/auth/me', {
@@ -443,29 +448,34 @@ export default function AgenticSearchPage() {
                         return;
                     }
                 }
-                
-                // Fallback: Check if Clerk user is available
-                // This will be handled by the agent API proxy
-                setUserInfo({
-                    id: 'clerk-user',
-                    firstName: 'User',
-                    lastName: '',
-                    userType: 'clerk'
-                });
             } catch (error) {
-                console.error('Error fetching user info:', error);
-                // Set default for Clerk user
-                setUserInfo({
-                    id: 'clerk-user',
-                    firstName: 'User',
-                    lastName: '',
-                    userType: 'clerk'
-                });
+                console.error('Error fetching JWT user info:', error);
             }
         };
 
-        fetchUserInfo();
+        fetchJWTUserInfo();
     }, []);
+    
+    // Fetch Clerk user info when Clerk auth is loaded
+    useEffect(() => {
+        if (isClerkAuthLoaded && isClerkUserLoaded && isClerkSignedIn && clerkUserId) {
+            // Only set Clerk user info if we don't already have JWT user info
+            setUserInfo(prev => {
+                if (prev?.userType === 'jwt') {
+                    // JWT user takes precedence
+                    return prev;
+                }
+                
+                return {
+                    id: clerkUserId,
+                    firstName: clerkUser?.firstName || 'User',
+                    lastName: clerkUser?.lastName || '',
+                    email: clerkUser?.emailAddresses?.[0]?.emailAddress,
+                    userType: 'clerk'
+                };
+            });
+        }
+    }, [isClerkAuthLoaded, isClerkUserLoaded, isClerkSignedIn, clerkUserId, clerkUser]);
 
     const handleRecordingStop = (audioBlob: Blob) => {
         const url = URL.createObjectURL(audioBlob);
