@@ -2,7 +2,7 @@
 
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface UseAuthRedirectOptions {
   requireAuth?: boolean;
@@ -11,16 +11,56 @@ interface UseAuthRedirectOptions {
 }
 
 export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded: isClerkLoaded, isSignedIn: isClerkSignedIn } = useAuth();
   const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // Track JWT authentication state
+  const [isJWTAuthenticated, setIsJWTAuthenticated] = useState<boolean | null>(null);
+  const [isJWTChecked, setIsJWTChecked] = useState(false);
 
   const {
     requireAuth = false,
     redirectTo = '/search',
     fallbackUrl = '/'
   } = options;
+  
+  // Check JWT authentication on mount
+  useEffect(() => {
+    let cancelled = false;
+    
+    (async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
+        
+        if (!cancelled) {
+          if (response.ok) {
+            const data = await response.json();
+            setIsJWTAuthenticated(data?.success && data?.user ? true : false);
+          } else {
+            setIsJWTAuthenticated(false);
+          }
+          setIsJWTChecked(true);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setIsJWTAuthenticated(false);
+          setIsJWTChecked(true);
+        }
+      }
+    })();
+    
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  
+  // Combined authentication status - user is authenticated if EITHER Clerk OR JWT succeeds
+  const isAuthenticated = isClerkSignedIn || isJWTAuthenticated === true;
+  const isLoaded = isClerkLoaded && isJWTChecked;
 
   // Redirect to sign-in with return URL
   const redirectToSignIn = useCallback((returnUrl?: string) => {
@@ -42,8 +82,8 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
       return false; // Still loading, don't do anything
     }
 
-    if (isSignedIn) {
-      // User is authenticated, proceed to target URL
+    if (isAuthenticated) {
+      // User is authenticated (either Clerk or JWT), proceed to target URL
       router.push(targetUrl || redirectTo);
       return true;
     } else {
@@ -51,16 +91,16 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
       redirectToSignIn(targetUrl || redirectTo);
       return false;
     }
-  }, [isLoaded, isSignedIn, router, redirectTo, redirectToSignIn]);
+  }, [isLoaded, isAuthenticated, router, redirectTo, redirectToSignIn]);
 
   // Auto-redirect based on authentication state
   useEffect(() => {
     if (!isLoaded) return;
 
-    if (requireAuth && !isSignedIn) {
+    if (requireAuth && !isAuthenticated) {
       redirectToSignIn();
     }
-  }, [isLoaded, isSignedIn, requireAuth, redirectToSignIn]);
+  }, [isLoaded, isAuthenticated, requireAuth, redirectToSignIn]);
 
   // Handle redirect after successful authentication
   const handleAuthSuccess = useCallback(() => {
@@ -70,7 +110,9 @@ export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
 
   return {
     isLoaded,
-    isSignedIn,
+    isSignedIn: isAuthenticated, // Return combined auth status
+    isClerkSignedIn, // Also expose individual auth states
+    isJWTAuthenticated,
     user,
     redirectToSignIn,
     redirectToSignUp,
