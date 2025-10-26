@@ -4,12 +4,14 @@ import { getJWTFromRequest, verifyJWT } from './lib/jwt'
 
 // Define routes that require authentication
 const isProtectedRoute = createRouteMatcher([
+  '/explore(.*)',
   '/search(.*)',
   '/dashboard(.*)',
   '/profile(.*)',
   '/settings(.*)',
   // Protect agent proxy API so we always have identity server-side
-  '/api/agent(.*)'
+  '/api/agent(.*)',
+  '/api/cases/explore'
 ])
 
 // Define routes that require admin access
@@ -41,8 +43,6 @@ const isPublicRoute = createRouteMatcher([
   '/api/cases/:caseId', // Allow viewing case details (but claiming requires auth)
   '/cases/:caseId', // Allow viewing case detail pages
 ])
-
-// Custom auth check function
 async function checkCustomAuth(req: NextRequest) {
   const token = getJWTFromRequest(req);
   if (!token) return null;
