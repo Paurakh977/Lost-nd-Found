@@ -13,6 +13,7 @@ import Case from '../../../../models/Case';
  * - type: filter by type (lost, found)
  * - startDate: filter by date range start
  * - endDate: filter by date range end
+ * - search: search query for title, description, and location (case-insensitive regex)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +31,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type'); // lost, found
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const searchQuery = searchParams.get('search'); // search query
 
     // Build query - exclude resolved cases
     const query: any = {
@@ -59,6 +61,21 @@ export async function GET(request: NextRequest) {
       if (endDate) {
         query.createdAt.$lte = new Date(endDate);
       }
+    }
+
+    // Search filter - search in title, description, and location
+    if (searchQuery && searchQuery.trim()) {
+      const searchRegex = new RegExp(searchQuery.trim(), 'i'); // case-insensitive
+      query.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+        { 'location.address': searchRegex },
+        { 'location.details': searchRegex },
+        { 'itemDetails.detailedDescription': searchRegex },
+        { 'itemDetails.category': searchRegex },
+        { 'itemDetails.brand': searchRegex },
+        { 'itemDetails.color': searchRegex },
+      ];
     }
 
     // Fetch cases with pagination
