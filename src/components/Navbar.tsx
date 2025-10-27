@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Info, Mail, Circle, LogIn, UserPlus, Bot } from 'lucide-react';
+import { Home, Info, Mail, Circle, LogIn, UserPlus, Bot, Compass } from 'lucide-react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { cn } from "../lib/utlis";
 import { useNavigation } from './SplashLayout';
@@ -63,6 +63,7 @@ const Navbar: React.FC = () => {
   // Memoize nav items to prevent recreation
   const navItems: NavItem[] = useMemo(() => [
     { name: 'Home', url: '/', icon: Home },
+    { name: 'Explore', url: '/explore', icon: Compass },
     { name: 'Agentic Search', url: '/search', icon: Bot },
     { name: 'About', url: '/about', icon: Info },
     { name: 'Contact', url: '/contact', icon: Mail },
