@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, Eye, Calendar, MapPin, Package, CheckCircle, Shield, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Filter, Eye, Calendar, MapPin, Package, CheckCircle, Shield, ChevronLeft, ChevronRight, X, Search, Loader2 } from 'lucide-react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useTheme } from '@/components/ThemeProvider';
 import CaseDetailModal from '@/components/CaseDetailModal';
@@ -73,6 +73,8 @@ export default function ExplorePage() {
 
   // Filters
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
@@ -116,6 +118,15 @@ export default function ExplorePage() {
     }
   }, [authChecked, isClerkAuthLoaded, isClerkUserLoaded, isClerkSignedIn, jwtUser, router]);
 
+  // Debounce search query to reduce API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Fetch cases
   const fetchCases = async (page: number = 1) => {
     try {
@@ -124,6 +135,7 @@ export default function ExplorePage() {
       params.append('page', page.toString());
       params.append('limit', '12');
       
+      if (debouncedSearchQuery.trim()) params.append('search', debouncedSearchQuery.trim());
       if (statusFilter) params.append('status', statusFilter);
       if (typeFilter) params.append('type', typeFilter);
       if (startDate) params.append('startDate', startDate);
@@ -145,7 +157,7 @@ export default function ExplorePage() {
 
   useEffect(() => {
     fetchCases(1);
-  }, [statusFilter, typeFilter, startDate, endDate]);
+  }, [debouncedSearchQuery, statusFilter, typeFilter, startDate, endDate]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -164,6 +176,7 @@ export default function ExplorePage() {
   };
 
   const clearFilters = () => {
+    setSearchQuery('');
     setStatusFilter('');
     setTypeFilter('');
     setStartDate('');
@@ -245,6 +258,64 @@ export default function ExplorePage() {
           </p>
         </motion.div>
 
+        {/* Search Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <div className="relative">
+            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
+              isDark ? 'text-neutral-500' : 'text-gray-400'
+            }`} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title, location, description, category, brand, color..."
+              className={`w-full pl-12 pr-${searchQuery && searchQuery !== debouncedSearchQuery ? '12' : '4'} py-4 rounded-xl border transition-all ${
+                isDark 
+                  ? 'bg-neutral-900/60 border-neutral-800/50 text-white placeholder-neutral-500 focus:bg-neutral-900 focus:border-neutral-700' 
+                  : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500'
+              } focus:ring-2 focus:ring-blue-500/50 focus:outline-none`}
+            />
+            {/* Show loading spinner when debouncing */}
+            {searchQuery && searchQuery !== debouncedSearchQuery && (
+              <div className="absolute right-12 top-1/2 -translate-y-1/2">
+                <Loader2 className={`w-4 h-4 animate-spin ${
+                  isDark ? 'text-neutral-500' : 'text-gray-400'
+                }`} />
+              </div>
+            )}
+            {/* Show clear button */}
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className={`absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors ${
+                  isDark 
+                    ? 'text-neutral-500 hover:text-white hover:bg-neutral-800' 
+                    : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          {/* Search hint */}
+          {searchQuery && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mt-2 text-sm ${
+                isDark ? 'text-neutral-500' : 'text-gray-500'
+              }`}
+            >
+              Searching in: title, location, description, category, brand, color
+            </motion.p>
+          )}
+        </motion.div>
+
         {/* Filters */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -266,7 +337,7 @@ export default function ExplorePage() {
               <span className="font-medium">Filters</span>
             </button>
 
-            {(statusFilter || typeFilter || startDate || endDate) && (
+            {(searchQuery || statusFilter || typeFilter || startDate || endDate) && (
               <button
                 onClick={clearFilters}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
