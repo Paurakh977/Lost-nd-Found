@@ -125,10 +125,10 @@ const Navbar: React.FC = () => {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[55] pt-3 sm:pt-6 px-2 sm:px-0">
-      <div className="flex justify-center">
+    <div className="fixed top-0 left-0 right-0 z-[55] pt-3 sm:pt-6 px-2 sm:px-0 overflow-x-auto scrollbar-hide">
+      <div className="flex justify-start sm:justify-center">
         <motion.div
-          className="flex items-center gap-0.5 sm:gap-1 bg-white/80 dark:bg-black/80 border border-gray-200/50 dark:border-white/10 backdrop-blur-xl py-1.5 sm:py-2 px-2 sm:px-3 rounded-full shadow-lg relative max-w-[95vw]"
+          className="flex items-center gap-0.5 sm:gap-1 bg-white/80 dark:bg-black/80 border border-gray-200/50 dark:border-white/10 backdrop-blur-xl py-1.5 sm:py-2 px-2 sm:px-3 rounded-full shadow-lg relative w-max sm:max-w-[95vw]"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{
