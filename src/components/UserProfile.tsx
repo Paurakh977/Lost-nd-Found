@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { UserButton, useUser, useClerk } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, User, Settings, Shield, Building } from 'lucide-react';
@@ -19,6 +20,8 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
   const [jwtUser, setJwtUser] = useState<any>(null);
   const [userType, setUserType] = useState<'clerk' | 'jwt'>('clerk');
   const [userUnreadCount, setUserUnreadCount] = useState<number>(0);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
 
   // Check for JWT user on component mount
   useEffect(() => {
@@ -87,6 +90,23 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
     return () => { mounted = false; clearInterval(t); };
   }, [isLoaded, user, jwtUser]);
 
+  // Update dropdown position when open, on resize/scroll
+  useEffect(() => {
+    if (!isOpen) return;
+    const update = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, { passive: true });
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update);
+    };
+  }, [isOpen]);
+
   const handleSignOut = async () => {
     try {
       if (userType === 'jwt') {
@@ -134,6 +154,7 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
   return (
     <div className={`relative ${className}`}>
       <motion.button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20 hover:ring-white/40 transition-all duration-300 group"
         whileHover={{ scale: 1.05 }}
@@ -179,153 +200,157 @@ export default function UserProfile({ className = '' }: UserProfileProps) {
         />
       </motion.button>
 
-      {/* Dropdown Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              className="fixed inset-0 z-[65]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-            />
-            
-            {/* Menu */}
-            <motion.div
-              className="absolute top-full right-0 mt-2 w-64 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-xl border border-white/20 dark:border-zinc-700/20 rounded-2xl shadow-xl overflow-hidden z-[70]"
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            >
-              {/* User Info Header */}
-              <div className="p-4 border-b border-gray-200/20 dark:border-zinc-700/20">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-blue-500/20">
-                    {userType === 'clerk' ? (
-                      <img
-                        src={user?.imageUrl}
-                        alt={user?.fullName || 'User'}
-                        className="w-full h-full object-cover"
-                        onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/default-avatar.png'}}
-                      />
-                    ) : jwtUser?.profileImage ? (
-                      <img
-                        src={`/api/profile/image/${jwtUser.profileImage}?t=${Date.now()}`}
-                        alt={`${jwtUser.firstName} ${jwtUser.lastName}`.trim()}
-                        className="w-full h-full object-cover"
-                        onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/default-avatar.png'}}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                        {jwtUser?.firstName?.charAt(0) || jwtUser?.email?.charAt(0) || 'U'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {userType === 'clerk' 
-                        ? (user?.fullName || 'User')
-                        : (`${jwtUser?.firstName} ${jwtUser?.lastName}`.trim() || jwtUser?.email || 'User')
-                      }
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {userType === 'clerk' 
-                        ? user?.emailAddresses[0]?.emailAddress
-                        : jwtUser?.email
-                      }
-                    </p>
-                    {userType === 'jwt' && jwtUser?.role && (
-                      <p className="text-xs text-blue-500 dark:text-blue-400 truncate capitalize">
-                        {jwtUser.role}
+      {/* Dropdown Menu via Portal (avoids transform/overflow clipping) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                className="fixed inset-0 z-[998]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsOpen(false)}
+              />
+
+              {/* Menu */}
+              <motion.div
+                className="fixed w-64 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-xl border border-white/20 dark:border-zinc-700/20 rounded-2xl shadow-xl overflow-hidden z-[999]"
+                style={menuPos ? { top: menuPos.top, right: menuPos.right } : undefined}
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              >
+                {/* User Info Header */}
+                <div className="p-4 border-b border-gray-200/20 dark:border-zinc-700/20">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-blue-500/20">
+                      {userType === 'clerk' ? (
+                        <img
+                          src={user?.imageUrl}
+                          alt={user?.fullName || 'User'}
+                          className="w-full h-full object-cover"
+                          onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/default-avatar.png'}}
+                        />
+                      ) : jwtUser?.profileImage ? (
+                        <img
+                          src={`/api/profile/image/${jwtUser.profileImage}?t=${Date.now()}`}
+                          alt={`${jwtUser.firstName} ${jwtUser.lastName}`.trim()}
+                          className="w-full h-full object-cover"
+                          onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/default-avatar.png'}}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                          {jwtUser?.firstName?.charAt(0) || jwtUser?.email?.charAt(0) || 'U'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {userType === 'clerk' 
+                          ? (user?.fullName || 'User')
+                          : (`${jwtUser?.firstName} ${jwtUser?.lastName}`.trim() || jwtUser?.email || 'User')
+                        }
                       </p>
-                    )}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {userType === 'clerk' 
+                          ? user?.emailAddresses[0]?.emailAddress
+                          : jwtUser?.email
+                        }
+                      </p>
+                      {userType === 'jwt' && jwtUser?.role && (
+                        <p className="text-xs text-blue-500 dark:text-blue-400 truncate capitalize">
+                          {jwtUser.role}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Menu Items */}
-              <div className="py-2">
-                <motion.button
-                  onClick={() => { router.push('/messages'); setIsOpen(false); }}
-                  className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
-                  whileHover={{ x: 4 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  <User className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
-                  Messages
-                  {userUnreadCount > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2">
-                      {userUnreadCount > 9 ? '9+' : userUnreadCount}
-                    </span>
-                  )}
-                </motion.button>
-
-                <motion.button
-                  onClick={handleProfileClick}
-                  className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
-                  whileHover={{ x: 4 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  <User className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
-                  Profile Settings
-                </motion.button>
-
-                <motion.button
-                  onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
-                  whileHover={{ x: 4 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  <Settings className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-purple-500 transition-colors" />
-                  Account Settings
-                </motion.button>
-
-                {userType === 'jwt' && jwtUser?.role === 'institutional' && (
+                {/* Menu Items */}
+                <div className="py-2">
                   <motion.button
-                    onClick={() => {
-                      router.push('/institutional-info');
-                      setIsOpen(false);
-                    }}
+                    onClick={() => { router.push('/messages'); setIsOpen(false); }}
                     className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
                     whileHover={{ x: 4 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   >
-                    <Building className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
-                    Institution Info
+                    <User className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
+                    Messages
+                    {userUnreadCount > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2">
+                        {userUnreadCount > 9 ? '9+' : userUnreadCount}
+                      </span>
+                    )}
                   </motion.button>
-                )}
 
-                <motion.button
-                  onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
-                  whileHover={{ x: 4 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  <Shield className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-green-500 transition-colors" />
-                  Privacy & Security
-                </motion.button>
+                  <motion.button
+                    onClick={handleProfileClick}
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  >
+                    <User className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
+                    Profile Settings
+                  </motion.button>
 
-                {/* Divider */}
-                <div className="my-2 border-t border-gray-200/20 dark:border-zinc-700/20" />
+                  <motion.button
+                    onClick={() => setIsOpen(false)}
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  >
+                    <Settings className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-purple-500 transition-colors" />
+                    Account Settings
+                  </motion.button>
 
-                {/* Sign Out */}
-                <motion.button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-colors group"
-                  whileHover={{ x: 4 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  <LogOut className="w-4 h-4 mr-3 group-hover:text-red-500 transition-colors" />
-                  Sign Out
-                </motion.button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                  {userType === 'jwt' && jwtUser?.role === 'institutional' && (
+                    <motion.button
+                      onClick={() => {
+                        router.push('/institutional-info');
+                        setIsOpen(false);
+                      }}
+                      className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
+                      whileHover={{ x: 4 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    >
+                      <Building className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
+                      Institution Info
+                    </motion.button>
+                  )}
+
+                  <motion.button
+                    onClick={() => setIsOpen(false)}
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-zinc-700/50 transition-colors group"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  >
+                    <Shield className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-green-500 transition-colors" />
+                    Privacy & Security
+                  </motion.button>
+
+                  {/* Divider */}
+                  <div className="my-2 border-t border-gray-200/20 dark:border-zinc-700/20" />
+
+                  {/* Sign Out */}
+                  <motion.button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-colors group"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  >
+                    <LogOut className="w-4 h-4 mr-3 group-hover:text-red-500 transition-colors" />
+                    Sign Out
+                  </motion.button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
