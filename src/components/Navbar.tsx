@@ -125,10 +125,10 @@ const Navbar: React.FC = () => {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[55] pt-3 sm:pt-6 px-2 sm:px-0 overflow-x-auto scrollbar-hide">
+    <div className="fixed top-0 left-0 right-0 z-[55] pt-2 sm:pt-5 px-1 sm:px-0 overflow-x-auto overflow-y-visible scrollbar-hide">
       <div className="flex justify-start sm:justify-center">
         <motion.div
-          className="flex items-center gap-0.5 sm:gap-1 bg-white/80 dark:bg-black/80 border border-gray-200/50 dark:border-white/10 backdrop-blur-xl py-1.5 sm:py-2 px-2 sm:px-3 rounded-full shadow-lg relative w-max sm:max-w-[95vw]"
+          className="flex items-center gap-0 sm:gap-1 bg-white/80 dark:bg-black/80 border border-gray-200/50 dark:border-white/10 backdrop-blur-xl py-1 sm:py-2 px-1.5 sm:px-3 rounded-full shadow-lg relative w-max sm:max-w-[95vw]"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{
@@ -140,7 +140,7 @@ const Navbar: React.FC = () => {
           {/* Logo - Minimalistic Silver GOTUS */}
           <button
             onClick={handleLogoClick}
-            className="px-3 sm:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-white/5 group"
+            className="px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-white/5 group"
             disabled={isNavigating}
           >
             <motion.div
@@ -186,7 +186,7 @@ const Navbar: React.FC = () => {
                 onMouseLeave={() => handleTabHover(null)}
                 disabled={isNavigating}
                 className={cn(
-                  "relative cursor-pointer text-xs sm:text-sm font-semibold px-2 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-full transition-all duration-300",
+                  "relative cursor-pointer text-xs sm:text-sm font-semibold px-1 sm:px-3 lg:px-5 py-1.5 sm:py-3 rounded-full transition-all duration-300",
                   "text-gray-600 dark:text-white/70 hover:text-gray-900 dark:hover:text-white",
                   isActive && "text-blue-600 dark:text-white",
                   isNavigating && "opacity-50 cursor-not-allowed"
@@ -241,7 +241,7 @@ const Navbar: React.FC = () => {
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <Icon size={16} strokeWidth={2.5} />
+                  <Icon size={14} strokeWidth={2.3} />
                 </motion.span>
 
                 <AnimatePresence>
@@ -258,7 +258,7 @@ const Navbar: React.FC = () => {
                 {isActive && (
                   <motion.div
                     layoutId="anime-mascot"
-                    className="absolute -top-6 left-1/2 -translate-x-1/2 pointer-events-none z-[60]"
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 pointer-events-none z-[60] hidden sm:block"
                     initial={false}
                     transition={{
                       type: "spring",
@@ -413,25 +413,27 @@ const Navbar: React.FC = () => {
                   layout
                   layoutId="theme-toggle"
                 >
-                  <div className="scale-90 sm:scale-100">
+                  <div className="scale-[.6] sm:scale-75">
                     <SkyToggle isDark={isDark} onToggle={toggleTheme} />
                   </div>
                 </motion.div>
                 {/* User Profile (component already supports Clerk and JWT) */}
-                <UserProfile />
+                <div className="scale-[.8] sm:scale-90">
+                  <UserProfile />
+                </div>
               </div>
             ) : (
               // Show sign in/up buttons when not authenticated
               <div className="flex items-center gap-1 sm:gap-2">
                 {/* Theme Toggle */}
                 <motion.div
-                  className="flex items-center justify-center mr-1 sm:mr-2"
+                  className="flex items-center justify-center mr-0.5 sm:mr-1"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   layout
                   layoutId="theme-toggle"
                 >
-                  <div className="scale-90 sm:scale-100">
+                  <div className="scale-[.6] sm:scale-75">
                     <SkyToggle isDark={isDark} onToggle={toggleTheme} />
                   </div>
                 </motion.div>
@@ -439,7 +441,7 @@ const Navbar: React.FC = () => {
                 <motion.button
                   onClick={handleSignInClick}
                   disabled={isNavigating}
-                  className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-full hover:bg-gray-100/50 dark:hover:bg.white/5"
+                  className="flex items-center gap-1 px-1 sm:px-2 py-1 sm:py-2 text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-full hover:bg-gray-100/50 dark:hover:bg.white/5"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, x: 20 }}
@@ -453,7 +455,7 @@ const Navbar: React.FC = () => {
                 <motion.button
                   onClick={handleSignUpClick}
                   disabled={isNavigating}
-                  className="relative flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white rounded-full shadow-md hover:shadow-lg overflow-hidden group"
+                  className="relative flex items-center gap-1 px-1 sm:px-2 py-1 sm:py-2 text-xs sm:text-sm font-medium text-white rounded-full shadow-md hover:shadow-lg overflow-hidden group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, x: 20 }}
