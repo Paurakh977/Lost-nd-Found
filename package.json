@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
-    "start": "node -e \"process.env.NODE_ENV='production'; require('./server.js')\"",
-    "start:next": "node -e \"process.env.NODE_ENV='production'; require('child_process').spawn('next', ['start'], { stdio: 'inherit', shell: true })\"",
-    "lint": "eslint",
-    "dev:socket": "node server.js"
+    "start": "next start",
+    "lint": "next lint",
+    "deploy-prep": "rm -rf .next && next build",
+    "export": "next build && next export"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.8",
