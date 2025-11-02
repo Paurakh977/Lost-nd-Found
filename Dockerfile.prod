@@ -45,25 +45,6 @@ COPY . .
 
 RUN npm run build
 
-# New stage: Install only runtime dependencies for server.js
-FROM base as server-deps
-
-WORKDIR /app
-
-# Create a minimal package.json with ONLY runtime dependencies
-RUN echo '{ \
-  "dependencies": { \
-    "next": "*", \
-    "socket.io": "*", \
-    "redis": "*" \
-  } \
-}' > package.json
-
-# Copy the lock file to preserve exact versions
-COPY package-lock.json ./
-
-# Install only these 3 packages + their dependencies
-RUN npm i --omit=dev && npm cache clean --force
 
 FROM base as runner
 
@@ -74,11 +55,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Copy custom server.js
-COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
-
-# Copy ONLY the runtime node_modules (socket.io + redis + next)
-COPY --from=server-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
