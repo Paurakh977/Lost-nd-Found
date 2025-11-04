@@ -14,4 +14,4 @@ ENV WATCHPACK_POLLING=true
 
 EXPOSE 3000
 
-CMD [ "npm", "run", "dev:socket" ]
+CMD [ "npm", "run", "dev" ]
