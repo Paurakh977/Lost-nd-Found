@@ -13,6 +13,7 @@ import {
   UserButton,
 } from '@clerk/nextjs'
 import ConditionalNavbar from "../components/ConditionalNavbar";
+import SocketBootstrap from "../components/SocketBootstrap";
 
 
 const geistSans = Geist({
@@ -54,6 +55,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} antialiased`}
         >
         <ThemeProvider>
+          <SocketBootstrap />
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
             <SplashLayout>
               <AuthLayoutWrapper>
