@@ -19,7 +19,7 @@
 
 ## Table of Contents
 - [Overview](#overview)
-- [Tech Stack](#tech-stack)
+- [Tech Stack](#tech-stacks)
 - [Quick Start](#quick-start)
 - [Install Prerequisites](#install-prerequisites)
   - [Docker Installation](#docker-installation)
